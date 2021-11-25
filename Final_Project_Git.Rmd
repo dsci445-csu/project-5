@@ -6,5 +6,108 @@ output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
+library(knitr)
 knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(message = FALSE)
+library(ggplot2)
+library(MASS)
+library(GGally)
+library(caret)
+library(tidyverse)
+library(ggrepel)
+library(ISLR)
+library(hrbrthemes)
+library(class)
+library(boot)
+library(leaps)
+library(glmnet)
+library(pls)
+library(gam)
+library(tree)
+library(gbm)
+library(randomForest)
+library(e1071)
 ```
+
+### Reproducibility
+```{r}
+set.seed(1)
+```
+
+### Uploading data
+```{r}
+REIMS <- read.csv("C:/Users/sinth/OneDrive/Desktop/R CSU/Machine Learning/Final project/REIMS machine learning class.csv")
+```
+
+
+### Prediction of USDA grade using REIMS (classification models)  
+        a) Dimensionality reduction using Principal Component Analysis (PCA)
+```{r}
+
+```
+
+        b) Dimensionality reduction using Recursive Feature Elimination (FS)
+```{r}
+
+```
+
+        c) Logistic regression with PCA data
+```{r}
+
+```
+
+        d) Logistic regression with FS data
+```{r}
+
+```
+
+        e) K-nearest neighbors using PCA data
+```{r}
+
+```
+
+        f) K-nearest neighbors using FS data
+```{r}
+
+```
+
+        g) PCA using PCA data
+```{r}
+
+```
+
+        h) PCA using FS data
+```{r}
+
+```
+
+        i) Support vector machine (SVM) using PCA data
+```{r}
+
+```
+
+        j) SVM using FS data
+```{r}
+
+```
+
+        k) PLS-DA
+```{r}
+
+```
+
+        l) PLS-DA
+```{r}
+
+```
+
+### Prediction of Tenderness over time using 36h REIMS (regression models)
+
+        Best subset selection
+```{r}
+#test
+```
+
+
+
+
