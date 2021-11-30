@@ -41,16 +41,26 @@ REIMS <- read.csv("REIMS machine learning class.csv")
 dropBase <- c("SampleID", "Cx", "GS_1", "GS_2", "UNIQ_ID", "Ten42", "Ten56", "Ten70")
 responseVars <- c("USDA.grade", "Ten3", "Ten14","Ten28")
 
-# Define the associated dataframes for each analysis. Respnose variable is column 1, predictors are the remaining columns
+# Define the associated dataframes for each analysis. Response variable is column 1, predictors are the remaining columns
 gradeDF <- REIMS[,!(names(REIMS) %in% union(dropBase,setdiff(responseVars, c("USDA.grade"))))]
-ten3DF <- REIMS[,!(names(REIMS) %in% union(dropBase,setdiff(responseVars, c("Ten3"))))]
-ten14DF <- REIMS[,!(names(REIMS) %in% union(dropBase,setdiff(responseVars, c("Ten14"))))]
-ten28DF <- REIMS[,!(names(REIMS) %in% union(dropBase,setdiff(responseVars, c("Ten28"))))]
 
-gradeDF[,1:5]
-ten3DF[,1:5]
-ten14DF[,1:5]
-ten28DF[,1:5]
+#Creating training and test subsets for regressions
+set.seed(1)
+dpart <- createDataPartition(REIMS$USDA.grade, p = 0.6, list = F)
+train<- REIMS[dpart, ]
+test<- REIMS[-dpart, ]
+
+ten3DF_train<- na.omit(train[,!(names(REIMS) %in% union(dropBase,setdiff(responseVars, c("Ten3"))))])
+ten3DF_test<-na.omit(test[,!(names(REIMS) %in% union(dropBase,setdiff(responseVars, c("Ten3"))))])
+ten14DF_train<-na.omit(train[,!(names(REIMS) %in% union(dropBase,setdiff(responseVars, c("Ten14"))))])
+ten14DF_test<-na.omit(test[,!(names(REIMS) %in% union(dropBase,setdiff(responseVars, c("Ten14"))))])
+ten28DF_train<-na.omit(train[,!(names(REIMS) %in% union(dropBase,setdiff(responseVars, c("Ten28"))))])
+ten28DF_test<-na.omit(test[,!(names(REIMS) %in% union(dropBase,setdiff(responseVars, c("Ten28"))))])
+
+# Completed datasets for regressions
+ten3DF <- na.omit(REIMS[,!(names(REIMS) %in% union(dropBase,setdiff(responseVars, c("Ten3"))))])
+ten14DF <- na.omit(REIMS[,!(names(REIMS) %in% union(dropBase,setdiff(responseVars, c("Ten14"))))])
+ten28DF <- na.omit(REIMS[,!(names(REIMS) %in% union(dropBase,setdiff(responseVars, c("Ten28"))))])
 ```
 
 
@@ -406,11 +416,77 @@ data.frame(optimalPC = c(svmRadResultsDF$PrincipalComponents[which.min(svmRadRes
 
 ### Prediction of Tenderness over time using 36h REIMS (regression models)
 
-        Best subset selection
+     Subsets
+```{r, echo = FALSE}
+#Here are the names of the data sets for all the following models. They correspond to a 60/40 training/test subsets.
+ten3DF_train
+ten3DF_test
+ten14DF_train
+ten14DF_test
+ten28DF_train
+ten28DF_test
+```
+
+        a) Best subset selection
 ```{r}
-#test
+#
+
+
 ```
 
 
+        b) PCR
+```{r}
+#Fitting the PCR Ten3 model using 10-fold cross-validation
+set.seed(1)
+pcr.fit_ten3<- pcr (Ten3~., data=ten3DF_train, scale = TRUE,
+validation="CV")
+summary (pcr.fit_ten3)
+mse <- MSEP(pcr.fit_ten3)
+#M of the smallest CV error
+mse$comps[which.min(as.data.frame(mse$val)[1,])]
+#Calculating MSE with M=6 and the Test set.
+pcr.pred <- predict (pcr.fit_ten3, ten3DF_test, ncomp = 6)
+pcr.pred-ten3DF_test$Ten3
+mse_mean_ten3<-mean ((pcr.pred - ten3DF_test$Ten3)^2)
+#Error compare to average
+sqrt(mse_mean_ten3)
+mean(ten3DF$Ten3)
 
 
+#Fitting the PCR Ten14 model using 10-fold cross-validation
+set.seed(1)
+pcr.fit_ten14<- pcr (Ten14~., data=ten14DF_train, scale = TRUE,
+validation="CV")
+summary (pcr.fit_ten14)
+mse <- MSEP(pcr.fit_ten14)
+#M of the smallest CV error
+mse$comps[which.min(as.data.frame(mse$val)[1,])]
+#Calculating MSE with M=1 and the Test set.
+pcr.pred <- predict (pcr.fit_ten14, ten14DF_test, ncomp = 1)
+pcr.pred-ten14DF_test$Ten14
+mse_mean_ten14<-mean ((pcr.pred - ten14DF_test$Ten14)^2)
+#Error in the same scale
+sqrt(mse_mean_ten14)
+mean(ten14DF$Ten14)
+
+
+#Fitting the PCR Ten28 model using 10-fold cross-validation
+set.seed(1)
+pcr.fit_ten28<- pcr (Ten28~., data=ten28DF_train, scale = TRUE,
+validation="CV")
+summary (pcr.fit_ten28)
+mse <- MSEP(pcr.fit_ten28)
+#M of the smallest CV error
+mse$comps[which.min(as.data.frame(mse$val)[1,])]
+#Calculating MSE with M=2 and the Test set.
+pcr.pred <- predict (pcr.fit_ten28, ten28DF_test, ncomp = 2)
+pcr.pred-ten28DF_test$Ten28
+mse_mean_ten28<-mean ((pcr.pred - ten28DF_test$Ten28)^2)
+#Error in the same scale
+sqrt(mse_mean_ten28)
+mean(ten28DF$Ten28)
+
+#Summarizing results
+
+```
