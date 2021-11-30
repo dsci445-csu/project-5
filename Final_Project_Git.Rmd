@@ -49,7 +49,7 @@ REIMS <- read.csv("REIMS machine learning class.csv")
 
         b) Dimensionality reduction using Recursive Feature Elimination (FS)
 ```{r}
-
+FS_REIMS<-read.csv("REIMS_FS_data.csv")
 ```
 
         c) Logistic regression with PCA data
