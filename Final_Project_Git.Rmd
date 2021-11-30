@@ -36,13 +36,14 @@ set.seed(1)
 
 ### Uploading data
 ```{r}
-REIMS <- read.csv("C:/Users/sinth/OneDrive/Desktop/R CSU/Machine Learning/Final project/REIMS machine learning class.csv")
+REIMS <- read.csv("REIMS machine learning class.csv")
 ```
 
 
 ### Prediction of USDA grade using REIMS (classification models)  
         a) Dimensionality reduction using Principal Component Analysis (PCA)
 ```{r}
+# Patrick
 
 ```
 
@@ -83,11 +84,12 @@ REIMS <- read.csv("C:/Users/sinth/OneDrive/Desktop/R CSU/Machine Learning/Final 
 
         i) Support vector machine (SVM) using PCA data
 ```{r}
-
+ 
 ```
 
         j) SVM using FS data
 ```{r}
+
 
 ```
 
