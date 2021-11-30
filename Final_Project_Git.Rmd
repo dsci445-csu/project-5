@@ -191,6 +191,9 @@ data.frame(optimalNumPrincpleCompoents = c(optimal_PC), optimalCVerror = c(optim
 ```
 
         i) Support vector machine (SVM) using PCA data
+        
+            
+            iA) Linear SVM
 ```{r}
 set.seed(1)
 
@@ -201,37 +204,32 @@ min_components <- 15 # it was found that components less than 15 did not perform
 max_components <- 80
 component_seq <- seq(min_components,max_components)
 
-best_cost <- rep(NA, max_components)
-cv_mse <- rep(NA, max_components)
+best_cost <- rep(NA, length(component_seq))
+cv_mse <- rep(NA, length(component_seq))
 
-for (i in component_seq) {
-    num_components <- i
+costVec <- seq(from = .01, to = 2.5, length.out = 50)
+
+for (i in seq(length(component_seq))) {
+    num_components <- component_seq[i]
 
     loadingDF <- pca_loadings[,1:num_components] # store the correct loadings DF
     
     scoresDF <- as.data.frame(as.matrix(predictorsDF) %*% as.matrix(loadingDF)) #compute the scores (z-values) for the given number of principal components
     scoresDF$USDA.grade <- gradeDF$USDA.grade
     
-    # n <- nrow(scoresDF)
-    # trn <- seq_len(n) %in% sample(seq_len(n), round(0.8*n))
-    # TrainData <- scoresDF[trn,]
-    # TestData <- scoresDF[!trn,]
-    
-    costVec <- seq(from = .01, to = 2.5, length.out = 100)
     TuneObj <- tune.svm(USDA.grade~ ., data = scoresDF, kernel = "linear", cost = costVec)
     
     best_cost[i] <- TuneObj$best.parameters[1,1]
     cv_mse[i] <- TuneObj$best.performance
 }
 
-PrincipalComponent <- seq_len(max_components)
-ggplot() +
-  geom_line(aes(x=PrincipalComponent, y=cv_mse))+
-  geom_point()
+PrincipalComponent <- component_seq
 
-ggplot() +
-  geom_line(aes(x=PrincipalComponent, y=best_cost))+
-  geom_point()
+linSVM_Results <- data.frame(PrincipalComponents = PrincipalComponent, CV_MSE = cv_mse, Best_Cost = best_cost)
+
+write.csv(linSVM_Results,"SVM_results/PCA/LinSVM.csv", row.names = FALSE)
+
+
 
 
 ```
@@ -239,7 +237,152 @@ ggplot() +
 
 ```{r}
 #Linear SVM Continued
-data.frame(optimalPC = c(which.min(cv_mse)), optimalCVError = c(min(cv_mse[15:length(cv_mse)])))
+
+
+
+svmLinResultsDF <- read.csv("SVM_results/PCA/LinSVM.csv")
+
+ggplot(data= svmLinResultsDF, aes(x=PrincipalComponents, y=CV_MSE)) +
+  geom_line()+
+  geom_point()
+
+ggplot(data= svmLinResultsDF, aes(x=PrincipalComponents, y=Best_Cost)) +
+  geom_line()+
+  geom_point()
+
+
+data.frame(optimalPC = c(svmLinResultsDF$PrincipalComponents[which.min(svmLinResultsDF$CV_MSE)]), optimalCVError = c(min(svmLinResultsDF$CV_MSE)))
+
+```
+
+
+
+            iB) Polynomial SVM with PC
+
+```{r}
+
+set.seed(1)
+
+#convert USDA.grade to factor
+gradeDF$USDA.grade <- as.factor(gradeDF$USDA.grade)
+
+min_components <- 1 # it was found that components less than 15 did not perform optimally
+max_components <- 50
+component_seq <- seq(min_components,max_components)
+degreeVec <- seq(1,7)
+
+best_cost <- rep(NA, length(component_seq))
+cv_mse <- rep(NA, length(component_seq))
+
+
+
+for (i in seq(length(component_seq))) {
+    num_components <- component_seq[i]
+
+    loadingDF <- pca_loadings[,1:num_components] # store the correct loadings DF
+    
+    scoresDF <- as.data.frame(as.matrix(predictorsDF) %*% as.matrix(loadingDF)) #compute the scores (z-values) for the given number of principal components
+    scoresDF$USDA.grade <- gradeDF$USDA.grade
+    
+
+    costVec <- seq(from = .01, to = 10, length.out =10)
+
+    TuneObj <- tune.svm(USDA.grade~ ., data = scoresDF, kernel = "polynomial", degree=1, scale=FALSE, cost = costVec)
+    
+    best_cost[i] <- TuneObj$best.parameters[1,1]
+    cv_mse[i] <- TuneObj$best.performance
+}
+
+PrincipalComponent <- seq(min_components,max_components)
+
+polySVM_Results <- data.frame(PrincipalComponents = PrincipalComponent, CV_MSE = cv_mse, Best_Cost = best_cost)
+
+write.csv(polySVM_Results,"SVM_results/PCA/PolySVM.csv", row.names = FALSE)
+
+
+
+```
+
+```{r}
+
+svmPolyResultsDF <- read.csv("SVM_results/PCA/PolySVM.csv")
+
+ggplot(data= svmPolyResultsDF, aes(x=PrincipalComponents, y=CV_MSE)) +
+  geom_line()+
+  geom_point()
+
+ggplot(data= svmPolyResultsDF, aes(x=PrincipalComponents, y=Best_Cost)) +
+  geom_line()+
+  geom_point()
+
+```
+
+
+            iB) Radial SVM with PC
+
+```{r}
+
+set.seed(1)
+
+#convert USDA.grade to factor
+gradeDF$USDA.grade <- as.factor(gradeDF$USDA.grade)
+
+min_components <- 5 # it was found that components less than 15 did not perform optimially
+max_components <- 50
+component_seq <- seq(min_components,max_components)
+
+best_cost <- rep(NA, length(component_seq))
+best_gamma <- rep(NA, length(component_seq))
+cv_mse <- rep(NA, length(component_seq))
+
+costVec <- seq(from = .01, to = 15, length.out = 10)
+gammaVec <- seq(from = .0001, to = .2, length.out = 20)
+
+for (i in seq(length(component_seq))) {
+    num_components <- component_seq[i]
+
+    loadingDF <- pca_loadings[,1:num_components] # store the correct loadings DF
+    
+    scoresDF <- as.data.frame(as.matrix(predictorsDF) %*% as.matrix(loadingDF)) #compute the scores (z-values) for the given number of principal components
+    scoresDF$USDA.grade <- gradeDF$USDA.grade
+    
+    TuneObj <- tune.svm(USDA.grade~ ., data = scoresDF, kernel = "radial", cost = costVec, gamma = gammaVec)
+    
+    best_cost[i] <- TuneObj$best.parameters[1,2]
+    best_gamma[i] <- TuneObj$best.parameters[1,1]
+    cv_mse[i] <- TuneObj$best.performance
+}
+
+PrincipalComponent <- component_seq
+
+radSVM_Results <- data.frame(PrincipalComponents = PrincipalComponent, CV_MSE = cv_mse, Best_Cost = best_cost, Best_Gamma = best_gamma)
+
+write.csv(radSVM_Results,"SVM_results/PCA/radSVM.csv", row.names = FALSE)
+
+
+```
+
+
+```{r}
+
+
+svmRadResultsDF <- read.csv("SVM_results/PCA/radSVM.csv")
+
+ggplot(data= svmRadResultsDF, aes(x=PrincipalComponents, y=CV_MSE)) +
+  geom_line()+
+  geom_point()
+
+ggplot(data= svmRadResultsDF, aes(x=PrincipalComponents, y=Best_Cost)) +
+  geom_line()+
+  geom_point()
+
+ggplot(data= svmRadResultsDF, aes(x=PrincipalComponents, y=Best_Gamma)) +
+  geom_line()+
+  geom_point()
+
+
+
+data.frame(optimalPC = c(svmRadResultsDF$PrincipalComponents[which.min(svmRadResultsDF$CV_MSE)]), optimalCVError = c(min(svmRadResultsDF$CV_MSE)))
 
 ```
 
