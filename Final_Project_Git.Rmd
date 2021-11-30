@@ -37,13 +37,45 @@ set.seed(1)
 ### Uploading data
 ```{r}
 REIMS <- read.csv("REIMS machine learning class.csv")
+
+dropBase <- c("SampleID", "Cx", "GS_1", "GS_2", "UNIQ_ID", "Ten42", "Ten56", "Ten70")
+responseVars <- c("USDA.grade", "Ten3", "Ten14","Ten28")
+
+# Define the associated dataframes for each analysis. Respnose variable is column 1, predictors are the remaining columns
+gradeDF <- REIMS[,!(names(REIMS) %in% union(dropBase,setdiff(responseVars, c("USDA.grade"))))]
+ten3DF <- REIMS[,!(names(REIMS) %in% union(dropBase,setdiff(responseVars, c("Ten3"))))]
+ten14DF <- REIMS[,!(names(REIMS) %in% union(dropBase,setdiff(responseVars, c("Ten14"))))]
+ten28DF <- REIMS[,!(names(REIMS) %in% union(dropBase,setdiff(responseVars, c("Ten28"))))]
+
+gradeDF[,1:5]
+ten3DF[,1:5]
+ten14DF[,1:5]
+ten28DF[,1:5]
 ```
 
 
 ### Prediction of USDA grade using REIMS (classification models)  
         a) Dimensionality reduction using Principal Component Analysis (PCA)
 ```{r}
-# Patrick
+#CODE BY PATRICK
+# This section of code performs PCA on the predictors of the data set. It stores the loading vectors in the pca_loadings dataframe
+# for use in the models below. It also provides a plot of Proportion of Variance Explained (PVE) vs. Principal Component.
+
+gradeResponse <- as.factor(gradeDF$USDA.grade)
+data <- gradeDF[,!(names(gradeDF) %in% c("USDA.grade"))] # dataframe without response
+pca_obj <- prcomp(data, center=TRUE, scale=TRUE)  # perform PCA
+pca_summary <- summary(pca_obj)
+pca_loadings <- pca_obj$rotation #store the loading vectors for future use
+
+pca_summary
+
+PVE <- pca_summary$importance[2,] # store the proportion of variance explained by each PC
+PrincipalComponent <- seq(1, length(PVE), 1) # Vector of Principle components for plot
+
+#PLOT OF PVE VS. Principle Component
+ggplot() +
+  geom_line(aes(x=PrincipalComponent, y=PVE))+
+  geom_point()
 
 ```
 
@@ -54,6 +86,82 @@ FS_REIMS<-read.csv("REIMS_FS_data.csv")
 
         c) Logistic regression with PCA data
 ```{r}
+# CODED BY PATRICK
+
+#This section of code performs 10-fold cross validation on a logistic regression using different number of principal components (varying from 
+# 1 principal component to 16 principal components). The optimal number of principal components to use for the logistic regression is identified
+# and used to build a final logistic model on the full dataset. A graph of CV_Error vs. Number of Principal Components is provided, and a data
+# frame that reports the optimal number of principal components to use, it's CV_Error, and the training error using the full dataset.
+
+set.seed(1)
+
+predictorsDF <- gradeDF[,!(names(gradeDF) %in% c("USDA.grade"))] # dataframe without response
+gradeResponse <- as.factor(gradeDF$USDA.grade)
+
+max_components <- 16 #maximum number of components to use in cross validation
+n <- nrow(predictorsDF) 
+k<-10 # number of folds
+p <- .5 #probability threshold to bin logistic regression response
+
+cv_labels <- sample(seq_len(k), n, replace = TRUE) #labels for folds
+cv_mse <- rep(NA, max_components) # place holder vector to record cv_mse for each PC
+
+#loop over each number of principle components
+for (i in seq_len(max_components)) {
+    num_components <- i
+    
+    loadingDF <- pca_loadings[,1:num_components] # store the correct loadings DF
+    
+    #compute the scores (z-values) for the given number of principal components
+    scoresDF <- as.data.frame(as.matrix(predictorsDF) %*% as.matrix(loadingDF))
+    scoresDF$USDA.grade <- gradeResponse
+    
+    cv_mse_i <- rep(NA, k) 
+    
+    #perform 10-fold cross validation
+    for(j in seq_len(k)) {
+        train <- scoresDF[cv_labels != j,]
+        test <- scoresDF[cv_labels == j,]
+        
+        fit <- glm(formula = USDA.grade ~ ., family = "binomial", data = train)
+        pred <- predict(fit, newdata = test, type="response")
+        confMatrix <-table(pred=ifelse(pred > p, "SE", "CH"), actual=test$USDA.grade)
+        
+        #it was found that sometimes the predicted response only categorized one response, not two
+        # so this error handling was necessary to get the appropriate error rate.
+        if ( nrow(confMatrix) == 2) {
+          errorRate <- 1 - (confMatrix[1,1] + confMatrix[2,2])/ sum(confMatrix)  
+        } else {
+          errorRate <- 1 - (confMatrix[1,1])/ sum(confMatrix)
+        }
+        
+        cv_mse_i[j] <- errorRate
+      }
+    
+    cv_mse[[i]] <- mean(cv_mse_i) #store the average CV-error of the 10 folds
+}
+
+#PLOT OF K-Fold CV_MSE VS. Principle Component
+PrincipalComponent <- seq_len(max_components)
+ggplot() +
+  geom_line(aes(x=PrincipalComponent, y=cv_mse))+
+  geom_point()
+
+#store the optimal cv error rate associated with the optimal number of principal components
+optimal_CVerror <- min(cv_mse)
+optimal_PC <- which.min(cv_mse)
+
+
+#train a model with the optimal number of principal components and report
+loadingDF <- pca_loadings[,1:optimal_PC]
+scoresDF <- as.data.frame(as.matrix(predictorsDF) %*% as.matrix(loadingDF))
+scoresDF$USDA.grade <- gradeResponse
+fit <- glm(formula = USDA.grade ~ ., family = "binomial", data = scoresDF)
+pred <- predict(fit,type="response")
+confMatrix <-table(pred=ifelse(pred > p, "SE", "CH"), actual=scoresDF$USDA.grade)
+TrainErrorRate <- 1 - (confMatrix[1,1] + confMatrix[2,2])/ sum(confMatrix)  
+
+data.frame(optimalNumPrincpleCompoents = c(optimal_PC), optimalCVerror = c(optimal_CVerror), trainError = c(TrainErrorRate))
 
 ```
 
@@ -84,14 +192,64 @@ FS_REIMS<-read.csv("REIMS_FS_data.csv")
 
         i) Support vector machine (SVM) using PCA data
 ```{r}
- 
+set.seed(1)
+
+#convert USDA.grade to factor
+gradeDF$USDA.grade <- as.factor(gradeDF$USDA.grade)
+
+min_components <- 15 # it was found that components less than 15 did not perform optimially
+max_components <- 80
+component_seq <- seq(min_components,max_components)
+
+best_cost <- rep(NA, max_components)
+cv_mse <- rep(NA, max_components)
+
+for (i in component_seq) {
+    num_components <- i
+
+    loadingDF <- pca_loadings[,1:num_components] # store the correct loadings DF
+    
+    scoresDF <- as.data.frame(as.matrix(predictorsDF) %*% as.matrix(loadingDF)) #compute the scores (z-values) for the given number of principal components
+    scoresDF$USDA.grade <- gradeDF$USDA.grade
+    
+    # n <- nrow(scoresDF)
+    # trn <- seq_len(n) %in% sample(seq_len(n), round(0.8*n))
+    # TrainData <- scoresDF[trn,]
+    # TestData <- scoresDF[!trn,]
+    
+    costVec <- seq(from = .01, to = 2.5, length.out = 100)
+    TuneObj <- tune.svm(USDA.grade~ ., data = scoresDF, kernel = "linear", cost = costVec)
+    
+    best_cost[i] <- TuneObj$best.parameters[1,1]
+    cv_mse[i] <- TuneObj$best.performance
+}
+
+PrincipalComponent <- seq_len(max_components)
+ggplot() +
+  geom_line(aes(x=PrincipalComponent, y=cv_mse))+
+  geom_point()
+
+ggplot() +
+  geom_line(aes(x=PrincipalComponent, y=best_cost))+
+  geom_point()
+
+
 ```
+
+
+```{r}
+#Linear SVM Continued
+data.frame(optimalPC = c(which.min(cv_mse)), optimalCVError = c(min(cv_mse[15:length(cv_mse)])))
+
+```
+
 
         j) SVM using FS data
 ```{r}
 
 
 ```
+
 
         k) PLS-DA
 ```{r}
