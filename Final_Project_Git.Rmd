@@ -490,3 +490,283 @@ mean(ten28DF$Ten28)
 #Summarizing results
 
 ```
+
+
+        c)Lasso Regression
+```{r}
+#CODED BY PATRICK
+set.seed(1)
+#Ten3 Analysis
+
+
+X_train <- model.matrix(Ten3 ~ ., data = ten3DF_train)[,-1]
+Y_train <- ten3DF_train$Ten3
+X_test <- model.matrix(Ten3 ~ ., data = ten3DF_test)[,-1]
+Y_test <- ten3DF_test$Ten3
+
+lambda <- 10^seq(-2, 3, length.out = 1000)
+
+cv_lasso <- cv.glmnet(X_train, Y_train, alpha = 1, lambda = lambda)
+
+ggplot() +
+  geom_line(aes(cv_lasso$lambda, cv_lasso$cvm)) +
+  geom_point(aes(cv_lasso$lambda, cv_lasso$cvm)) +
+  scale_x_log10()
+
+lambdaMin <- cv_lasso$lambda.min
+lambdaMin
+
+lasso_mdl <- glmnet(X_train, Y_train, alpha = 1, lambda = lambdaMin)
+
+predictions <- predict(lasso_mdl,newx=X_test,s=lambdaMin, type="response")
+
+testErrorLasso <- mean(( predictions[,'s1'] - Y_test )^2)
+testErrorLasso
+
+ggplot() +
+  geom_point(aes(predictions, Y_test))+
+  geom_abline(slope=1, intercept = 0) +
+  geom_point(aes(Train_predictions, Y_train))
+
+
+```
+```{r}
+# Lasso on principal components for Ten3
+
+set.seed(1)
+
+#recompute principal components with na removed
+data <- na.omit(ten3DF)
+predictorsDF <- data[,!(names(data) %in% c("Ten3"))] # dataframe without response
+pca_obj <- prcomp(predictorsDF, center=TRUE, scale=TRUE)  # perform PCA
+pca_summary <- summary(pca_obj)
+pca_loadings <- pca_obj$rotation #store the loading vectors for future use
+
+lambda <- 10^seq(-7, 2, length.out = 10000)
+
+min_components <- 2
+max_components <- 30
+components_seq <- seq(min_components, max_components)
+
+best_lambda <- rep(NA, length(components_seq))
+cv_mse <- rep(NA, length(components_seq))
+
+
+for (i in seq(length(components_seq))) {
+  
+    num_components <- components_seq[i]
+    loadingDF <- pca_loadings[,1:num_components] # store the correct loadings DF
+    #compute the scores (z-values) for the given number of principal components
+    scoresDF <- as.data.frame(as.matrix(predictorsDF) %*% as.matrix(loadingDF))
+    scoresDF$Ten3 <- data$Ten3
+    
+    
+    #set.seed(1)
+    n<-nrow(scoresDF)
+    trn <- seq_len(n) %in% sample(seq_len(n), round(0.8*n))
+    TrainData <- scoresDF[trn,]
+    TestData <- scoresDF[!trn,]
+    X_train <- model.matrix(Ten3 ~ ., data = TrainData)[,-1]
+    Y_train <- TrainData$Ten3
+    X_test <- model.matrix(Ten3 ~ ., data = TestData)[,-1]
+    Y_test <- TestData$Ten3
+    
+    cv_lasso <- cv.glmnet(X_train, Y_train, alpha = 1, lambda = lambda)
+
+    
+    lambdaMin <- cv_lasso$lambda.min
+    
+    lasso_mdl <- glmnet(X_train, Y_train, alpha = 1, lambda = lambdaMin)
+    
+    predictions <- predict(lasso_mdl,newx=X_test,s=lambdaMin, type="response")
+    
+    testErrorLasso <- mean(( predictions[,'s1'] - Y_test )^2)
+    
+    cv_mse[i] <- testErrorLasso    
+    best_lambda[i] <- lambdaMin
+}
+
+
+lassoPCA_Results <- data.frame(PrincipalComponents = components_seq, CV_MSE = cv_mse, Best_Lambda = best_lambda)
+
+write.csv(lassoPCA_Results,"Lasso_results/Ten3.csv", row.names = FALSE)
+
+
+
+```
+
+```{r}
+
+LassoTen3Results <- read.csv("Lasso_results/Ten3.csv")
+
+ggplot(data=LassoTen3Results, aes(x= PrincipalComponents, y = CV_MSE)) +
+  geom_line() +
+  geom_point()
+
+ggplot(data=LassoTen3Results, aes(x= PrincipalComponents, y = Best_Lambda)) +
+  geom_line() +
+  geom_point() +
+  scale_y_log10()
+
+
+```
+```{r}
+# Lasso on principal components for Ten14
+
+set.seed(1)
+
+#recompute principal components with na removed
+data <- na.omit(ten14DF)
+predictorsDF <- data[,!(names(data) %in% c("Ten14"))] # dataframe without response
+pca_obj <- prcomp(predictorsDF, center=TRUE, scale=TRUE)  # perform PCA
+pca_summary <- summary(pca_obj)
+pca_loadings <- pca_obj$rotation #store the loading vectors for future use
+
+lambda <- 10^seq(-7, 2, length.out = 10000)
+
+min_components <- 2
+max_components <- 30
+components_seq <- seq(min_components, max_components)
+
+best_lambda <- rep(NA, length(components_seq))
+cv_mse <- rep(NA, length(components_seq))
+
+
+for (i in seq(length(components_seq))) {
+  
+    num_components <- components_seq[i]
+    loadingDF <- pca_loadings[,1:num_components] # store the correct loadings DF
+    #compute the scores (z-values) for the given number of principal components
+    scoresDF <- as.data.frame(as.matrix(predictorsDF) %*% as.matrix(loadingDF))
+    scoresDF$Ten14 <- data$Ten14
+    
+    
+    #set.seed(1)
+    n<-nrow(scoresDF)
+    trn <- seq_len(n) %in% sample(seq_len(n), round(0.8*n))
+    TrainData <- scoresDF[trn,]
+    TestData <- scoresDF[!trn,]
+    X_train <- model.matrix(Ten14 ~ ., data = TrainData)[,-1]
+    Y_train <- TrainData$Ten14
+    X_test <- model.matrix(Ten14 ~ ., data = TestData)[,-1]
+    Y_test <- TestData$Ten14
+    
+    cv_lasso <- cv.glmnet(X_train, Y_train, alpha = 1, lambda = lambda)
+
+    
+    lambdaMin <- cv_lasso$lambda.min
+    
+    lasso_mdl <- glmnet(X_train, Y_train, alpha = 1, lambda = lambdaMin)
+    
+    predictions <- predict(lasso_mdl,newx=X_test,s=lambdaMin, type="response")
+    
+    testErrorLasso <- mean(( predictions[,'s1'] - Y_test )^2)
+    
+    cv_mse[i] <- testErrorLasso    
+    best_lambda[i] <- lambdaMin
+}
+
+
+lassoPCA_Results <- data.frame(PrincipalComponents = components_seq, CV_MSE = cv_mse, Best_Lambda = best_lambda)
+
+write.csv(lassoPCA_Results,"Lasso_results/Ten14.csv", row.names = FALSE)
+
+
+
+```
+
+```{r}
+
+LassoTen14Results <- read.csv("Lasso_results/Ten14.csv")
+
+ggplot(data=LassoTen14Results, aes(x= PrincipalComponents, y = CV_MSE)) +
+  geom_line() +
+  geom_point()
+
+ggplot(data=LassoTen14Results, aes(x= PrincipalComponents, y = Best_Lambda)) +
+  geom_line() +
+  geom_point() +
+  scale_y_log10()
+
+
+```
+```{r}
+# Lasso on principal components for Ten28
+
+set.seed(1)
+
+#recompute principal components with na removed
+data <- na.omit(ten28DF)
+predictorsDF <- data[,!(names(data) %in% c("Ten28"))] # dataframe without response
+pca_obj <- prcomp(predictorsDF, center=TRUE, scale=TRUE)  # perform PCA
+pca_summary <- summary(pca_obj)
+pca_loadings <- pca_obj$rotation #store the loading vectors for future use
+
+lambda <- 10^seq(-7, 2, length.out = 10000)
+
+min_components <- 2
+max_components <- 30
+components_seq <- seq(min_components, max_components)
+
+best_lambda <- rep(NA, length(components_seq))
+cv_mse <- rep(NA, length(components_seq))
+
+
+for (i in seq(length(components_seq))) {
+  
+    num_components <- components_seq[i]
+    loadingDF <- pca_loadings[,1:num_components] # store the correct loadings DF
+    #compute the scores (z-values) for the given number of principal components
+    scoresDF <- as.data.frame(as.matrix(predictorsDF) %*% as.matrix(loadingDF))
+    scoresDF$Ten28 <- data$Ten28
+    
+    
+    #set.seed(1)
+    n<-nrow(scoresDF)
+    trn <- seq_len(n) %in% sample(seq_len(n), round(0.8*n))
+    TrainData <- scoresDF[trn,]
+    TestData <- scoresDF[!trn,]
+    X_train <- model.matrix(Ten28 ~ ., data = TrainData)[,-1]
+    Y_train <- TrainData$Ten28
+    X_test <- model.matrix(Ten28 ~ ., data = TestData)[,-1]
+    Y_test <- TestData$Ten28
+    
+    cv_lasso <- cv.glmnet(X_train, Y_train, alpha = 1, lambda = lambda)
+
+    
+    lambdaMin <- cv_lasso$lambda.min
+    
+    lasso_mdl <- glmnet(X_train, Y_train, alpha = 1, lambda = lambdaMin)
+    
+    predictions <- predict(lasso_mdl,newx=X_test,s=lambdaMin, type="response")
+    
+    testErrorLasso <- mean(( predictions[,'s1'] - Y_test )^2)
+    
+    cv_mse[i] <- testErrorLasso    
+    best_lambda[i] <- lambdaMin
+}
+
+
+lassoPCA_Results <- data.frame(PrincipalComponents = components_seq, CV_MSE = cv_mse, Best_Lambda = best_lambda)
+
+write.csv(lassoPCA_Results,"Lasso_results/Ten28.csv", row.names = FALSE)
+
+
+
+```
+
+```{r}
+
+LassoTen28Results <- read.csv("Lasso_results/Ten28.csv")
+
+ggplot(data=LassoTen28Results, aes(x= PrincipalComponents, y = CV_MSE)) +
+  geom_line() +
+  geom_point()
+
+ggplot(data=LassoTen28Results, aes(x= PrincipalComponents, y = Best_Lambda)) +
+  geom_line() +
+  geom_point() +
+  scale_y_log10()
+
+
+```
