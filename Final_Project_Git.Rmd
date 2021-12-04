@@ -218,63 +218,37 @@ data.frame(optimalNumPrincpleCompoents = c(optimal_PC), optimalCVerror = c(optim
             
             iA) Linear SVM
 ```{r}
-set.seed(1)
 
-#convert USDA.grade to factor
-gradeDF$USDA.grade <- as.factor(gradeDF$USDA.grade)
-
-min_components <- 15 # it was found that components less than 15 did not perform optimially
-max_components <- 80
-component_seq <- seq(min_components,max_components)
-
-best_cost <- rep(NA, length(component_seq))
-cv_mse <- rep(NA, length(component_seq))
-
-costVec <- seq(from = .01, to = 2.5, length.out = 50)
-
-for (i in seq(length(component_seq))) {
-    num_components <- component_seq[i]
-
-    loadingDF <- pca_loadings[,1:num_components] # store the correct loadings DF
-    
-    scoresDF <- as.data.frame(as.matrix(predictorsDF) %*% as.matrix(loadingDF)) #compute the scores (z-values) for the given number of principal components
-    scoresDF$USDA.grade <- gradeDF$USDA.grade
-    
-    TuneObj <- tune.svm(USDA.grade~ ., data = scoresDF, kernel = "linear", cost = costVec)
-    
-    best_cost[i] <- TuneObj$best.parameters[1,1]
-    cv_mse[i] <- TuneObj$best.performance
-}
-
-PrincipalComponent <- component_seq
-
-linSVM_Results <- data.frame(PrincipalComponents = PrincipalComponent, CV_MSE = cv_mse, Best_Cost = best_cost)
-
-write.csv(linSVM_Results,"SVM_results/PCA/LinSVM.csv", row.names = FALSE)
-
-
+# This calls a script to run the Linear SVM
+source("SVM/SVM_linear.R", local = knitr::knit_global())
 
 
 ```
 
 
 ```{r}
-#Linear SVM Continued
+#Linear SVM Plotting and Results
 
+svmLinResultsDF <- read.csv("SVM/Results/LinSVM.csv")
+BestLinModel <- readRDS("SVM/BestSVMModels/BestLinModel.rds")
+BestLinModel
 
-
-svmLinResultsDF <- read.csv("SVM_results/PCA/LinSVM.csv")
-
-ggplot(data= svmLinResultsDF, aes(x=PrincipalComponents, y=CV_MSE)) +
+ggplot(data= svmLinResultsDF, aes(x=PrincipalComponents_linSVM, y=CV_MSE_linSVM)) +
   geom_line()+
   geom_point()
 
-ggplot(data= svmLinResultsDF, aes(x=PrincipalComponents, y=Best_Cost)) +
+ggplot(data= svmLinResultsDF, aes(x=PrincipalComponents_linSVM, y=Best_Cost)) +
   geom_line()+
-  geom_point()
+  geom_point()+
+  geom_hline(yintercept=abs_min_cost_lin, linetype="dashed", color = "red") +
+  geom_hline(yintercept=abs_max_cost_lin, linetype="dashed", color = "red") +
+  scale_y_log10()
 
+optimalPC = c(svmLinResultsDF$PrincipalComponents_linSVM[which.min(svmLinResultsDF$CV_MSE_linSVM)])
+optimalCVError =  c(min(svmLinResultsDF$CV_MSE_linSVM))
+optimalCost = c(svmLinResultsDF$Best_Cost[which.min(svmLinResultsDF$CV_MSE_linSVM)])
 
-data.frame(optimalPC = c(svmLinResultsDF$PrincipalComponents[which.min(svmLinResultsDF$CV_MSE)]), optimalCVError = c(min(svmLinResultsDF$CV_MSE)))
+data.frame(optimalPC = optimalPC, optimalCVError =optimalCVError,optimalCost= optimalCost)
 
 ```
 
@@ -284,59 +258,46 @@ data.frame(optimalPC = c(svmLinResultsDF$PrincipalComponents[which.min(svmLinRes
 
 ```{r}
 
-set.seed(1)
 
-#convert USDA.grade to factor
-gradeDF$USDA.grade <- as.factor(gradeDF$USDA.grade)
-
-min_components <- 1 # it was found that components less than 15 did not perform optimally
-max_components <- 50
-component_seq <- seq(min_components,max_components)
-degreeVec <- seq(1,7)
-
-best_cost <- rep(NA, length(component_seq))
-cv_mse <- rep(NA, length(component_seq))
-
-
-
-for (i in seq(length(component_seq))) {
-    num_components <- component_seq[i]
-
-    loadingDF <- pca_loadings[,1:num_components] # store the correct loadings DF
-    
-    scoresDF <- as.data.frame(as.matrix(predictorsDF) %*% as.matrix(loadingDF)) #compute the scores (z-values) for the given number of principal components
-    scoresDF$USDA.grade <- gradeDF$USDA.grade
-    
-
-    costVec <- seq(from = .01, to = 10, length.out =10)
-
-    TuneObj <- tune.svm(USDA.grade~ ., data = scoresDF, kernel = "polynomial", degree=1, scale=FALSE, cost = costVec)
-    
-    best_cost[i] <- TuneObj$best.parameters[1,1]
-    cv_mse[i] <- TuneObj$best.performance
-}
-
-PrincipalComponent <- seq(min_components,max_components)
-
-polySVM_Results <- data.frame(PrincipalComponents = PrincipalComponent, CV_MSE = cv_mse, Best_Cost = best_cost)
-
-write.csv(polySVM_Results,"SVM_results/PCA/PolySVM.csv", row.names = FALSE)
+# This calls a script to run the Poly SVM
+source("SVM/SVM_Poly.R", local = knitr::knit_global())
 
 
 
 ```
 
 ```{r}
+#Plotting and Results for Poly SVM
 
-svmPolyResultsDF <- read.csv("SVM_results/PCA/PolySVM.csv")
+abs_min_cost_poly <- .0001
+abs_max_cost_poly <- 10000
+BestPolyModel <- readRDS("SVM/BestSVMModels/BestPolyModel.rds")
+BestPolyModel
 
-ggplot(data= svmPolyResultsDF, aes(x=PrincipalComponents, y=CV_MSE)) +
+svmPolyResultsDF <- read.csv("SVM/Results/PolySVM.csv")
+
+ggplot(data= svmPolyResultsDF, aes(x=PrincipalComponents, y=CV_MSE_polySVM)) +
   geom_line()+
   geom_point()
 
-ggplot(data= svmPolyResultsDF, aes(x=PrincipalComponents, y=Best_Cost)) +
+ggplot(data= svmPolyResultsDF, aes(x=PrincipalComponents, y=Best_Cost_polySVM)) +
+  geom_line()+
+  geom_point()+
+  geom_hline(yintercept=abs_min_cost_poly, linetype="dashed", color = "red") +
+  geom_hline(yintercept=abs_max_cost_poly, linetype="dashed", color = "red") +
+  scale_y_log10()
+
+ggplot(data= svmPolyResultsDF, aes(x=PrincipalComponents, y=Best_Degree)) +
   geom_line()+
   geom_point()
+
+optimalPC <- c(svmPolyResultsDF$PrincipalComponents[which.min(svmPolyResultsDF$CV_MSE_polySVM)])
+optimalCVError <- c(min(svmPolyResultsDF$CV_MSE_polySVM))
+optimalCost <- c(svmPolyResultsDF$Best_Cost_polySVM[which.min(svmPolyResultsDF$CV_MSE_polySVM)])
+optimalDegree <- c(svmPolyResultsDF$Best_Degree[which.min(svmPolyResultsDF$CV_MSE_polySVM)])
+
+#Results from tuning across all PCs
+data.frame(optimalPC = optimalPC , optimalCVError = optimalCVError, optimalCost = optimalCost)
 
 ```
 
@@ -345,67 +306,50 @@ ggplot(data= svmPolyResultsDF, aes(x=PrincipalComponents, y=Best_Cost)) +
 
 ```{r}
 
-set.seed(1)
 
-#convert USDA.grade to factor
-gradeDF$USDA.grade <- as.factor(gradeDF$USDA.grade)
-
-min_components <- 5 # it was found that components less than 15 did not perform optimially
-max_components <- 50
-component_seq <- seq(min_components,max_components)
-
-best_cost <- rep(NA, length(component_seq))
-best_gamma <- rep(NA, length(component_seq))
-cv_mse <- rep(NA, length(component_seq))
-
-costVec <- seq(from = .01, to = 15, length.out = 10)
-gammaVec <- seq(from = .0001, to = .2, length.out = 20)
-
-for (i in seq(length(component_seq))) {
-    num_components <- component_seq[i]
-
-    loadingDF <- pca_loadings[,1:num_components] # store the correct loadings DF
-    
-    scoresDF <- as.data.frame(as.matrix(predictorsDF) %*% as.matrix(loadingDF)) #compute the scores (z-values) for the given number of principal components
-    scoresDF$USDA.grade <- gradeDF$USDA.grade
-    
-    TuneObj <- tune.svm(USDA.grade~ ., data = scoresDF, kernel = "radial", cost = costVec, gamma = gammaVec)
-    
-    best_cost[i] <- TuneObj$best.parameters[1,2]
-    best_gamma[i] <- TuneObj$best.parameters[1,1]
-    cv_mse[i] <- TuneObj$best.performance
-}
-
-PrincipalComponent <- component_seq
-
-radSVM_Results <- data.frame(PrincipalComponents = PrincipalComponent, CV_MSE = cv_mse, Best_Cost = best_cost, Best_Gamma = best_gamma)
-
-write.csv(radSVM_Results,"SVM_results/PCA/radSVM.csv", row.names = FALSE)
+# This calls a script to run the Radial SVM
+source("SVM/SVM_rad.R", local = knitr::knit_global())
 
 
 ```
 
 
 ```{r}
+abs_min_cost <- .0001
+abs_max_cost <- 10000
 
+abs_min_gamma <- .0001
+abs_max_gamma <-10000
 
-svmRadResultsDF <- read.csv("SVM_results/PCA/radSVM.csv")
+svmRadResultsDF <- read.csv("SVM/Results/radSVM.csv")
+BestRadModel <- readRDS("SVM/BestSVMModels/BestRadModel.rds")
+BestRadModel
 
-ggplot(data= svmRadResultsDF, aes(x=PrincipalComponents, y=CV_MSE)) +
+ggplot(data= svmRadResultsDF, aes(x=PrincipalComponents_radSVM, y=CV_MSE_radSVM)) +
   geom_line()+
   geom_point()
 
-ggplot(data= svmRadResultsDF, aes(x=PrincipalComponents, y=Best_Cost)) +
+ggplot(data= svmRadResultsDF, aes(x=PrincipalComponents_radSVM, y=Best_Cost_radSVM)) +
   geom_line()+
-  geom_point()
+  geom_point()+
+  geom_hline(yintercept=abs_min_cost, linetype="dashed", color = "red") +
+  geom_hline(yintercept=abs_max_cost, linetype="dashed", color = "red") +
+  scale_y_log10()
 
-ggplot(data= svmRadResultsDF, aes(x=PrincipalComponents, y=Best_Gamma)) +
+ggplot(data= svmRadResultsDF, aes(x=PrincipalComponents_radSVM, y=Best_Gamma_radSVM)) +
   geom_line()+
-  geom_point()
+  geom_point()+
+  geom_hline(yintercept=abs_min_gamma, linetype="dashed", color = "red") +
+  geom_hline(yintercept=abs_max_gamma, linetype="dashed", color = "red") +
+  scale_y_log10()
 
+optimalPC <- c(svmRadResultsDF$PrincipalComponents_radSVM[which.min(svmRadResultsDF$CV_MSE_radSVM)])
+optimalCVError <- c(min(svmRadResultsDF$CV_MSE_radSVM))
+optimalCost <- c(svmRadResultsDF$Best_Cost_radSVM[which.min(svmRadResultsDF$CV_MSE_radSVM)])
+optimalGamma <- c(svmRadResultsDF$Best_Gamma_radSVM[which.min(svmRadResultsDF$CV_MSE_radSVM)])
 
-
-data.frame(optimalPC = c(svmRadResultsDF$PrincipalComponents[which.min(svmRadResultsDF$CV_MSE)]), optimalCVError = c(min(svmRadResultsDF$CV_MSE)))
+#Results from tuning across all PCs
+data.frame(optimalPC = optimalPC , optimalCVError = optimalCVError, optimalCost = optimalCost, optimalGamma = optimalGamma)
 
 ```
 
@@ -501,5 +445,141 @@ sqrt(mse_mean_ten28)
 mean(ten28DF$Ten28)
 
 #Summarizing results
+
+```
+
+
+        c)Lasso Regression
+```{r}
+#CODED BY PATRICK
+set.seed(1)
+#Ten3 Analysis
+
+
+X_train <- model.matrix(Ten3 ~ ., data = ten3DF_train)[,-1]
+Y_train <- ten3DF_train$Ten3
+X_test <- model.matrix(Ten3 ~ ., data = ten3DF_test)[,-1]
+Y_test <- ten3DF_test$Ten3
+
+lambda <- 10^seq(-2, 3, length.out = 1000)
+
+cv_lasso <- cv.glmnet(X_train, Y_train, alpha = 1, lambda = lambda)
+
+ggplot() +
+  geom_line(aes(cv_lasso$lambda, cv_lasso$cvm)) +
+  geom_point(aes(cv_lasso$lambda, cv_lasso$cvm)) +
+  scale_x_log10()
+
+lambdaMin <- cv_lasso$lambda.min
+lambdaMin
+
+lasso_mdl <- glmnet(X_train, Y_train, alpha = 1, lambda = lambdaMin)
+
+predictions <- predict(lasso_mdl,newx=X_test,s=lambdaMin, type="response")
+
+testErrorLasso <- mean(( predictions[,'s1'] - Y_test )^2)
+testErrorLasso
+
+ggplot() +
+  geom_point(aes(predictions, Y_test))+
+  geom_abline(slope=1, intercept = 0) +
+  geom_point(aes(Train_predictions, Y_train))
+
+
+```
+```{r}
+# Lasso on principal components for Ten3
+
+source("Lasso/Lasso_ten3.R", local = knitr::knit_global())
+
+
+```
+
+```{r}
+
+LassoTen3Results <- read.csv("Lasso/Results/Ten3.csv")
+BestTen3LassoModel <- readRDS("Lasso/BestModels/BestLassoTen3Model.rds")
+BestTen3LassoModel
+
+ggplot(data=LassoTen3Results, aes(x= PrincipalComponents, y = CV_MSE)) +
+  geom_line() +
+  geom_point()
+
+ggplot(data=LassoTen3Results, aes(x= PrincipalComponents, y = Best_Lambda)) +
+  geom_line() +
+  geom_point() +
+  geom_hline(yintercept=10^lambda_max_over, linetype="dashed", color = "red") +
+  geom_hline(yintercept=10^lambda_min_under, linetype="dashed", color = "red") +
+  scale_y_log10()
+
+optimalPC <- LassoTen3Results$PrincipalComponents[which.min(LassoTen3Results$CV_MSE)]
+optimal_TestError <-  min(LassoTen3Results$CV_MSE)
+optimalLambda <- LassoTen3Results$Best_Lambda[which.min(LassoTen3Results$CV_MSE)]
+
+data.frame(optimalPC = optimalPC, optimal_TestError = optimal_TestError, optimalLambda = optimalLambda)
+
+```
+```{r}
+# Lasso on principal components for Ten14
+
+source("Lasso/Lasso_ten14.R", local = knitr::knit_global())
+
+```
+
+```{r}
+
+LassoTen14Results <- read.csv("Lasso/Results/Ten14.csv")
+BestTen14LassoModel <- readRDS("Lasso/BestModels/BestLassoTen14Model.rds")
+BestTen14LassoModel
+
+ggplot(data=LassoTen14Results, aes(x= PrincipalComponents, y = CV_MSE)) +
+  geom_line() +
+  geom_point()
+
+ggplot(data=LassoTen14Results, aes(x= PrincipalComponents, y = Best_Lambda)) +
+  geom_line() +
+  geom_point() +
+  geom_hline(yintercept=10^lambda_max_over, linetype="dashed", color = "red") +
+  geom_hline(yintercept=10^lambda_min_under, linetype="dashed", color = "red") +
+  scale_y_log10()
+
+optimalPC <- LassoTen14Results$PrincipalComponents[which.min(LassoTen14Results$CV_MSE)]
+optimal_TestError <-  min(LassoTen14Results$CV_MSE)
+optimalLambda <- LassoTen14Results$Best_Lambda[which.min(LassoTen14Results$CV_MSE)]
+
+data.frame(optimalPC = optimalPC, optimal_TestError = optimal_TestError, optimalLambda = optimalLambda)
+
+
+```
+```{r}
+# Lasso on principal components for Ten28
+
+source("Lasso/Lasso_ten28.R", local = knitr::knit_global())
+
+
+```
+
+```{r}
+
+LassoTen28Results <- read.csv("Lasso/Results/Ten28.csv")
+BestTen28LassoModel <- readRDS("Lasso/BestModels/BestLassoTen28Model.rds")
+BestTen28LassoModel
+
+ggplot(data=LassoTen28Results, aes(x= PrincipalComponents, y = CV_MSE)) +
+  geom_line() +
+  geom_point()
+
+ggplot(data=LassoTen28Results, aes(x= PrincipalComponents, y = Best_Lambda)) +
+  geom_line() +
+  geom_point() +
+  geom_hline(yintercept=10^lambda_max_over, linetype="dashed", color = "red") +
+  geom_hline(yintercept=10^lambda_min_under, linetype="dashed", color = "red") +
+  scale_y_log10()
+
+optimalPC <- LassoTen28Results$PrincipalComponents[which.min(LassoTen28Results$CV_MSE)]
+optimal_TestError <-  min(LassoTen28Results$CV_MSE)
+optimalLambda <- LassoTen28Results$Best_Lambda[which.min(LassoTen28Results$CV_MSE)]
+
+data.frame(optimalPC = optimalPC, optimal_TestError = optimal_TestError, optimalLambda = optimalLambda)
 
 ```
