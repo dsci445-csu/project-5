@@ -394,16 +394,6 @@ data.frame(optimalPC = optimalPC , optimalCVError = optimalCVError, optimalCost 
 
 
 ```
-
-
-        k) PLS-DA
-```{r}
-
-```
-
-        l) PLS-DA
-```{r}
-
 ```
 
 ### Prediction of Tenderness over time using 36h REIMS (regression models)
