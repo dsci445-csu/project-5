@@ -33,7 +33,7 @@ library(FactoMineR)
 ```
 
 ### INTRODUCTION
-Beef palatability depends on tenderness, juiciness, and flavor. In the United States, there is a quality grading system that classifies beef carcasses on different quality categories (USDA). Some of the most common USDA quality grades are Prime, Choice, and Select, with Prime the best quality and Select being the lowest quality of the three classifications. The USDA quality grade is based on animal maturity and marbling level (intramuscular fat), and it is correlated with the overall consumer acceptance (USDA). However, tenderness is not predicted with USDA quality grade. Beef industry stakeholders have been searching for a non-destructive, real-time instrument for determining the tenderness of beef for nearly 40 years. Although some technologies allow the determination of beef tenderness, they require sacrificing a loin steak and cannot be performed in real-time. Rapid Evaporative Ionization Mass Spectrometry (REIMS) is a novel environmental mass spectrometry technique that combines a sample vaporization device with a time-of-flight mass spectrometer. When a sampling device, which uses a high-frequency current, comes into contact with the sample surface, an aerosol of molecules is generated and transformed into a mass spectral fingerprint. This technology has the advantage that it can be used in-situ and in the real-time classification of biological tissues without any sample preparation. Therefore, the goal of this study was to evaluate the ability of REIMS to predict USDA quality grade and beef tenderness.
+ * Beef palatability depends on tenderness, juiciness, and flavor. In the United States, there is a quality grading system that classifies beef carcasses on different quality categories (USDA). Some of the most common USDA quality grades are Prime, Choice, and Select, with Prime the best quality and Select being the lowest quality of the three classifications. The USDA quality grade is based on animal maturity and marbling level (intramuscular fat), and it is correlated with the overall consumer acceptance (USDA). However, tenderness is not predicted with USDA quality grade. Beef industry stakeholders have been searching for a non-destructive, real-time instrument for determining the tenderness of beef for nearly 40 years. Although some technologies allow the determination of beef tenderness, they require sacrificing a loin steak and cannot be performed in real-time. Rapid Evaporative Ionization Mass Spectrometry (REIMS) is a novel environmental mass spectrometry technique that combines a sample vaporization device with a time-of-flight mass spectrometer. When a sampling device, which uses a high-frequency current, comes into contact with the sample surface, an aerosol of molecules is generated and transformed into a mass spectral fingerprint. This technology has the advantage that it can be used in-situ and in the real-time classification of biological tissues without any sample preparation. Therefore, the goal of this study was to evaluate the ability of REIMS to predict USDA quality grade and beef tenderness.
 
 ```{r}
 ### Reproducibility
@@ -74,7 +74,9 @@ ten14DF <- na.omit(REIMS[,!(names(REIMS) %in% union(dropBase,setdiff(responseVar
 ten28DF <- na.omit(REIMS[,!(names(REIMS) %in% union(dropBase,setdiff(responseVars, c("Ten28"))))])
 ```
 
-### Data visualization using Principal Component Analysis (PCA)  
+### RESULTS
+
+# Data visualization using Principal Component Analysis (PCA)  
   There is not a evident cluster by USDA grade and tenderness at day 3, 14, and 28 days
 ```{r, include=TRUE,fig.width = 8, fig.height = 4}
 #Performing PCA
@@ -606,5 +608,4 @@ optimal_TestError <-  min(LassoTen28Results$CV_MSE)
 optimalLambda <- LassoTen28Results$Best_Lambda[which.min(LassoTen28Results$CV_MSE)]
 
 data.frame(optimalPC = optimalPC, optimal_TestError = optimal_TestError, optimalLambda = optimalLambda)
-
 ```
