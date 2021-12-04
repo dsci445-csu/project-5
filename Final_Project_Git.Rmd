@@ -7,8 +7,10 @@ output: pdf_document
 
 ```{r setup, include=FALSE}
 library(knitr)
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
 knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+knitr::opts_chunk$set(include = FALSE)
 library(ggplot2)
 library(MASS)
 library(GGally)
@@ -33,13 +35,13 @@ library(FactoMineR)
 ### INTRODUCTION
 Beef palatability depends on tenderness, juiciness, and flavor. In the United States, there is a quality grading system that classifies beef carcasses on different quality categories (USDA). Some of the most common USDA quality grades are Prime, Choice, and Select, with Prime the best quality and Select being the lowest quality of the three classifications. The USDA quality grade is based on animal maturity and marbling level (intramuscular fat), and it is correlated with the overall consumer acceptance (USDA). However, tenderness is not predicted with USDA quality grade. Beef industry stakeholders have been searching for a non-destructive, real-time instrument for determining the tenderness of beef for nearly 40 years. Although some technologies allow the determination of beef tenderness, they require sacrificing a loin steak and cannot be performed in real-time. Rapid Evaporative Ionization Mass Spectrometry (REIMS) is a novel environmental mass spectrometry technique that combines a sample vaporization device with a time-of-flight mass spectrometer. When a sampling device, which uses a high-frequency current, comes into contact with the sample surface, an aerosol of molecules is generated and transformed into a mass spectral fingerprint. This technology has the advantage that it can be used in-situ and in the real-time classification of biological tissues without any sample preparation. Therefore, the goal of this study was to evaluate the ability of REIMS to predict USDA quality grade and beef tenderness.
 
-```{r, echo=FALSE}
+```{r}
 ### Reproducibility
 set.seed(1)
 ```
 
 
-```{r, include=FALSE}
+```{r}
 ### Uploading data
 REIMS <- read.csv("REIMS machine learning class.csv")
 
@@ -51,8 +53,7 @@ gradeDF <- REIMS[,!(names(REIMS) %in% union(dropBase,setdiff(responseVars, c("US
 ```
 
 ### METHODOLOGY
-Beef
-
+...
 ``` {r}
 #Creating training and test subsets for regressions
 set.seed(1)
@@ -73,16 +74,40 @@ ten14DF <- na.omit(REIMS[,!(names(REIMS) %in% union(dropBase,setdiff(responseVar
 ten28DF <- na.omit(REIMS[,!(names(REIMS) %in% union(dropBase,setdiff(responseVars, c("Ten28"))))])
 ```
 
-### Data visualization using PCA
-```{r}
+### Data visualization using Principal Component Analysis (PCA)  
+  There is not a evident cluster by USDA grade and tenderness at day 3, 14, and 28 days
+```{r, include=TRUE,fig.width = 8, fig.height = 4}
 #Performing PCA
-pca1 <- PCA(gradeDF[,-1], ncp = 100, scale.unit=TRUE ,graph = F)
-dat1<-gradeDF[,1]
-dat1 <- data.frame(USDA.grade=dat1,pca1$ind$coord[, c(1:2)])
+pca1 <- PCA(REIMS[,-c(1:12)], ncp = 100, scale.unit=TRUE ,graph = F)
+dat1<-REIMS[,6]
+#Building data frame
+dat1 <- data.frame(USDA.grade=dat1,Ten3=REIMS[,7],Ten14=REIMS[,8],Ten28=REIMS[,9],pca1$ind$coord[, c(1:5)])
 #Plotting PCA faced by USDA grade
 p <- ggplot(data = dat1, aes(x = Dim.1, y = Dim.2,colour=USDA.grade)) +
-  geom_point()+ggtitle("PCA graph of Striploin and Tenderloin")
-p
+  geom_point()
+print(p + labs(title= "PCA of REIMS data faced by USDA quality grade",y="Comp 2", x = "Comp 1"))
+
+#Plotting PCA faced by USDA grade
+p1 <- ggplot(data = dat1, aes(x = Dim.2, y = Dim.3,colour=USDA.grade)) +
+  geom_point()
+print(p1 + labs(title= "PCA of REIMS data faced by USDA quality grade",y="Comp 2", x = "Comp 1"))
+```
+
+```{r, include=TRUE, fig.width = 8, fig.height = 4}
+#Plotting PCA colored by tenderness at day 3
+p2 <- ggplot(data = dat1, aes(x = Dim.1, y = Dim.2,colour=Ten3)) +
+  geom_point()
+print(p2 + labs(title= "PCA of REIMS data colored by tenderness at day 3",y="Comp 2", x = "Comp 1"))
+
+#Plotting PCA colored by tenderness at day 14
+p3 <- ggplot(data = dat1, aes(x = Dim.1, y = Dim.2,colour=Ten14)) +
+  geom_point()
+print(p3 + labs(title= "PCA of REIMS data colored by tenderness at day 3",y="Comp 2", x = "Comp 1"))
+
+#Plotting PCA colored by tenderness at day 28
+p4 <- ggplot(data = dat1, aes(x = Dim.1, y = Dim.2,colour=Ten28)) +
+  geom_point()
+print(p4 + labs(title= "PCA of REIMS data colored by tenderness at day 3",y="Comp 2", x = "Comp 1"))
 ```
 
 
@@ -113,6 +138,7 @@ ggplot() +
 
         b) Dimensionality reduction using Recursive Feature Elimination (FS)
 ```{r}
+#Dimensionality reduction using Recursive Feature Elimination (FS)
 FS_REIMS<-read.csv("REIMS_FS_data.csv")
 ```
 
