@@ -1,0 +1,120 @@
+---
+title: "Presentation"
+author: "Michael Hernandez"
+date: "12/4/2021"
+output:
+  beamer_presentation:
+    theme: Frankfurt
+    colortheme: default
+    fonttheme: structurebold
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+knitr::opts_chunk$set(include = FALSE)
+library(ggplot2)
+library(MASS)
+library(GGally)
+library(caret)
+library(tidyverse)
+library(ggrepel)
+library(ISLR)
+library(hrbrthemes)
+library(class)
+library(boot)
+library(leaps)
+library(glmnet)
+library(pls)
+library(gam)
+library(tree)
+library(gbm)
+library(randomForest)
+library(e1071)
+library(FactoMineR)
+```
+
+
+# INTRODUCTION
+
+## Beef industry context
+- Beef palatability depends on tenderness, juiciness, and flavor. 
+- In the United States, there is a quality grading system that classifies beef carcasses on different quality categories (USDA) based on animal maturity and marbling level (intramuscular fat).
+- Tenderness is not predicted with USDA quality grade.
+- Although some technologies allow the determination of beef tenderness, they require sacrificing a loin steak and cannot be performed in real-time.
+
+## Rapid Evaporative Ionization Mass Spectrometry (REIMS)
+
+- Rapid Evaporative Ionization Mass Spectrometry (REIMS) is a novel environmental mass spectrometry technique that combines a sample vaporization device with a time-of-flight mass spectrometer. 
+- The sampling device, which uses a high-frequency current, comes into contact with the sample surface, an aerosol of molecules is generated and transformed into a mass spectral fingerprint. 
+- REIMS can classify biological tissues in-situ, in real-time and without any sample preparation. 
+- The goal of this study was to evaluate the ability of REIMS to predict USDA quality grade and beef tenderness.
+
+
+# METHODOLOGY
+
+## Data collection
+
+- Eighty-three whole striploins were collected at 36h post-mortem (42 USDA quality grade Choice, and 41 USDA quality grade Select).
+- They were cut into three sections, which were aged at 3 different aging treatments (3 days, 14 days, 28 days).
+- Tenderness were measure at each aging period.
+- The number of observations is 83, and the number of predictors is 1700.
+- Classification models were performed to predict USDA quality grade.
+- Regression models were performed to predict tenderness.
+
+# RESULTS
+
+## Data structure (Principal Component Analysis)
+
+```{r}
+### Reproducibility
+set.seed(1)
+```
+
+```{r}
+### Uploading data
+REIMS <- read.csv("REIMS machine learning class.csv")
+
+dropBase <- c("SampleID", "Cx", "GS_1", "GS_2", "UNIQ_ID", "Ten42", "Ten56", "Ten70")
+responseVars <- c("USDA.grade", "Ten3", "Ten14","Ten28")
+
+# Define the associated dataframes for each analysis. Response variable is column 1, predictors are the remaining columns
+gradeDF <- REIMS[,!(names(REIMS) %in% union(dropBase,setdiff(responseVars, c("USDA.grade"))))]
+```
+
+```{r, include=TRUE,fig.width = 6, fig.height = 2}
+#Performing PCA
+pca1 <- PCA(REIMS[,-c(1:12)], ncp = 100, scale.unit=TRUE ,graph = F)
+dat1<-REIMS[,6]
+#Building data frame
+dat1 <- data.frame(USDA.grade=dat1,Ten3=REIMS[,7],Ten14=REIMS[,8],Ten28=REIMS[,9],pca1$ind$coord[, c(1:5)])
+#Plotting PCA faced by USDA grade
+p <- ggplot(data = dat1, aes(x = Dim.1, y = Dim.2,colour=USDA.grade)) +
+  geom_point()
+print(p + labs(title= "PCA of REIMS data faced by USDA quality grade",y="Comp 2", x = "Comp 1"))
+
+#Plotting PCA faced by USDA grade
+p1 <- ggplot(data = dat1, aes(x = Dim.2, y = Dim.3,colour=USDA.grade)) +
+  geom_point()
+print(p1 + labs(title= "PCA of REIMS data faced by USDA quality grade",y="Comp 2", x = "Comp 1"))
+```
+
+## Data structure (Tenderness)  
+```{r, include=TRUE, fig.width = 8, fig.height = 4}
+#Plotting PCA colored by tenderness at day 3
+p2 <- ggplot(data = dat1, aes(x = Dim.1, y = Dim.2,colour=Ten3)) +
+  geom_point()
+print(p2 + labs(title= "PCA of REIMS data colored by tenderness at day 3",y="Comp 2", x = "Comp 1"))
+
+#Plotting PCA colored by tenderness at day 14
+p3 <- ggplot(data = dat1, aes(x = Dim.1, y = Dim.2,colour=Ten14)) +
+  geom_point()
+print(p3 + labs(title= "PCA of REIMS data colored by tenderness at day 3",y="Comp 2", x = "Comp 1"))
+
+#Plotting PCA colored by tenderness at day 28
+p4 <- ggplot(data = dat1, aes(x = Dim.1, y = Dim.2,colour=Ten28)) +
+  geom_point()
+print(p4 + labs(title= "PCA of REIMS data colored by tenderness at day 3",y="Comp 2", x = "Comp 1"))
+```
