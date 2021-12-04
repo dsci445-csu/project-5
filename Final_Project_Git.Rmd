@@ -525,7 +525,7 @@ ggplot() +
 ```{r}
 # Lasso on principal components for Ten3
 
-source("Lasso/Lasso_ten3.R", local = knitr::knit_global())
+source("Lasso/Lasso_ten3_CV.R", local = knitr::knit_global())
 
 
 ```
@@ -557,7 +557,7 @@ data.frame(optimalPC = optimalPC, optimal_TestError = optimal_TestError, optimal
 ```{r}
 # Lasso on principal components for Ten14
 
-source("Lasso/Lasso_ten14.R", local = knitr::knit_global())
+source("Lasso/Lasso_ten14_CV.R", local = knitr::knit_global())
 
 ```
 
@@ -589,7 +589,7 @@ data.frame(optimalPC = optimalPC, optimal_TestError = optimal_TestError, optimal
 ```{r}
 # Lasso on principal components for Ten28
 
-source("Lasso/Lasso_ten28.R", local = knitr::knit_global())
+source("Lasso/Lasso_ten28_CV.R", local = knitr::knit_global())
 
 
 ```
@@ -607,8 +607,8 @@ ggplot(data=LassoTen28Results, aes(x= PrincipalComponents, y = CV_MSE)) +
 ggplot(data=LassoTen28Results, aes(x= PrincipalComponents, y = Best_Lambda)) +
   geom_line() +
   geom_point() +
-  geom_hline(yintercept=10^lambda_max_over, linetype="dashed", color = "red") +
   geom_hline(yintercept=10^lambda_min_under, linetype="dashed", color = "red") +
+  geom_hline(yintercept=10^lambda_max_over, linetype="dashed", color = "red") +
   scale_y_log10()
 
 optimalPC <- LassoTen28Results$PrincipalComponents[which.min(LassoTen28Results$CV_MSE)]

@@ -35,16 +35,11 @@ for (i in seq(length(components_seq))) {
   
   #set.seed(1)
   n<-nrow(scoresDF)
-  trn <- seq_len(n) %in% sample(seq_len(n), round(0.8*n))
-  TrainData <- scoresDF[trn,]
-  TestData <- scoresDF[!trn,]
+  TrainData <- scoresDF
   X_train <- model.matrix(Ten28 ~ ., data = TrainData)[,-1]
   Y_train <- TrainData$Ten28
-  X_test <- model.matrix(Ten28 ~ ., data = TestData)[,-1]
-  Y_test <- TestData$Ten28
   
   cv_lasso <- cv.glmnet(X_train, Y_train, alpha = 1, lambda = lambda)
-  
   
   lambdaMinSolutionTemp <- cv_lasso$lambda.min
   
@@ -68,14 +63,9 @@ for (i in seq(length(components_seq))) {
   }
   
   lambdaMinActual <- cv_lasso$lambda.min
+  cv_error <- min(cv_lasso$cvm)
   
-  lasso_mdl <- glmnet(X_train, Y_train, alpha = 1, lambda = lambdaMinActual)
-  
-  predictions <- predict(lasso_mdl,newx=X_test,s=lambdaMinActual, type="response")
-  
-  testErrorLasso <- mean(( predictions[,'s1'] - Y_test )^2)
-  
-  cv_mse[i] <- testErrorLasso    
+  cv_mse[i] <- cv_error    
   best_lambda[i] <- lambdaMinActual
   best_model_list[[i]] <- lasso_mdl
 }
