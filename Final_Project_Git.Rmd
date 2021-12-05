@@ -398,9 +398,68 @@ ten28DF_test
 
         a) Best subset selection
 ```{r}
-#
+#Tenderness at day 3
+reg.fwd <- regsubsets(Ten3~., data = ten3DF_train, nvmax = 40,method = "forward") 
+#Best subset selection using foward selection.
+summary(reg.fwd)
+res.sum <- summary(reg.fwd)
 
+#Loop to calculate CV test error
+test.mat <- model.matrix(Ten3~., data=ten3DF_test)
+val.errors <- rep(NA, 20)
+coefi<-seq(0)
 
+for (i in 1:20) {
+  coefi<-coef(reg.fwd , id = i)
+  pred <- test.mat[, names(coefi)] %*% coefi
+  val.errors[i] <- mean((ten3DF_test$Ten3-pred)^2)
+}
+
+# Graph of Model size vs. MSE
+plot(seq(1,20), val.errors, log="y", xlab = "number of variables", ylab="MSE",
+     main="Model size vs. MSE (test) tenderness at day 3",type = "o")
+
+#Tenderness at day 14
+reg.fwd <- regsubsets(Ten14~., data = ten14DF_train, nvmax = 40,method = "forward") 
+#Best subset selection using foward selection.
+summary(reg.fwd)
+res.sum <- summary(reg.fwd)
+
+#Loop to calculate CV test error
+test.mat <- model.matrix(Ten14~., data=ten14DF_test)
+val.errors <- rep(NA, 20)
+coefi<-seq(0)
+
+for (i in 1:20) {
+  coefi<-coef(reg.fwd , id = i)
+  pred <- test.mat[, names(coefi)] %*% coefi
+  val.errors[i] <- mean((ten14DF_test$Ten14-pred)^2)
+}
+
+# Graph of Model size vs. MSE
+plot(seq(1,20), val.errors, log="y", xlab = "number of variables", ylab="MSE",
+     main="Model size vs. MSE (test) tenderness at day 14",type = "o")
+
+#Tenderness at day 28
+reg.fwd <- regsubsets(Ten28~., data = ten28DF_train, nvmax = 40,method = "forward") 
+#Best subset selection using forward selection.
+summary(reg.fwd)
+res.sum <- summary(reg.fwd)
+
+#Loop to calculate CV test error
+test.mat <- model.matrix(Ten28~., data=ten28DF_test)
+val.errors <- rep(NA, 20)
+coefi<-seq(0)
+
+for (i in 1:20) {
+  coefi<-coef(reg.fwd , id = i)
+  pred <- test.mat[, names(coefi)] %*% coefi
+  val.errors[i] <- mean((ten28DF_test$Ten28-pred)^2)
+}
+
+# Graph of Model size vs. MSE
+plot(seq(1,20), val.errors, log="y", xlab = "number of variables", ylab="MSE",
+     main="Model size vs. MSE (test) tenderness at day 28",type = "o")
 ```
 
 
