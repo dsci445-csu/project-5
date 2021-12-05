@@ -667,5 +667,6 @@ err28[i]<-mean((ten28_test$Ten28 - preds)^2)
 Spline28<-data.frame(N.comp=seq(1,10),MSE=err28)
 which.min(Spline28$MSE)
 min(Spline28$MSE)
+
 ```
 
