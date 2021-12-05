@@ -4,31 +4,164 @@ author: "Patrick Noe"
 date: "12/4/2021"
 output:
   beamer_presentation:
-    theme: "AnnArbor"
+    theme: "Frankfurt"
     colortheme: "dolphin"
     fonttheme: "structurebold"
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
+library(ggplot2)
+library(knitr)
 ```
 
-## R Markdown
+# USDA Grade Categorical Prediction
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+```{r}
+# Import Data
+LogModelDF <- read.csv("LogisticRegression/PCvsCV.csv")
+SVMLinResultsDF <- read.csv("SVM/Results/LinSVM.csv")
+SVMPolyResultsDF <- read.csv("SVM/Results/PolySVM.csv")
+SVMRadResultsDF <- read.csv("SVM/Results/radSVM.csv")
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+#Process Data
+optimalIndex <- which.min(SVMLinResultsDF$CV_MSE_linSVM)
+optimalPC_SVMLin <- SVMLinResultsDF$PrincipalComponents_linSVM[optimalIndex]
+optimalCVError_SVMLin <- min(SVMLinResultsDF$CV_MSE_linSVM)
+optimalCost_SVMLin <- SVMLinResultsDF$Best_Cost[optimalIndex]
 
-```{r cars}
-summary(cars)
+optimalIndex <- which.min(SVMPolyResultsDF$CV_MSE_polySVM)
+optimalPC_SVMPoly <- SVMPolyResultsDF$PrincipalComponents[optimalIndex]
+optimalCVError_SVMPoly <- min(SVMPolyResultsDF$CV_MSE_polySVM)
+optimalCost_SVMPoly <- SVMPolyResultsDF$Best_Cost_polySVM[optimalIndex]
+optimalDegree_SVMPoly <- SVMPolyResultsDF$Best_Degree[optimalIndex] 
+
+optimalIndex <- which.min(SVMRadResultsDF$CV_MSE_radSVM)
+optimalPC_SVMRad <- SVMRadResultsDF$PrincipalComponents_radSVM[optimalIndex]
+optimalCVError_SVMRad <- min(SVMRadResultsDF$CV_MSE_radSVM)
+optimalCost_SVMRad <- SVMRadResultsDF$Best_Cost_radSVM[optimalIndex]
+optimalGamma_SVMRad <- SVMRadResultsDF$Best_Gamma_radSVM[optimalIndex] 
+
+optimalIndex <- which.min(LogModelDF$CV_Error)
+optimalPC_Log <- LogModelDF$PrincipalComponents[optimalIndex]
+optimalCVError_Log <- min(LogModelDF$CV_Error)
+
 ```
 
-## Including Plots
+## Methodology
 
-You can also embed plots, for example:
+## Overview 
+
+- Several models were built utilizing the Principal Components to predict the USDA Grade
+  - Support Vector Machines (Linear, Polynomial, and Radial)
+  - Logistic Regression
+- Results:
+
+```{r}
+ModelNames <- c('Radial SVM', 'Linear SVM', 'Polynomial SVM', 'Logistic Regression')
+PrincipalComponents <- c(optimalPC_SVMRad, optimalPC_SVMLin, optimalPC_SVMPoly, optimalPC_Log)
+CV_Error <- c(optimalCVError_SVMRad, optimalCVError_SVMLin, optimalCVError_SVMPoly, optimalCVError_Log)
+
+SummaryDF <- data.frame(Model = ModelNames,PrincipalComponents = PrincipalComponents, CV_Error = CV_Error)
+
+kable(SummaryDF)
+```
+- Best Model: SVM Radial
+
+
+## Radial SVM Summary
+
+```{r}
+
+BestRadModel <- readRDS("SVM/BestSVMModels/BestRadModel.rds")
+BestRadModel<- BestRadModel[[1]]
+numSupportVectors <- nrow(BestRadModel$SV)
+
+kable(data.frame(PC = optimalPC_SVMRad , CV_Error = optimalCVError_SVMRad, Cost = optimalCost_SVMRad, Gamma = optimalGamma_SVMRad, SV = numSupportVectors))
+
+
+
+```
+
+## Radial SVM CV Error vs. Principal Components
+
+```{r}
+
+ggplot(data= SVMRadResultsDF, aes(x=PrincipalComponents_radSVM, y=CV_MSE_radSVM)) +
+  geom_line()+
+  geom_point()
+
+
+
+
+
+```
+
+## Radial SVM: Optimal Cost vs. Principal Components
+
+```{r}
+abs_min_cost <- .0001
+abs_max_cost <- 10000
+
+ggplot(data= SVMRadResultsDF, aes(x=PrincipalComponents_radSVM, y=Best_Cost_radSVM)) +
+  geom_line()+
+  geom_point()+
+  geom_hline(yintercept=abs_min_cost, linetype="dashed", color = "red") +
+  geom_hline(yintercept=abs_max_cost, linetype="dashed", color = "red") +
+  scale_y_log10()
+
+```
+
+## Radial SVM: Optimal Gamma vs. Principal Components
+```{r}
+abs_min_gamma <- .0001
+abs_max_gamma <-10000
+
+ggplot(data= SVMRadResultsDF, aes(x=PrincipalComponents_radSVM, y=Best_Gamma_radSVM)) +
+  geom_line()+
+  geom_point()+
+  geom_hline(yintercept=abs_min_gamma, linetype="dashed", color = "red") +
+  geom_hline(yintercept=abs_max_gamma, linetype="dashed", color = "red") +
+  scale_y_log10()
+
+```
+
+
+## Linear Support Vector Machine
+
+```{r}
+
+ggplot(data= SVMLinResultsDF, aes(x=PrincipalComponents_linSVM, y=CV_MSE_linSVM)) +
+  geom_line()+
+  geom_point()
+
+
+```
+
+## Polynomial Support Vector Machine
+
+```{r}
+
+ggplot(data= SVMPolyResultsDF, aes(x=PrincipalComponents, y=CV_MSE_polySVM)) +
+  geom_line()+
+  geom_point()
+```
+
+## Logistic Regression
+
+
 
 ```{r pressure, echo=FALSE}
-plot(pressure)
+
+bestLogModelDF <- read.csv("LogisticRegression/bestLogModelDF.csv")
+PCvsCVLog <- read.csv("LogisticRegression/PCvsCV.csv")
+
+#bestLogModelDF
+
+ggplot(data = PCvsCVLog, aes(x = PrincipalComponents, y= CV_Error)) +
+  geom_line()+
+  geom_point()
+
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
