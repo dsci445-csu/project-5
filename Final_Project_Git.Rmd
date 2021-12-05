@@ -233,27 +233,12 @@ write.csv(PCvsCV_DF,"LogisticRegression/PCvsCV.csv", row.names = FALSE)
 
 ```
 
-        d) Logistic regression with FS data
-```{r}
-
-```
-
         e) K-nearest neighbors using PCA data
 ```{r}
 
 ```
 
-        f) K-nearest neighbors using FS data
-```{r}
-
-```
-
         g) PCA using PCA data
-```{r}
-
-```
-
-        h) PCA using FS data
 ```{r}
 
 ```
@@ -395,13 +380,6 @@ optimalGamma <- c(svmRadResultsDF$Best_Gamma_radSVM[which.min(svmRadResultsDF$CV
 
 #Results from tuning across all PCs
 data.frame(optimalPC = optimalPC , optimalCVError = optimalCVError, optimalCost = optimalCost, optimalGamma = optimalGamma)
-
-```
-
-
-        j) SVM using FS data
-```{r}
-
 
 ```
 
