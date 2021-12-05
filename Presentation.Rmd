@@ -1,6 +1,6 @@
 ---
 title: "Presentation"
-author: "Michael Hernandez"
+author: "Patrick Noe, Logan Perkins, Michael Hernandez"
 date: "12/4/2021"
 output:
   beamer_presentation:
@@ -64,10 +64,9 @@ library(FactoMineR)
 - Classification models were performed to predict USDA quality grade.
 - Regression models were performed to predict tenderness.
 
-# RESULTS
+# PRINCIPAL COMPONENT ANALYSIS
 
-## Data structure (Principal Component Analysis)
-
+## USDA quality grade
 ```{r}
 ### Reproducibility
 set.seed(1)
@@ -84,7 +83,7 @@ responseVars <- c("USDA.grade", "Ten3", "Ten14","Ten28")
 gradeDF <- REIMS[,!(names(REIMS) %in% union(dropBase,setdiff(responseVars, c("USDA.grade"))))]
 ```
 
-```{r, include=TRUE,fig.width = 6, fig.height = 2}
+```{r, include=TRUE,fig.width = 6, fig.height = 2.2}
 #Performing PCA
 pca1 <- PCA(REIMS[,-c(1:12)], ncp = 100, scale.unit=TRUE ,graph = F)
 dat1<-REIMS[,6]
@@ -101,17 +100,12 @@ p1 <- ggplot(data = dat1, aes(x = Dim.2, y = Dim.3,colour=USDA.grade)) +
 print(p1 + labs(title= "PCA of REIMS data faced by USDA quality grade",y="Comp 2", x = "Comp 1"))
 ```
 
-## Data structure (Tenderness)  
-```{r, include=TRUE, fig.width = 8, fig.height = 4}
+## Tenderness 
+```{r, include=TRUE, fig.width = 6, fig.height = 2.2}
 #Plotting PCA colored by tenderness at day 3
 p2 <- ggplot(data = dat1, aes(x = Dim.1, y = Dim.2,colour=Ten3)) +
   geom_point()
 print(p2 + labs(title= "PCA of REIMS data colored by tenderness at day 3",y="Comp 2", x = "Comp 1"))
-
-#Plotting PCA colored by tenderness at day 14
-p3 <- ggplot(data = dat1, aes(x = Dim.1, y = Dim.2,colour=Ten14)) +
-  geom_point()
-print(p3 + labs(title= "PCA of REIMS data colored by tenderness at day 3",y="Comp 2", x = "Comp 1"))
 
 #Plotting PCA colored by tenderness at day 28
 p4 <- ggplot(data = dat1, aes(x = Dim.1, y = Dim.2,colour=Ten28)) +
