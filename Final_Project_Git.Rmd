@@ -30,6 +30,7 @@ library(gbm)
 library(randomForest)
 library(e1071)
 library(FactoMineR)
+library(kableExtra)
 ```
 
 ### INTRODUCTION
@@ -399,6 +400,7 @@ ten28DF_test
         a) Best subset selection
 ```{r}
 #Tenderness at day 3
+set.seed(1)
 reg.fwd <- regsubsets(Ten3~., data = ten3DF_train, nvmax = 40,method = "forward") 
 #Best subset selection using foward selection.
 summary(reg.fwd)
@@ -419,6 +421,8 @@ for (i in 1:20) {
 plot(seq(1,20), val.errors, log="y", xlab = "number of variables", ylab="MSE",
      main="Model size vs. MSE (test) tenderness at day 3",type = "o")
 
+MSE_subset_day3<-min(val.errors)
+
 #Tenderness at day 14
 reg.fwd <- regsubsets(Ten14~., data = ten14DF_train, nvmax = 40,method = "forward") 
 #Best subset selection using foward selection.
@@ -427,18 +431,20 @@ res.sum <- summary(reg.fwd)
 
 #Loop to calculate CV test error
 test.mat <- model.matrix(Ten14~., data=ten14DF_test)
-val.errors <- rep(NA, 20)
+val.errors1 <- rep(NA, 20)
 coefi<-seq(0)
 
 for (i in 1:20) {
   coefi<-coef(reg.fwd , id = i)
   pred <- test.mat[, names(coefi)] %*% coefi
-  val.errors[i] <- mean((ten14DF_test$Ten14-pred)^2)
+  val.errors1[i] <- mean((ten14DF_test$Ten14-pred)^2)
 }
 
 # Graph of Model size vs. MSE
-plot(seq(1,20), val.errors, log="y", xlab = "number of variables", ylab="MSE",
+plot(seq(1,20), val.errors1, log="y", xlab = "number of variables", ylab="MSE",
      main="Model size vs. MSE (test) tenderness at day 14",type = "o")
+
+MSE_subset_day14<-min(val.errors1)
 
 #Tenderness at day 28
 reg.fwd <- regsubsets(Ten28~., data = ten28DF_train, nvmax = 40,method = "forward") 
@@ -448,18 +454,20 @@ res.sum <- summary(reg.fwd)
 
 #Loop to calculate CV test error
 test.mat <- model.matrix(Ten28~., data=ten28DF_test)
-val.errors <- rep(NA, 20)
+val.errors2 <- rep(NA, 20)
 coefi<-seq(0)
 
 for (i in 1:20) {
   coefi<-coef(reg.fwd , id = i)
   pred <- test.mat[, names(coefi)] %*% coefi
-  val.errors[i] <- mean((ten28DF_test$Ten28-pred)^2)
+  val.errors2[i] <- mean((ten28DF_test$Ten28-pred)^2)
 }
 
 # Graph of Model size vs. MSE
 plot(seq(1,20), val.errors, log="y", xlab = "number of variables", ylab="MSE",
      main="Model size vs. MSE (test) tenderness at day 28",type = "o")
+
+MSE_subset_day28<-min(val.errors2)
 ```
 
 
@@ -470,15 +478,15 @@ set.seed(1)
 pcr.fit_ten3<- pcr (Ten3~., data=ten3DF_train, scale = TRUE,
 validation="CV")
 summary (pcr.fit_ten3)
-mse <- MSEP(pcr.fit_ten3)
+mse3 <- MSEP(pcr.fit_ten3)
 #M of the smallest CV error
-mse$comps[which.min(as.data.frame(mse$val)[1,])]
+mse3$comps[which.min(as.data.frame(mse3$val)[1,])]
 #Calculating MSE with M=6 and the Test set.
 pcr.pred <- predict (pcr.fit_ten3, ten3DF_test, ncomp = 6)
 pcr.pred-ten3DF_test$Ten3
-mse_mean_ten3<-mean ((pcr.pred - ten3DF_test$Ten3)^2)
+MSE_PCR_day3<-mean ((pcr.pred - ten3DF_test$Ten3)^2)
 #Error compare to average
-sqrt(mse_mean_ten3)
+sqrt(MSE_PCR_day3)
 mean(ten3DF$Ten3)
 
 
@@ -487,16 +495,17 @@ set.seed(1)
 pcr.fit_ten14<- pcr (Ten14~., data=ten14DF_train, scale = TRUE,
 validation="CV")
 summary (pcr.fit_ten14)
-mse <- MSEP(pcr.fit_ten14)
+mse14 <- MSEP(pcr.fit_ten14)
 #M of the smallest CV error
-mse$comps[which.min(as.data.frame(mse$val)[1,])]
+mse14$comps[which.min(as.data.frame(mse14$val)[1,])]
 #Calculating MSE with M=1 and the Test set.
 pcr.pred <- predict (pcr.fit_ten14, ten14DF_test, ncomp = 1)
 pcr.pred-ten14DF_test$Ten14
-mse_mean_ten14<-mean ((pcr.pred - ten14DF_test$Ten14)^2)
+MSE_PCR_day14<-mean ((pcr.pred - ten14DF_test$Ten14)^2)
 #Error in the same scale
-sqrt(mse_mean_ten14)
+sqrt(MSE_PCR_day14)
 mean(ten14DF$Ten14)
+
 
 
 #Fitting the PCR Ten28 model using 10-fold cross-validation
@@ -504,18 +513,18 @@ set.seed(1)
 pcr.fit_ten28<- pcr (Ten28~., data=ten28DF_train, scale = TRUE,
 validation="CV")
 summary (pcr.fit_ten28)
-mse <- MSEP(pcr.fit_ten28)
+mse28 <- MSEP(pcr.fit_ten28)
 #M of the smallest CV error
-mse$comps[which.min(as.data.frame(mse$val)[1,])]
+mse28$comps[which.min(as.data.frame(mse28$val)[1,])]
+size_PCR_day28<-which.min(as.data.frame(mse28$val)[1,])
 #Calculating MSE with M=2 and the Test set.
 pcr.pred <- predict (pcr.fit_ten28, ten28DF_test, ncomp = 2)
 pcr.pred-ten28DF_test$Ten28
-mse_mean_ten28<-mean ((pcr.pred - ten28DF_test$Ten28)^2)
+MSE_PCR_day28<-mean ((pcr.pred - ten28DF_test$Ten28)^2)
 #Error in the same scale
-sqrt(mse_mean_ten28)
+sqrt(MSE_PCR_day28)
 mean(ten28DF$Ten28)
 
-#Summarizing results
 
 ```
 
@@ -589,6 +598,7 @@ optimalLambda <- LassoTen3Results$Best_Lambda[which.min(LassoTen3Results$CV_MSE)
 
 data.frame(optimalPC = optimalPC, optimal_TestError = optimal_TestError, optimalLambda = optimalLambda)
 
+MSE_Lasso_day3<-optimal_TestError
 ```
 ```{r}
 # Lasso on principal components for Ten14
@@ -619,6 +629,8 @@ optimal_TestError <-  min(LassoTen14Results$CV_MSE)
 optimalLambda <- LassoTen14Results$Best_Lambda[which.min(LassoTen14Results$CV_MSE)]
 
 data.frame(optimalPC = optimalPC, optimal_TestError = optimal_TestError, optimalLambda = optimalLambda)
+
+MSE_Lasso_day14<-optimal_TestError
 
 
 ```
@@ -652,6 +664,8 @@ optimal_TestError <-  min(LassoTen28Results$CV_MSE)
 optimalLambda <- LassoTen28Results$Best_Lambda[which.min(LassoTen28Results$CV_MSE)]
 
 data.frame(optimalPC = optimalPC, optimal_TestError = optimal_TestError, optimalLambda = optimalLambda)
+
+MSE_Lasso_day28<-optimal_TestError
 ```
 
         d) Splines
@@ -712,6 +726,31 @@ err28[i]<-mean((ten28_test$Ten28 - preds)^2)
 Spline28<-data.frame(N.comp=seq(1,10),MSE=err28)
 which.min(Spline28$MSE)
 min(Spline28$MSE)
+
+```
+
+``` {r}
+#Summary results of regression
+
+data.frame(  Model = "Best Subset", 
+             Size_day3 = "1", MSE_day3=MSE_subset_day3,
+             Size_day14 = "1", MSE_day14=MSE_subset_day14,
+             Size_day28 = "1", MSE_day28=MSE_subset_day28)%>%
+  bind_rows(data.frame(Model = "PCA-Lasso", 
+            Size_day3 ="18", MSE_day3=MSE_Lasso_day3, 
+            Size_day14 ="10", MSE_day14=MSE_Lasso_day14, 
+            Size_day28 ="58", MSE_day28=MSE_Lasso_day28))%>%
+  bind_rows(data.frame(Model = "PCR", 
+            Size_day3 ="6", MSE_day3= MSE_PCR_day3, 
+            Size_day14 ="1", MSE_day14= MSE_PCR_day14, 
+            Size_day28 ="2", MSE_day28= MSE_PCR_day28)) %>%
+  bind_rows(data.frame(Model = "PCA-Splines", 
+            Size_day3 ="5", MSE_day3= min(Spline3$MSE), 
+            Size_day14 ="2", MSE_day14= min(Spline14$MSE), 
+            Size_day28 ="4", MSE_day28= min(Spline28$MSE))) %>%
+kable(caption="Table 2. Mean Squared Error (MSE) of regression models for tenderness at day 3, 14, and 28",digits=2)
+
+
 
 ```
 
