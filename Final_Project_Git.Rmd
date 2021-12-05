@@ -83,7 +83,7 @@ ten28DF <- na.omit(REIMS[,!(names(REIMS) %in% union(dropBase,setdiff(responseVar
 pca1 <- PCA(REIMS[,-c(1:12)], ncp = 100, scale.unit=TRUE ,graph = F)
 dat1<-REIMS[,6]
 #Building data frame
-dat1 <- data.frame(USDA.grade=dat1,Ten3=REIMS[,7],Ten14=REIMS[,8],Ten28=REIMS[,9],pca1$ind$coord[, c(1:5)])
+dat1 <- data.frame(USDA.grade=dat1,Ten3=REIMS[,7],Ten14=REIMS[,8],Ten28=REIMS[,9],pca1$ind$coord[, c(1:50)])
 #Plotting PCA faced by USDA grade
 p <- ggplot(data = dat1, aes(x = Dim.1, y = Dim.2,colour=USDA.grade)) +
   geom_point()
@@ -396,7 +396,6 @@ data.frame(optimalPC = optimalPC , optimalCVError = optimalCVError, optimalCost 
 
 
 ```
-```
 
 ### Prediction of Tenderness over time using 36h REIMS (regression models)
 
@@ -609,3 +608,64 @@ optimalLambda <- LassoTen28Results$Best_Lambda[which.min(LassoTen28Results$CV_MS
 
 data.frame(optimalPC = optimalPC, optimal_TestError = optimal_TestError, optimalLambda = optimalLambda)
 ```
+
+        d) Splines
+        
+```{r}
+# Spline model for Tenderness at day 3
+set.seed(1)
+dpart <- createDataPartition(REIMS$USDA.grade, p = 0.6, list = F)
+ten3<-na.omit( dat1[,-c(1,3:4)])
+ten3_train<-ten3[dpart,]
+ten3_test<-ten3[-dpart,]
+err3<-0
+for (i in 1:10) {
+p<-i
+form<-as.formula(paste0("Ten3~",paste0("s(Dim.",1:p,",3)",collapse="+")))
+gam<-gam(formula=form,data=ten3_train)
+preds<- predict(gam, newdata = ten3_test)
+preds
+err3[i]<-mean((ten3_test$Ten3 - preds)^2)
+}
+Spline3<-data.frame(N.comp=seq(1,10),MSE=err3)
+which.min(Spline3$MSE)
+min(Spline3$MSE)
+
+
+# Spline model for Tenderness at day 14
+set.seed(1)
+ten14<-na.omit( dat1[,-c(1:2,4)])
+ten14_train<-ten14[dpart,]
+ten14_test<-ten14[-dpart,]
+err14<-0
+for (i in 1:10) {
+p<-i
+form<-as.formula(paste0("Ten14~",paste0("s(Dim.",1:p,",3)",collapse="+")))
+gam<-gam(formula=form,data=ten14_train)
+preds<- predict(gam, newdata = ten14_test)
+preds
+err14[i]<-mean((ten14_test$Ten14 - preds)^2)
+}
+Spline14<-data.frame(N.comp=seq(1,10),MSE=err14)
+which.min(Spline14$MSE)
+min(Spline14$MSE)
+
+# Spline model for Tenderness at day 28
+set.seed(1)
+ten28<-na.omit( dat1[,-c(1:3)])
+ten28_train<-ten28[dpart,]
+ten28_test<-ten28[-dpart,]
+err28<-0
+for (i in 1:10) {
+p<-i
+form<-as.formula(paste0("Ten28~",paste0("s(Dim.",1:p,",3)",collapse="+")))
+gam<-gam(formula=form,data=ten28_train)
+preds<- predict(gam, newdata = ten28_test)
+preds
+err28[i]<-mean((ten28_test$Ten28 - preds)^2)
+}
+Spline28<-data.frame(N.comp=seq(1,10),MSE=err28)
+which.min(Spline28$MSE)
+min(Spline28$MSE)
+```
+
