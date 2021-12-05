@@ -34,6 +34,7 @@ library(gbm)
 library(randomForest)
 library(e1071)
 library(FactoMineR)
+library(kableExtra)
 ```
 
 
@@ -112,7 +113,8 @@ p4 <- ggplot(data = dat1, aes(x = Dim.1, y = Dim.2,colour=Ten28)) +
   geom_point()
 print(p4 + labs(title= "PCA of REIMS data colored by tenderness at day 3",y="Comp 2", x = "Comp 1"))
 ```
-# REGRESSION MODELS:  TENDERNESS
+
+# REGRESSION MODELS: TENDERNESS
 
 ``` {r}
 #Data
@@ -364,7 +366,8 @@ MSE_Lasso_day28<-optimal_TestError
 ```
 
 ## Summary results
-```{r,include=TRUE}
+\tiny
+```{r,include=TRUE,size="huge"}
 
 data.frame(  Model = "Best Subset", 
              Size = "1", MSE_day3=MSE_subset_day3,
@@ -379,9 +382,8 @@ data.frame(  Model = "Best Subset",
             Size ="1", MSE_day14= MSE_PCR_day14, 
             Size ="2", MSE_day28= MSE_PCR_day28)) %>%
   bind_rows(data.frame(Model = "PCA-Splines", 
-            Size_day3 ="5", MSE_day3= min(Spline3$MSE), 
-            Size_day14 ="2", MSE_day14= min(Spline14$MSE), 
-            Size_day28 ="4", MSE_day28= min(Spline28$MSE))) %>%
-kable(caption="Table 2. Mean Squared Error (MSE) of regression models for tenderness at day 3, 14, and 28",digits=2,font_size=10)
-
+            Size ="5", MSE_day3= min(Spline3$MSE), 
+            Size ="2", MSE_day14= min(Spline14$MSE), 
+            Size ="4", MSE_day28= min(Spline28$MSE))) %>%
+kable(caption="Table 2. Mean Squared Error (MSE) of regression models for tenderness at day 3, 14, and 28",digits=2)
 ```
