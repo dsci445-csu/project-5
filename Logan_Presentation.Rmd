@@ -37,5 +37,16 @@ data.frame(Model = c("Best Subset", "PCA-Lasso", "PCR", "PCA-Splines"),
 kable(caption = "MSE of Tenderness Regression Models at Days 3, 14, and 28")
 ```
 
+## Which model to choose?
 
+Generally, the lower the MSE, the better the model performs.
 
+Going by this, if we want to predict the tenderness of meat after three days, the PCA-Splines model would be the best model to use. After 14 days, best subset selection would be the best and after 28 days, the PCA-Splines model would also be best to use.
+
+```{r, include = TRUE}
+data.frame(Model = c("Best Subset", "PCA-Lasso", "PCR", "PCA-Splines"),
+           MSE_3Days = c(23.86676, 17.93212, 20.54899, 17.22352),
+           MSE_14Days = c(9.934574, 12.558450, 10.587106, 15.381422),
+           MSE_28Days = c(7.978889, 6.296094, 5.826689, 5.309924)) %>%
+kable(caption = "MSE of Tenderness Regression Models at Days 3, 14, and 28")
+```
