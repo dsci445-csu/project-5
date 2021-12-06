@@ -638,6 +638,22 @@ which.min(Spline28$MSE)
 min(Spline28$MSE)
 
 ```
+```{r}
+#lasso Non PCA
+
+LassoNonPCATen3Results <- read.csv("Lasso/LassoNonPCA/Ten3.csv")
+LassoNonPCATen14Results <- read.csv("Lasso/LassoNonPCA/Ten14.csv")
+LassoNonPCATen28Results <- read.csv("Lasso/LassoNonPCA/Ten28.csv")
+
+MSE_LassoNonPCA_3 <- LassoNonPCATen3Results$TestError
+Size_LassoNonPCA_3 <- LassoNonPCATen3Results$Size
+MSE_LassoNonPCA_14 <- LassoNonPCATen14Results$TestError
+Size_LassoNonPCA_14 <- LassoNonPCATen14Results$Size
+MSE_LassoNonPCA_28 <- LassoNonPCATen28Results$TestError
+Size_LassoNonPCA_28 <- LassoNonPCATen28Results$Size
+
+```
+
 
 ```{r}
 #PCA-Lasso
@@ -650,7 +666,8 @@ BestTen3LassoModel
 optimalPC <- LassoTen3Results$PrincipalComponents[which.min(LassoTen3Results$CV_MSE)]
 optimal_TestError <-  min(LassoTen3Results$CV_MSE)
 optimalLambda <- LassoTen3Results$Best_Lambda[which.min(LassoTen3Results$CV_MSE)]
-data.frame(optimalPC = optimalPC, optimal_TestError = optimal_TestError, optimalLambda = optimalLambda)
+optimalSize_Ten3 <- LassoTen3Results$Size[which.min(LassoTen3Results$CV_MSE)]
+data.frame(optimalPC = optimalPC, optimal_TestError = optimal_TestError, optimalLambda = optimalLambda, Size = optimalSize_Ten3)
 
 MSE_Lasso_day3<-optimal_TestError
 
@@ -662,6 +679,7 @@ BestTen14LassoModel
 optimalPC <- LassoTen14Results$PrincipalComponents[which.min(LassoTen14Results$CV_MSE)]
 optimal_TestError <-  min(LassoTen14Results$CV_MSE)
 optimalLambda <- LassoTen14Results$Best_Lambda[which.min(LassoTen14Results$CV_MSE)]
+optimalSize_Ten14 <- LassoTen14Results$Size[which.min(LassoTen14Results$CV_MSE)]
 
 data.frame(optimalPC = optimalPC, optimal_TestError = optimal_TestError, optimalLambda = optimalLambda)
 
@@ -675,6 +693,7 @@ BestTen28LassoModel
 optimalPC <- LassoTen28Results$PrincipalComponents[which.min(LassoTen28Results$CV_MSE)]
 optimal_TestError <-  min(LassoTen28Results$CV_MSE)
 optimalLambda <- LassoTen28Results$Best_Lambda[which.min(LassoTen28Results$CV_MSE)]
+optimalSize_Ten28 <- LassoTen28Results$Size[which.min(LassoTen28Results$CV_MSE)]
 
 data.frame(optimalPC = optimalPC, optimal_TestError = optimal_TestError, optimalLambda = optimalLambda)
 
@@ -690,9 +709,9 @@ data.frame(  Model = "Best Subset",
              Size = "1", MSE_day14=MSE_subset_day14,
              Size = "1", MSE_day28=MSE_subset_day28)%>%
   bind_rows(data.frame(Model = "PCA-Lasso", 
-            Size ="18", MSE_day3=MSE_Lasso_day3, 
-            Size ="10", MSE_day14=MSE_Lasso_day14, 
-            Size ="58", MSE_day28=MSE_Lasso_day28))%>%
+            Size = toString(optimalSize_Ten3), MSE_day3=MSE_Lasso_day3, 
+            Size = toString(optimalSize_Ten14), MSE_day14=MSE_Lasso_day14, 
+            Size = toString(optimalSize_Ten28), MSE_day28=MSE_Lasso_day28))%>%
   bind_rows(data.frame(Model = "PCR", 
             Size ="6", MSE_day3= MSE_PCR_day3, 
             Size ="1", MSE_day14= MSE_PCR_day14, 
@@ -700,6 +719,10 @@ data.frame(  Model = "Best Subset",
   bind_rows(data.frame(Model = "PCA-Splines", 
             Size ="5", MSE_day3= min(Spline3$MSE), 
             Size ="2", MSE_day14= min(Spline14$MSE), 
-            Size ="4", MSE_day28= min(Spline28$MSE)))%>% 
+            Size ="4", MSE_day28= min(Spline28$MSE))) %>%
+  bind_rows(data.frame(Model = "Lasso", 
+          Size =toString(Size_LassoNonPCA_3), MSE_day3= MSE_LassoNonPCA_3, 
+          Size =toString(Size_LassoNonPCA_14), MSE_day14= MSE_LassoNonPCA_14, 
+          Size =toString(Size_LassoNonPCA_28), MSE_day28= MSE_LassoNonPCA_28)) %>% 
 kable(caption="Mean Squared Error (MSE) of regression models for tenderness at day 3, 14, and 28",digits=2)
 ```
