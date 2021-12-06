@@ -12,15 +12,16 @@ lambda_min <- 0
 lambda_max <- 3
 
 lambda_min_under <- -1
-lambda_max_over <- 6
+lambda_max_over <- 10
 
 min_components <- 2
-max_components <- 60
+max_components <- 50
 components_seq <- seq(min_components, max_components)
 
 best_lambda <- rep(NA, length(components_seq))
 cv_mse <- rep(NA, length(components_seq))
-best_model_list <- vector(mode="list", length=length(component_seq))
+best_model_list <- vector(mode="list", length=length(components_seq))
+size_list <- rep(NA, length(components_seq))
 
 for (i in seq(length(components_seq))) {
   
@@ -47,13 +48,14 @@ for (i in seq(length(components_seq))) {
   temp_lambdaMax <- lambda_max
   resolve_bool <- FALSE
   
-  if (lambdaMinSolutionTemp == 10^temp_lambdaMin) {
+  if (isTRUE(all.equal(lambdaMinSolutionTemp,10^temp_lambdaMin))) {
     temp_lambdaMin <- lambda_min_under
     temp_lambdaMax <- lambda_min
     resolve_bool <- TRUE
-  } else if (lambdaMinSolutionTemp == 10^temp_lambdaMax) {
-    temp_lambdaMin <- lambda_max
-    temp_lambdaMax <- lambda_max_over
+    isTRUE(all.equal(i,0.15))
+  } else if (isTRUE(all.equal(lambdaMinSolutionTemp,10^temp_lambdaMax))) {
+    temp_lambdaMin <- 8
+    temp_lambdaMax <- 10
     resolve_bool <- TRUE
   }
   
@@ -65,13 +67,19 @@ for (i in seq(length(components_seq))) {
   lambdaMinActual <- cv_lasso$lambda.min
   cv_error <- min(cv_lasso$cvm)
   
+  lasso_mdl <-  glmnet(X_train, Y_train, alpha = 1, lambda = lambdaMinActual)
+  
+  coefs_all <- coef(lasso_mdl)
+  size <- length(coefs_all[coefs_all[,1]!=0,]) - 1
+  
   cv_mse[i] <- cv_error    
   best_lambda[i] <- lambdaMinActual
+  size_list[i] <- size
   best_model_list[[i]] <- lasso_mdl
 }
 
 
-lassoPCA_Results <- data.frame(PrincipalComponents = components_seq, CV_MSE = cv_mse, Best_Lambda = best_lambda)
+lassoPCA_Results <- data.frame(PrincipalComponents = components_seq, CV_MSE = cv_mse, Best_Lambda = best_lambda, Size=size_list)
 #store the best model
 lassoTen28_BestModel <- best_model_list[which.min(cv_mse)]
 saveRDS(lassoTen28_BestModel, "Lasso/BestModels/BestLassoTen28Model.rds")

@@ -27,49 +27,58 @@ SVMRadResultsDF <- read.csv("SVM/Results/radSVM.csv")
 #Process Data
 optimalIndex <- which.min(SVMLinResultsDF$CV_MSE_linSVM)
 optimalPC_SVMLin <- SVMLinResultsDF$PrincipalComponents_linSVM[optimalIndex]
-optimalCVError_SVMLin <- min(SVMLinResultsDF$CV_MSE_linSVM)
+optimalCVError_SVMLin <- round(min(SVMLinResultsDF$CV_MSE_linSVM),3)
 optimalCost_SVMLin <- SVMLinResultsDF$Best_Cost[optimalIndex]
 
 optimalIndex <- which.min(SVMPolyResultsDF$CV_MSE_polySVM)
 optimalPC_SVMPoly <- SVMPolyResultsDF$PrincipalComponents[optimalIndex]
-optimalCVError_SVMPoly <- min(SVMPolyResultsDF$CV_MSE_polySVM)
+optimalCVError_SVMPoly <- round(min(SVMPolyResultsDF$CV_MSE_polySVM),3)
 optimalCost_SVMPoly <- SVMPolyResultsDF$Best_Cost_polySVM[optimalIndex]
 optimalDegree_SVMPoly <- SVMPolyResultsDF$Best_Degree[optimalIndex] 
 
 optimalIndex <- which.min(SVMRadResultsDF$CV_MSE_radSVM)
 optimalPC_SVMRad <- SVMRadResultsDF$PrincipalComponents_radSVM[optimalIndex]
-optimalCVError_SVMRad <- min(SVMRadResultsDF$CV_MSE_radSVM)
+optimalCVError_SVMRad <- round(min(SVMRadResultsDF$CV_MSE_radSVM),3)
 optimalCost_SVMRad <- SVMRadResultsDF$Best_Cost_radSVM[optimalIndex]
 optimalGamma_SVMRad <- SVMRadResultsDF$Best_Gamma_radSVM[optimalIndex] 
 
 optimalIndex <- which.min(LogModelDF$CV_Error)
 optimalPC_Log <- LogModelDF$PrincipalComponents[optimalIndex]
-optimalCVError_Log <- min(LogModelDF$CV_Error)
+optimalCVError_Log <- round(min(LogModelDF$CV_Error),3)
 
 ```
 
 ## Methodology
 
-## Overview 
-
-- Several models were built utilizing the Principal Components to predict the USDA Grade
-  - Support Vector Machines (Linear, Polynomial, and Radial)
+- Several models were built to predict USDA Grade using the principal components:
   - Logistic Regression
-- Results:
+  - Support Vector Machines (Linear, Polynomial, Radial)
+- 10-Fold cross validation was performed on each model using an increasing number of principal components
+- Optimal CV Error was recorded for each model and this was used to identify the optimal number of principal components to utilize for each model.
 
-```{r}
-ModelNames <- c('Radial SVM', 'Linear SVM', 'Polynomial SVM', 'Logistic Regression')
-PrincipalComponents <- c(optimalPC_SVMRad, optimalPC_SVMLin, optimalPC_SVMPoly, optimalPC_Log)
-CV_Error <- c(optimalCVError_SVMRad, optimalCVError_SVMLin, optimalCVError_SVMPoly, optimalCVError_Log)
 
-SummaryDF <- data.frame(Model = ModelNames,PrincipalComponents = PrincipalComponents, CV_Error = CV_Error)
+## Logistic Regression
 
-kable(SummaryDF)
+
+```{r pressure, echo=FALSE}
+
+bestLogModelDF <- read.csv("LogisticRegression/bestLogModelDF.csv")
+PCvsCVLog <- read.csv("LogisticRegression/PCvsCV.csv")
+
+#bestLogModelDF
+
+ggplot(data = PCvsCVLog, aes(x = PrincipalComponents, y= CV_Error)) +
+  geom_line()+
+  geom_point()+
+  labs(y="CV Error", x = "Number of Prinicipal Components") +
+  theme(axis.text=element_text(size=16, face="bold"),
+        axis.title=element_text(size=16, face="bold"))
+
 ```
-- Best Model: SVM Radial
-
 
 ## Radial SVM Summary
+
+- Optimal Model:
 
 ```{r}
 
@@ -82,6 +91,10 @@ kable(data.frame(PC = optimalPC_SVMRad , CV_Error = optimalCVError_SVMRad, Cost 
 
 
 ```
+- Built models using an increasing number of principal components from 2 to 60.
+- For each iteration of principal components, a SVM was tuned using:
+  - Costs from .0001 to 10,000
+  - $\gamma$ from .0001 to 10,000
 
 ## Radial SVM CV Error vs. Principal Components
 
@@ -89,8 +102,10 @@ kable(data.frame(PC = optimalPC_SVMRad , CV_Error = optimalCVError_SVMRad, Cost 
 
 ggplot(data= SVMRadResultsDF, aes(x=PrincipalComponents_radSVM, y=CV_MSE_radSVM)) +
   geom_line()+
-  geom_point()
-
+  geom_point()+
+  labs(y="CV Error", x = "Number of Prinicipal Components") +
+  theme(axis.text=element_text(size=16, face="bold"),
+        axis.title=element_text(size=16, face="bold"))
 
 
 
@@ -108,11 +123,14 @@ ggplot(data= SVMRadResultsDF, aes(x=PrincipalComponents_radSVM, y=Best_Cost_radS
   geom_point()+
   geom_hline(yintercept=abs_min_cost, linetype="dashed", color = "red") +
   geom_hline(yintercept=abs_max_cost, linetype="dashed", color = "red") +
-  scale_y_log10()
+  scale_y_log10() +
+  labs(y="Optimal Cost", x = "Number of Prinicipal Components") +
+  theme(axis.text=element_text(size=16, face="bold"),
+        axis.title=element_text(size=16, face="bold"))
 
 ```
 
-## Radial SVM: Optimal Gamma vs. Principal Components
+## Radial SVM: Optimal $\gamma$ vs. Principal Components
 ```{r}
 abs_min_gamma <- .0001
 abs_max_gamma <-10000
@@ -122,7 +140,10 @@ ggplot(data= SVMRadResultsDF, aes(x=PrincipalComponents_radSVM, y=Best_Gamma_rad
   geom_point()+
   geom_hline(yintercept=abs_min_gamma, linetype="dashed", color = "red") +
   geom_hline(yintercept=abs_max_gamma, linetype="dashed", color = "red") +
-  scale_y_log10()
+  scale_y_log10() +
+  labs(y="Optimal Gamma", x = "Number of Prinicipal Components") +
+  theme(axis.text=element_text(size=16, face="bold"),
+        axis.title=element_text(size=16, face="bold"))
 
 ```
 
@@ -133,7 +154,10 @@ ggplot(data= SVMRadResultsDF, aes(x=PrincipalComponents_radSVM, y=Best_Gamma_rad
 
 ggplot(data= SVMLinResultsDF, aes(x=PrincipalComponents_linSVM, y=CV_MSE_linSVM)) +
   geom_line()+
-  geom_point()
+  geom_point()+
+  labs(y="CV Error", x = "Number of Prinicipal Components") +
+  theme(axis.text=element_text(size=16, face="bold"),
+        axis.title=element_text(size=16, face="bold"))
 
 
 ```
@@ -144,24 +168,27 @@ ggplot(data= SVMLinResultsDF, aes(x=PrincipalComponents_linSVM, y=CV_MSE_linSVM)
 
 ggplot(data= SVMPolyResultsDF, aes(x=PrincipalComponents, y=CV_MSE_polySVM)) +
   geom_line()+
-  geom_point()
+  geom_point()+
+  labs(y="CV Error", x = "Number of Prinicipal Components") +
+  theme(axis.text=element_text(size=16, face="bold"),
+        axis.title=element_text(size=16, face="bold"))
 ```
 
-## Logistic Regression
 
 
 
-```{r pressure, echo=FALSE}
+## Summary of Results 
 
-bestLogModelDF <- read.csv("LogisticRegression/bestLogModelDF.csv")
-PCvsCVLog <- read.csv("LogisticRegression/PCvsCV.csv")
 
-#bestLogModelDF
+```{r}
+ModelNames <- c('Radial SVM', 'Linear SVM', 'Polynomial SVM', 'Logistic Regression')
+PrincipalComponents <- c(optimalPC_SVMRad, optimalPC_SVMLin, optimalPC_SVMPoly, optimalPC_Log)
+CV_Error <- c(optimalCVError_SVMRad, optimalCVError_SVMLin, optimalCVError_SVMPoly, optimalCVError_Log)
 
-ggplot(data = PCvsCVLog, aes(x = PrincipalComponents, y= CV_Error)) +
-  geom_line()+
-  geom_point()
+SummaryDF <- data.frame(Model = ModelNames,PrincipalComponents = PrincipalComponents, CV_Error = CV_Error)
 
+kable(SummaryDF)
 ```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+- Best Model: Radial SVM with 30 Principal Components: CV Error of .108
+  - Even though the Polynomial SVM outperformed the Radial SVM slightly, it required 48 more Principal Components to be utilized.
+  - The Linear SVM performed slightly worse than the Radial SVM, but required 6 less Principal Components.
