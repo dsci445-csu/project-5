@@ -1,0 +1,41 @@
+---
+title: "Logan_Presentation"
+author: "Logan Perkins"
+date: "12/5/2021"
+output: 
+  beamer_presentation:
+    theme: "Frankfurt"
+    colortheme: "dolphin"
+    fonttheme: "structurebold"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(knitr)
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+knitr::opts_chunk$set(include = FALSE)
+library(kableExtra)
+```
+
+# Tenderness Regression Model Comparison
+
+## Overview
+
+- Several models were used to predict tenderness:
+  - Best subset selection
+  - PCA-Lasso
+  - PCR
+  - PCA-Splines
+
+```{r, include = TRUE}
+data.frame(Model = c("Best Subset", "PCA-Lasso", "PCR", "PCA-Splines"),
+           MSE_3Days = c(23.86676, 17.93212, 20.54899, 17.22352),
+           MSE_14Days = c(9.934574, 12.558450, 10.587106, 15.381422),
+           MSE_28Days = c(7.978889, 6.296094, 5.826689, 5.309924)) %>%
+kable(caption = "MSE of Tenderness Regression Models at Days 3, 14, and 28")
+```
+
+
+
