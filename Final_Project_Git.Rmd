@@ -530,58 +530,141 @@ mean(ten28DF$Ten28)
 
 
         c)Lasso Regression
+        
 ```{r}
-#CODED BY PATRICK
-set.seed(1)
-#Ten3 Analysis
 
+#Lasso on Ten3 (Non-PCA)
+
+# THIS MODEL IS NO BETTER THAN AVERAGE!!!!
+set.seed(1)
 
 X_train <- model.matrix(Ten3 ~ ., data = ten3DF_train)[,-1]
 Y_train <- ten3DF_train$Ten3
 X_test <- model.matrix(Ten3 ~ ., data = ten3DF_test)[,-1]
 Y_test <- ten3DF_test$Ten3
-
 lambda <- 10^seq(-2, 3, length.out = 1000)
-
 cv_lasso <- cv.glmnet(X_train, Y_train, alpha = 1, lambda = lambda)
 
-ggplot() +
+lambdaPlot3 <- ggplot() +
   geom_line(aes(cv_lasso$lambda, cv_lasso$cvm)) +
   geom_point(aes(cv_lasso$lambda, cv_lasso$cvm)) +
   scale_x_log10()
 
 lambdaMin <- cv_lasso$lambda.min
-lambdaMin
+cv_error_min <- min(cv_lasso$cvm)
 
 lasso_mdl <- glmnet(X_train, Y_train, alpha = 1, lambda = lambdaMin)
 
 predictions <- predict(lasso_mdl,newx=X_test,s=lambdaMin, type="response")
 
 testErrorLasso <- mean(( predictions[,'s1'] - Y_test )^2)
-testErrorLasso
 
-ggplot() +
+predictionPlot3 <- ggplot() +
   geom_point(aes(predictions, Y_test))+
-  geom_abline(slope=1, intercept = 0) +
-  geom_point(aes(Train_predictions, Y_train))
+  geom_abline(slope=1, intercept = 0) 
 
+coefs_3 <- coef(lasso_mdl)
+size_3 <- length(coefs_3[coefs_3[,1]!=0,]) - 1
+
+Ten3NonPCA_Results <- data.frame(CV_MSE = cv_error_min, Lambda = lambdaMin, TestError = testErrorLasso, Size = size_3)
+Ten3NonPCA_Results
+
+
+#Lasso on Ten14 (Non-PCA)
+
+# THIS MODEL IS NO BETTER THAN AVERAGE!!!!
+set.seed(1)
+
+X_train <- model.matrix(Ten14 ~ ., data = ten14DF_train)[,-1]
+Y_train <- ten14DF_train$Ten14
+X_test <- model.matrix(Ten14 ~ ., data = ten14DF_test)[,-1]
+Y_test <- ten14DF_test$Ten14
+lambda <- 10^seq(-2, 3, length.out = 1000)
+cv_lasso <- cv.glmnet(X_train, Y_train, alpha = 1, lambda = lambda)
+
+lambdaPlot14 <- ggplot() +
+  geom_line(aes(cv_lasso$lambda, cv_lasso$cvm)) +
+  geom_point(aes(cv_lasso$lambda, cv_lasso$cvm)) +
+  scale_x_log10()
+
+lambdaMin <- cv_lasso$lambda.min
+cv_error_min <- min(cv_lasso$cvm)
+
+lasso_mdl <- glmnet(X_train, Y_train, alpha = 1, lambda = lambdaMin)
+
+predictions <- predict(lasso_mdl,newx=X_test,s=lambdaMin, type="response")
+
+testErrorLasso <- mean(( predictions[,'s1'] - Y_test )^2)
+
+predictionPlot14 <- ggplot() +
+  geom_point(aes(predictions, Y_test))+
+  geom_abline(slope=1, intercept = 0) 
+
+coefs_14 <- coef(lasso_mdl)
+size_14 <- length(coefs_14[coefs_14[,1]!=0,]) - 1
+
+Ten14NonPCA_Results <- data.frame(CV_MSE = cv_error_min, Lambda = lambdaMin, TestError = testErrorLasso, Size = size_14)
+Ten14NonPCA_Results
+
+#Lasso on Ten28 (Non-PCA)
+set.seed(1)
+
+X_train <- model.matrix(Ten28 ~ ., data = ten28DF_train)[,-1]
+Y_train <- ten28DF_train$Ten28
+X_test <- model.matrix(Ten28 ~ ., data = ten28DF_test)[,-1]
+Y_test <- ten28DF_test$Ten28
+lambda <- 10^seq(-2, 3, length.out = 1000)
+cv_lasso <- cv.glmnet(X_train, Y_train, alpha = 1, lambda = lambda)
+
+lambdaPlot28 <- ggplot() +
+  geom_line(aes(cv_lasso$lambda, cv_lasso$cvm)) +
+  geom_point(aes(cv_lasso$lambda, cv_lasso$cvm)) +
+  scale_x_log10()
+
+lambdaMin <- cv_lasso$lambda.min
+cv_error_min <- min(cv_lasso$cvm)
+
+lasso_mdl <- glmnet(X_train, Y_train, alpha = 1, lambda = lambdaMin)
+
+predictions <- predict(lasso_mdl,newx=X_test,s=lambdaMin, type="response")
+
+testErrorLasso <- mean(( predictions[,'s1'] - Y_test )^2)
+
+predictionPlot28 <- ggplot() +
+  geom_point(aes(predictions, Y_test))+
+  geom_abline(slope=1, intercept = 0) 
+
+coefs_28 <- coef(lasso_mdl)
+size_28 <- length(coefs_28[coefs_28[,1]!=0,]) - 1
+
+Ten28NonPCA_Results <- data.frame(CV_MSE = cv_error_min, Lambda = lambdaMin, TestError = testErrorLasso, Size = size_28)
+Ten28NonPCA_Results
 
 ```
+
 ```{r}
 # Lasso on principal components for Ten3
 
-source("Lasso/Lasso_ten3_CV.R", local = knitr::knit_global())
+# This code is commented out because it takes a while to run. Results are stored in files.
+#source("Lasso/Lasso_ten3_CV.R", local = knitr::knit_global())
 
 
 ```
 
 ```{r}
+lambda_min_under <- -2
+lambda_max_over <- 8
 
 LassoTen3Results <- read.csv("Lasso/Results/Ten3.csv")
 BestTen3LassoModel <- readRDS("Lasso/BestModels/BestLassoTen3Model.rds")
 BestTen3LassoModel
 
 ggplot(data=LassoTen3Results, aes(x= PrincipalComponents, y = CV_MSE)) +
+  geom_line() +
+  geom_point()
+
+
+ggplot(data=LassoTen3Results, aes(x= PrincipalComponents, y = Size)) +
   geom_line() +
   geom_point()
 
@@ -600,20 +683,29 @@ data.frame(optimalPC = optimalPC, optimal_TestError = optimal_TestError, optimal
 
 MSE_Lasso_day3<-optimal_TestError
 ```
+
 ```{r}
 # Lasso on principal components for Ten14
 
-source("Lasso/Lasso_ten14_CV.R", local = knitr::knit_global())
+# This code is commented out because it takes a while to run. Results are stored in files.
+# source("Lasso/Lasso_ten14_CV.R", local = knitr::knit_global())
 
 ```
 
 ```{r}
+
+lambda_min_under <- -4
+lambda_max_over <- 8
 
 LassoTen14Results <- read.csv("Lasso/Results/Ten14.csv")
 BestTen14LassoModel <- readRDS("Lasso/BestModels/BestLassoTen14Model.rds")
 BestTen14LassoModel
 
 ggplot(data=LassoTen14Results, aes(x= PrincipalComponents, y = CV_MSE)) +
+  geom_line() +
+  geom_point()
+
+ggplot(data=LassoTen14Results, aes(x= PrincipalComponents, y = Size)) +
   geom_line() +
   geom_point()
 
@@ -637,18 +729,26 @@ MSE_Lasso_day14<-optimal_TestError
 ```{r}
 # Lasso on principal components for Ten28
 
-source("Lasso/Lasso_ten28_CV.R", local = knitr::knit_global())
+# This code is commented out because it takes a while to run. Results are stored in files.
+# source("Lasso/Lasso_ten28_CV.R", local = knitr::knit_global())
 
 
 ```
 
 ```{r}
 
+lambda_min_under <- -1 
+lambda_max_over <- 10
+
 LassoTen28Results <- read.csv("Lasso/Results/Ten28.csv")
 BestTen28LassoModel <- readRDS("Lasso/BestModels/BestLassoTen28Model.rds")
 BestTen28LassoModel
 
 ggplot(data=LassoTen28Results, aes(x= PrincipalComponents, y = CV_MSE)) +
+  geom_line() +
+  geom_point()
+
+ggplot(data=LassoTen28Results, aes(x= PrincipalComponents, y = Size)) +
   geom_line() +
   geom_point()
 
