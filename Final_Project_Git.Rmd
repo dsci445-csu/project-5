@@ -2,11 +2,13 @@
 title: "Evaluation of Rapid Evaporative Ionization Mass Spectrometry to predict Beef Tenderness and USDA Grade"
 author: "Patrick Noe, Logan Perkins, Michael Hernandez"
 date: "12/16/2021"
-output: pdf_document
+output: 
+  bookdown::pdf_document2: default
 abstract: "Beef grade and tenderness are important qualities to both understand and predict within the meat processing industry, and most contemporary technologies are limited in their capabilities in making timely and cost effective analysees of these qualities of beef. More modern technologies like Rapid Evaporative Ionization Mass Spectrometry (REIMS) are available to assess the chemical composition of beef in an efficient manner. The purpose of this study to analyze REIMs data on 83 pieces of beef to explore the predictive preformance of REIMS on both USDA Grade and the beefs tenderness at 3, 14, and 28 days. The study develops and compares several different statistical learning models trained on REIMs data to predict grade and tenderness. The purpose of these models are to (1) Discover if there is a predictive relationship between REIMs data and beef grade/tenderness, and (2) Select a model that performs the best at prediction."
 ---
 
 ```{r setup, include=FALSE}
+library(bookdown)
 library(knitr)
 knitr::opts_chunk$set(echo = FALSE)
 knitr::opts_chunk$set(message = FALSE)
@@ -35,7 +37,7 @@ library(kableExtra)
 ```
 
 # INTRODUCTION
- * Beef palatability depends on tenderness, juiciness, and flavor. In the United States, there is a quality grading system that classifies beef carcasses on different quality categories (USDA). Some of the most common USDA quality grades are Prime, Choice, and Select, with Prime the best quality and Select being the lowest quality of the three classifications. The USDA quality grade is based on animal maturity and marbling level (intramuscular fat), and it is correlated with the overall consumer acceptance (USDA). However, tenderness is not predicted with USDA quality grade. Beef industry stakeholders have been searching for a non-destructive, real-time instrument for determining the tenderness of beef for nearly 40 years. Although some technologies allow the determination of beef tenderness, they require sacrificing a loin steak and cannot be performed in real-time. Rapid Evaporative Ionization Mass Spectrometry (REIMS) is a novel environmental mass spectrometry technique that combines a sample vaporization device with a time-of-flight mass spectrometer. When a sampling device, which uses a high-frequency current, comes into contact with the sample surface, an aerosol of molecules is generated and transformed into a mass spectral fingerprint. This technology has the advantage that it can be used in-situ and in the real-time classification of biological tissues without any sample preparation. Therefore, the goal of this study was to evaluate the ability of REIMS to predict USDA quality grade and beef tenderness.
+Beef palatability depends on tenderness, juiciness, and flavor. In the United States, there is a quality grading system that classifies beef carcasses on different quality categories (USDA). Some of the most common USDA quality grades are Prime, Choice, and Select, with Prime the best quality and Select being the lowest quality of the three classifications. The USDA quality grade is based on animal maturity and marbling level (intramuscular fat), and it is correlated with the overall consumer acceptance (USDA). However, tenderness is not predicted with USDA quality grade. Beef industry stakeholders have been searching for a non-destructive, real-time instrument for determining the tenderness of beef for nearly 40 years. Although some technologies allow the determination of beef tenderness, they require sacrificing a loin steak and cannot be performed in real-time. Rapid Evaporative Ionization Mass Spectrometry (REIMS) is a novel environmental mass spectrometry technique that combines a sample vaporization device with a time-of-flight mass spectrometer. When a sampling device, which uses a high-frequency current, comes into contact with the sample surface, an aerosol of molecules is generated and transformed into a mass spectral fingerprint. This technology has the advantage that it can be used in-situ and in the real-time classification of biological tissues without any sample preparation. Therefore, the goal of this study was to evaluate the ability of REIMS to predict USDA quality grade and beef tenderness.
 
 ```{r}
 ### Reproducibility
@@ -55,7 +57,7 @@ gradeDF <- REIMS[,!(names(REIMS) %in% union(dropBase,setdiff(responseVars, c("US
 ```
 
 # METHODOLOGY
-...
+
 The most challenging aspect of building statistical models using the REIMs dataset is that the dataset presents a high dimensional probelm with relatively few data points. The REIMs dataset is comprised of 1,700 predictors on 83 datapoints... 
 
 
@@ -82,8 +84,10 @@ ten28DF <- na.omit(REIMS[,!(names(REIMS) %in% union(dropBase,setdiff(responseVar
 # RESULTS
 
 ## Data visualization using Principal Component Analysis (PCA)  
-  There is not a evident cluster by USDA grade and tenderness at day 3, 14, and 28 days
-```{r, include=TRUE,fig.width = 8, fig.height = 4}
+
+There is not a evident cluster by USDA grade and tenderness at day 3, 14, and 28 days
+
+```{r pcaGradePlot1, include=TRUE,fig.width = 6, fig.height = 3, fig.cap = "Plot of Principal Component 2 vs. Principal Component 1 colored by USDA Grade. As is seen in the plot, there is no apparent clustering of the first two principal components."}
 #Performing PCA
 pca1 <- PCA(REIMS[,-c(1:12)], ncp = 100, scale.unit=TRUE ,graph = F)
 dat1<-REIMS[,6]
@@ -91,33 +95,54 @@ dat1<-REIMS[,6]
 dat1 <- data.frame(USDA.grade=dat1,Ten3=REIMS[,7],Ten14=REIMS[,8],Ten28=REIMS[,9],pca1$ind$coord[, c(1:50)])
 #Plotting PCA faced by USDA grade
 p <- ggplot(data = dat1, aes(x = Dim.1, y = Dim.2,colour=USDA.grade)) +
-  geom_point()
-print(p + labs(title= "PCA of REIMS data faced by USDA quality grade",y="Comp 2", x = "Comp 1"))
-
-#Plotting PCA faced by USDA grade
-p1 <- ggplot(data = dat1, aes(x = Dim.2, y = Dim.3,colour=USDA.grade)) +
-  geom_point()
-print(p1 + labs(title= "PCA of REIMS data faced by USDA quality grade",y="Comp 2", x = "Comp 1"))
+  geom_point()+
+  theme(axis.text=element_text(size=10),
+        axis.title=element_text(size=10),
+        plot.title = element_text(hjust = 0.5))
+print(p + labs(title= "PCA of REIMS data faced by USDA quality grade",y="Principal Component 2", x = "Principal Component 1"))
 ```
 
-```{r, include=TRUE, fig.width = 8, fig.height = 4}
+```{r pcaGradePlot2, include=TRUE,fig.width = 6, fig.height = 3, fig.cap = "Plot of Principal Component 3 vs. Principal Component 2 colored by USDA Grade Data. As is seen in the plot, there is no apparent clustering between the second and third principal components."}
+#Plotting PCA faced by USDA grade
+p1 <- ggplot(data = dat1, aes(x = Dim.2, y = Dim.3,colour=USDA.grade)) +
+  geom_point()+
+  theme(axis.text=element_text(size=10),
+        axis.title=element_text(size=10),
+        plot.title = element_text(hjust = 0.5))
+print(p1 + labs(title= "PCA of REIMS data faced by USDA quality grade",y="Principal Component 3", x = "Principal Component 2"))
+```
+
+```{r pcaTen3Plot, include=TRUE, fig.width = 6, fig.height = 3, fig.cap = "Plot of Principal Component 2 vs. Principal Component 1 colored by beef tenderness at 3 days. As is seen in the plot, there is no apparent clustering between the second and first principal components."}
 #Plotting PCA colored by tenderness at day 3
 p2 <- ggplot(data = dat1, aes(x = Dim.1, y = Dim.2,colour=Ten3)) +
-  geom_point()
+  geom_point()+
+  theme(axis.text=element_text(size=10),
+        axis.title=element_text(size=10),
+        plot.title = element_text(hjust = 0.5))
 print(p2 + labs(title= "PCA of REIMS data colored by tenderness at day 3",y="Comp 2", x = "Comp 1"))
+```
 
+```{r pcaTen14Plot, include=TRUE, fig.width = 6, fig.height = 3, fig.cap ="Plot of Principal Component 2 vs. Principal Component 1 colored by beef tenderness at 14 days. As is seen in the plot, there is no apparent clustering between the second and first principal components."}
 #Plotting PCA colored by tenderness at day 14
 p3 <- ggplot(data = dat1, aes(x = Dim.1, y = Dim.2,colour=Ten14)) +
-  geom_point()
+  geom_point()+
+  theme(axis.text=element_text(size=10),
+        axis.title=element_text(size=10),
+        plot.title = element_text(hjust = 0.5))
 print(p3 + labs(title= "PCA of REIMS data colored by tenderness at day 3",y="Comp 2", x = "Comp 1"))
+```
 
+```{r pcaTen28Plot, include=TRUE, fig.width = 6, fig.height = 3, fig.cap ="Plot of Principal Component 2 vs. Principal Component 1 colored by beef tenderness at 28 days. As is seen in the plot, there is no apparent clustering between the second and first principal components."}
 #Plotting PCA colored by tenderness at day 28
 p4 <- ggplot(data = dat1, aes(x = Dim.1, y = Dim.2,colour=Ten28)) +
-  geom_point()
+  geom_point()+
+  theme(axis.text=element_text(size=10),
+        axis.title=element_text(size=10),
+        plot.title = element_text(hjust = 0.5))
 print(p4 + labs(title= "PCA of REIMS data colored by tenderness at day 3",y="Comp 2", x = "Comp 1"))
 ```
 
-```{r}
+```{r pvePlot, include=TRUE,fig.width = 6, fig.height = 3, fig.cap = "Proportion of Variance Explained in the data by each principal component."}
 #CODE BY PATRICK
 # This section of code performs PCA on the predictors of the data set. It stores the loading vectors in the pca_loadings dataframe
 # for use in the models below. It also provides a plot of Proportion of Variance Explained (PVE) vs. Principal Component.
@@ -128,7 +153,7 @@ pca_obj <- prcomp(data, center=TRUE, scale=TRUE)  # perform PCA
 pca_summary <- summary(pca_obj)
 pca_loadings <- pca_obj$rotation #store the loading vectors for future use
 
-pca_summary
+#pca_summary
 
 PVE <- pca_summary$importance[2,] # store the proportion of variance explained by each PC
 PrincipalComponent <- seq(1, length(PVE), 1) # Vector of Principle components for plot
@@ -136,15 +161,20 @@ PrincipalComponent <- seq(1, length(PVE), 1) # Vector of Principle components fo
 #PLOT OF PVE VS. Principle Component
 ggplot() +
   geom_line(aes(x=PrincipalComponent, y=PVE))+
-  geom_point()
+  geom_point()+
+  labs(title= "Proportion of Variance Explained (PVE) vs. Principal Component", y="PVE", x = "Prinicipal Component") +
+  theme(axis.text=element_text(size=10),
+        axis.title=element_text(size=10),
+        plot.title = element_text(hjust = 0.5))
 
 ```
 
 ## Categorical Prediction of USDA Grade 
 
 
-a) Logistic regression with PCA data
-```{r}
+### Logistic Regression
+```{r LogRegressionCode}
+
 # CODED BY PATRICK
 
 #This section of code performs 10-fold cross validation on a logistic regression using different number of principal components (varying from 
@@ -202,15 +232,9 @@ for (i in seq_len(max_components)) {
 
 #PLOT OF K-Fold CV_MSE VS. Principle Component
 PrincipalComponent <- seq_len(max_components)
-ggplot() +
-  geom_line(aes(x=PrincipalComponent, y=cv_mse))+
-  geom_point()
-
 #store the optimal cv error rate associated with the optimal number of principal components
 optimal_CVerror <- min(cv_mse)
 optimal_PC <- which.min(cv_mse)
-
-
 #train a model with the optimal number of principal components and report
 loadingDF <- pca_loadings[,1:optimal_PC]
 scoresDF <- as.data.frame(as.matrix(predictorsDF) %*% as.matrix(loadingDF))
@@ -221,11 +245,7 @@ confMatrix <-table(pred=ifelse(pred > p, "SE", "CH"), actual=scoresDF$USDA.grade
 TrainErrorRate <- 1 - (confMatrix[1,1] + confMatrix[2,2])/ sum(confMatrix)  
 
 bestLogModelDF <- data.frame(optimalNumPrincpleCompoents = c(optimal_PC), optimalCVerror = c(optimal_CVerror))
-
 PCvsCV_DF <- data.frame(PrincipalComponents = PrincipalComponent, CV_Error = cv_mse)
-
-bestLogModelDF
-PCvsCV_DF
 
 write.csv(bestLogModelDF,"LogisticRegression/bestLogModelDF.csv", row.names = FALSE)
 write.csv(PCvsCV_DF,"LogisticRegression/PCvsCV.csv", row.names = FALSE)
@@ -233,42 +253,87 @@ write.csv(PCvsCV_DF,"LogisticRegression/PCvsCV.csv", row.names = FALSE)
 ```
 
 
-b) K-nearest neighbors using PCA data
+
+```{r log-plot, include=TRUE,fig.width = 6, fig.height = 3, fig.cap = "Logistic Regression Model CV Error vs. Number of Principal Components included."}
+# Log Model Visualization
+optimalIndex <- which.min(bestLogModelDF$optimalCVerror)
+optimalPC_Log <- bestLogModelDF$optimalNumPrincpleCompoents[optimalIndex]
+optimalCVError_Log <- round(min(bestLogModelDF$optimalCVerror),3)
+
+ggplot(data = data.frame(PrincipalComponent = PrincipalComponent, cv_mse = cv_mse), aes(y=cv_mse, x=PrincipalComponent)) +
+  geom_line()+
+  geom_point()+
+  labs(y="CV Error", x = "Number of Prinicipal Components") +
+  theme(axis.text=element_text(size=10),
+        axis.title=element_text(size=10),
+        plot.title = element_text(hjust = 0.5))
+
+```
+
+Practicing figure references. See Figure \@ref(fig:log-plot). See Table \@ref(tab:log-summary)
+
+```{r log-summary, include=TRUE}
+# Log Model Performance
+summaryDF <- data.frame(PrincipalComponents = bestLogModelDF$optimalNumPrincpleCompoents, CV_Error = bestLogModelDF$optimalCVerror)
+summaryDF%>%
+kable(caption="Best performing logistic regression model.",digits=2)
+
+```
+
+
+### K-Nearest Neighbors
 ```{r}
 
 ```
 
 
-c) PCA using PCA data
+### PCA
 ```{r}
 
 ```
 
-d) Support Vector Machine (SVM)
+### Support Vector Machines (SVM)
         
             
-            iA) Linear SVM
-```{r}
+#### *Linear SVM*
 
+Linear Support Vector Machines....
+
+See Figure \@ref(fig:svmLin-CVPlot). 
+
+See Figure \@ref(fig:svmLin-CostPlot). 
+
+```{r linSVMCode}
 # This calls a script to run the Linear SVM
 #source("SVM/SVM_linear.R", local = knitr::knit_global())
-
-
 ```
 
-
-```{r}
+```{r svmLin-CVPlot, include=TRUE,fig.width = 6, fig.height = 3, fig.cap = "Linear Support Vector Machine Optimal Cross Validation error for differing numbers of principal components included." }
 #Linear SVM Plotting and Results
-abs_min_cost <- .01
-abs_max_cost <- 100
-  
 svmLinResultsDF <- read.csv("SVM/Results/LinSVM.csv")
 BestLinModel <- readRDS("SVM/BestSVMModels/BestLinModel.rds")
-BestLinModel
+BestLinModel <- BestLinModel[[1]]
+numSupportVectors_linSVM <- nrow(BestLinModel$SV)
+optimalPC_linSVM = svmLinResultsDF$PrincipalComponents_linSVM[which.min(svmLinResultsDF$CV_MSE_linSVM)]
+optimalCVError_linSVM =  min(svmLinResultsDF$CV_MSE_linSVM)
+optimalCost_linSVM = svmLinResultsDF$Best_Cost[which.min(svmLinResultsDF$CV_MSE_linSVM)]
+
+SummaryDF <- data.frame(PC = optimalPC_linSVM , CV_Error = optimalCVError_linSVM, Cost = optimalCost_linSVM, SV = numSupportVectors_linSVM)
+
 
 ggplot(data= svmLinResultsDF, aes(x=PrincipalComponents_linSVM, y=CV_MSE_linSVM)) +
   geom_line()+
-  geom_point()
+  geom_point()+
+  labs(y="CV Error", x = "Number of Prinicipal Components") +
+  theme(axis.text=element_text(size=12),
+        axis.title=element_text(size=12),
+        plot.title = element_text(hjust = 0.5))
+```
+
+
+```{r svmLin-CostPlot, include=TRUE,fig.width = 6, fig.height = 2.5, fig.cap="Optimal Cost identfied for each linear support vector machine of differing numbers of principal components. The red dashed lines represent the mininum and maximum of the search range used to tune the support vector machine."}
+abs_min_cost <- .01
+abs_max_cost <- 100
 
 ggplot(data= svmLinResultsDF, aes(x=PrincipalComponents_linSVM, y=Best_Cost)) +
   geom_line()+
@@ -277,41 +342,61 @@ ggplot(data= svmLinResultsDF, aes(x=PrincipalComponents_linSVM, y=Best_Cost)) +
   geom_hline(yintercept=abs_max_cost, linetype="dashed", color = "red") +
   scale_y_log10()
 
-optimalPC = c(svmLinResultsDF$PrincipalComponents_linSVM[which.min(svmLinResultsDF$CV_MSE_linSVM)])
-optimalCVError =  c(min(svmLinResultsDF$CV_MSE_linSVM))
-optimalCost = c(svmLinResultsDF$Best_Cost[which.min(svmLinResultsDF$CV_MSE_linSVM)])
+```
 
-data.frame(optimalPC = optimalPC, optimalCVError =optimalCVError,optimalCost= optimalCost)
+```{r svmLin-Results, include=TRUE}
+SummaryDF%>%
+kable(caption="Best performing Linear SVM Model.",digits=4)
 
 ```
 
+The best performing model is shown in Table \@ref(tab:svmLin-Results).
 
 
-            iB) Polynomial SVM with PC
 
-```{r}
+#### *Polynomial SVM*
 
+Polynomial Support Vector Machines....
 
+See Figure \@ref(fig:svmPoly-CVPlot). 
+
+See Figure \@ref(fig:svmPoly-CostPlot).
+
+See Figure \@ref(fig:svmPoly-DegreePlot).
+```{r polySVMCode}
 # This calls a script to run the Poly SVM
 #source("SVM/SVM_Poly.R", local = knitr::knit_global())
-
-
-
 ```
 
-```{r}
+```{r svmPoly-CVPlot, include=TRUE,fig.width = 6, fig.height = 3, fig.cap = "Polynomial Support Vector Machine Optimal Cross Validation error for differing numbers of principal components included." }
 #Plotting and Results for Poly SVM
-
-abs_min_cost_poly <- .0001
-abs_max_cost_poly <- 10000
-BestPolyModel <- readRDS("SVM/BestSVMModels/BestPolyModel.rds")
-BestPolyModel
 
 svmPolyResultsDF <- read.csv("SVM/Results/PolySVM.csv")
 
+BestPolyModel <- readRDS("SVM/BestSVMModels/BestPolyModel.rds")
+BestPolyModel <- BestPolyModel[[1]]
+numSupportVectors_polySVM <- nrow(BestPolyModel$SV)
+optimalPC_polySVM <- c(svmPolyResultsDF$PrincipalComponents[which.min(svmPolyResultsDF$CV_MSE_polySVM)])
+optimalCVError_polySVM <- c(min(svmPolyResultsDF$CV_MSE_polySVM))
+optimalCost_polySVM <- c(svmPolyResultsDF$Best_Cost_polySVM[which.min(svmPolyResultsDF$CV_MSE_polySVM)])
+optimalDegree_polySVM <- c(svmPolyResultsDF$Best_Degree[which.min(svmPolyResultsDF$CV_MSE_polySVM)])
+
+SummaryDF <- data.frame(PC = optimalPC_polySVM , CV_Error = optimalCVError_polySVM, Cost = optimalCost_polySVM, Degree=optimalDegree_polySVM, SV = numSupportVectors_polySVM) 
+
 ggplot(data= svmPolyResultsDF, aes(x=PrincipalComponents, y=CV_MSE_polySVM)) +
   geom_line()+
-  geom_point()
+  geom_point()+
+  labs(title="CV Error vs. Principal Components", y="CV Error", x = "Number of Prinicipal Components") +
+  theme(axis.text=element_text(size=10),
+        axis.title=element_text(size=10),
+        plot.title = element_text(hjust = 0.5))
+```
+
+
+```{r svmPoly-CostPlot, include=TRUE,fig.width = 6, fig.height = 2.5, fig.cap="Optimal Cost identfied for each polynomial support vector machine of differing numbers of principal components. The red dashed lines represent the mininum and maximum of the search range used to tune the support vector machine."}
+
+abs_min_cost_poly <- .0001
+abs_max_cost_poly <- 10000
 
 ggplot(data= svmPolyResultsDF, aes(x=PrincipalComponents, y=Best_Cost_polySVM)) +
   geom_line()+
@@ -320,70 +405,128 @@ ggplot(data= svmPolyResultsDF, aes(x=PrincipalComponents, y=Best_Cost_polySVM)) 
   geom_hline(yintercept=abs_max_cost_poly, linetype="dashed", color = "red") +
   scale_y_log10()
 
+```
+
+
+```{r svmPoly-DegreePlot, include=TRUE,fig.width = 6, fig.height = 2.5, fig.cap="Optimal Degree identfied for each polynomial support vector machine of differing numbers of principal components."}
+
 ggplot(data= svmPolyResultsDF, aes(x=PrincipalComponents, y=Best_Degree)) +
   geom_line()+
-  geom_point()
-
-optimalPC <- c(svmPolyResultsDF$PrincipalComponents[which.min(svmPolyResultsDF$CV_MSE_polySVM)])
-optimalCVError <- c(min(svmPolyResultsDF$CV_MSE_polySVM))
-optimalCost <- c(svmPolyResultsDF$Best_Cost_polySVM[which.min(svmPolyResultsDF$CV_MSE_polySVM)])
-optimalDegree <- c(svmPolyResultsDF$Best_Degree[which.min(svmPolyResultsDF$CV_MSE_polySVM)])
-
-#Results from tuning across all PCs
-data.frame(optimalPC = optimalPC , optimalCVError = optimalCVError, optimalCost = optimalCost)
+  geom_point()+
+  labs(title = "Optimal Degree vs. Principal Components",y="Optimal Degree", x = "Number of Prinicipal Components") +
+  theme(axis.text=element_text(size=10),
+        axis.title=element_text(size=10),
+        plot.title = element_text(hjust = 0.5))
 
 ```
 
 
-            iB) Radial SVM with PC
+```{r svmPoly-Results, include=TRUE}
+SummaryDF%>%
+kable(caption="Best performing Linear SVM Model.",digits=4)
 
-```{r}
+```
 
+The best performing model is shown in Table \@ref(tab:svmPoly-Results).
 
+#### *Radial SVM*
+
+Radial Support Vector Machines....
+
+See Figure \@ref(fig:svmRad-CVPlot). 
+
+See Figure \@ref(fig:svmRad-CostPlot).
+
+See Figure \@ref(fig:svmRad-GammaPlot).
+
+```{r radSVMCode}
 # This calls a script to run the Radial SVM
 #source("SVM/SVM_rad.R", local = knitr::knit_global())
-
-
 ```
 
-
-```{r}
-abs_min_cost <- .0001
-abs_max_cost <- 10000
-
-abs_min_gamma <- .0001
-abs_max_gamma <-10000
+```{r svmRad-CVPlot, include=TRUE,fig.width = 6, fig.height = 3, fig.cap = "Radial Support Vector Machine Optimal Cross Validation error for differing numbers of principal components included." }
 
 svmRadResultsDF <- read.csv("SVM/Results/radSVM.csv")
 BestRadModel <- readRDS("SVM/BestSVMModels/BestRadModel.rds")
-BestRadModel
+BestRadModel<- BestRadModel[[1]]
+numSupportVectors_radSVM <- nrow(BestRadModel$SV)
+optimalPC_radSVM <- c(svmRadResultsDF$PrincipalComponents_radSVM[which.min(svmRadResultsDF$CV_MSE_radSVM)])
+optimalCVError_radSVM <- c(min(svmRadResultsDF$CV_MSE_radSVM))
+optimalCost_radSVM <- c(svmRadResultsDF$Best_Cost_radSVM[which.min(svmRadResultsDF$CV_MSE_radSVM)])
+optimalGamma_radSVM <- c(svmRadResultsDF$Best_Gamma_radSVM[which.min(svmRadResultsDF$CV_MSE_radSVM)])
+
+SummaryDF <- data.frame(PC = optimalPC_radSVM , CV_Error = optimalCVError_radSVM, Cost = optimalCost_radSVM, Gamma = optimalGamma_radSVM, SV = numSupportVectors_radSVM) 
 
 ggplot(data= svmRadResultsDF, aes(x=PrincipalComponents_radSVM, y=CV_MSE_radSVM)) +
   geom_line()+
-  geom_point()
+  geom_point()+
+  labs(title = "CV Error vs. Prinicipal Components",y="CV Error", x = "Number of Prinicipal Components") +
+  theme(axis.text=element_text(size=12),
+        axis.title=element_text(size=12),
+        plot.title = element_text(hjust = 0.5))
+
+
+```
+
+```{r svmRad-CostPlot, include=TRUE,fig.width = 6, fig.height = 2.5, fig.cap="Optimal Cost identfied for each radial support vector machine of differing numbers of principal components. The red dashed lines represent the mininum and maximum of the search range for cost used to tune the support vector machine."}
+
+abs_min_cost <- .0001
+abs_max_cost <- 10000
 
 ggplot(data= svmRadResultsDF, aes(x=PrincipalComponents_radSVM, y=Best_Cost_radSVM)) +
   geom_line()+
   geom_point()+
   geom_hline(yintercept=abs_min_cost, linetype="dashed", color = "red") +
   geom_hline(yintercept=abs_max_cost, linetype="dashed", color = "red") +
-  scale_y_log10()
+  scale_y_log10()+
+  labs(title= "Optimal Cost vs. Principal Components", y="Optimal Cost", x = "Number of Prinicipal Components") +
+  theme(axis.text=element_text(size=10),
+        axis.title=element_text(size=10),
+        plot.title = element_text(hjust = 0.5))
+
+```
+
+```{r svmRad-GammaPlot, include=TRUE,fig.width = 6, fig.height = 2.5, fig.cap="Optimal Gamma identfied for each radial support vector machine of differing numbers of principal components. The red dashed lines represent the mininum and maximum of the search range for gamma used to tune the support vector machine."}
+
+abs_min_gamma <- .0001
+abs_max_gamma <-10000
 
 ggplot(data= svmRadResultsDF, aes(x=PrincipalComponents_radSVM, y=Best_Gamma_radSVM)) +
   geom_line()+
   geom_point()+
   geom_hline(yintercept=abs_min_gamma, linetype="dashed", color = "red") +
   geom_hline(yintercept=abs_max_gamma, linetype="dashed", color = "red") +
-  scale_y_log10()
+  scale_y_log10()+
+  labs(title= "Optimal Gamma vs. Principal Components", y="Optimal Cost", x = "Number of Prinicipal Components") +
+  theme(axis.text=element_text(size=10),
+        axis.title=element_text(size=10),
+        plot.title = element_text(hjust = 0.5))
 
-optimalPC <- c(svmRadResultsDF$PrincipalComponents_radSVM[which.min(svmRadResultsDF$CV_MSE_radSVM)])
-optimalCVError <- c(min(svmRadResultsDF$CV_MSE_radSVM))
-optimalCost <- c(svmRadResultsDF$Best_Cost_radSVM[which.min(svmRadResultsDF$CV_MSE_radSVM)])
-optimalGamma <- c(svmRadResultsDF$Best_Gamma_radSVM[which.min(svmRadResultsDF$CV_MSE_radSVM)])
 
-#Results from tuning across all PCs
-data.frame(optimalPC = optimalPC , optimalCVError = optimalCVError, optimalCost = optimalCost, optimalGamma = optimalGamma)
+```
 
+
+```{r svmRad-Results, include=TRUE}
+SummaryDF%>%
+kable(caption="Best performing Radial SVM Model.",digits=4)
+```
+
+The best performing radial SVM model is shown in Table \@ref(tab:svmRad-Results).
+
+
+### Summary of Categorical Models
+
+The best performing model is shown in Table \@ref(tab:catModelSummary).
+
+```{r catModelSummary, include=TRUE}
+ModelNames <- c('Logistic Regression', 'Linear SVM', 'Polynomial SVM', 'Radial SVM')
+PrincipalComponents <- c(optimalPC_Log, optimalPC_linSVM, optimalPC_polySVM, optimalPC_radSVM)
+CV_Error <- c(optimalCVError_Log,  optimalCVError_linSVM, optimalCVError_polySVM,optimalCVError_radSVM)
+
+SummaryDF <- data.frame(Model = ModelNames,PrincipalComponents = PrincipalComponents, CV_Error = CV_Error)
+
+SummaryDF%>%
+kable(caption="Best performing USDA Grade Models.",digits=4)
 ```
 
 ## Regression Prediction of Tenderness at 3, 14 and 28 Days
@@ -399,8 +542,8 @@ ten28DF_train
 ten28DF_test
 ```
 
-        a) Best subset selection
-```{r}
+### Best subset selection
+```{r BestSubsetSelectionCode}
 #Tenderness at day 3
 set.seed(1)
 reg.fwd <- regsubsets(Ten3~., data = ten3DF_train, nvmax = 40,method = "forward") 
@@ -473,8 +616,8 @@ MSE_subset_day28<-min(val.errors2)
 ```
 
 
-        b) PCR
-```{r}
+### PCR
+```{r PCRCode}
 #Fitting the PCR Ten3 model using 10-fold cross-validation
 set.seed(1)
 pcr.fit_ten3<- pcr (Ten3~., data=ten3DF_train, scale = TRUE,
@@ -531,9 +674,9 @@ mean(ten28DF$Ten28)
 ```
 
 
-        c)Lasso Regression
-        
-```{r}
+### Lasso Regression
+
+```{r LassoNonPCACode}
 
 #Lasso on Ten3 (Non-PCA)
 
@@ -648,13 +791,11 @@ write.csv(Ten28NonPCA_Results,"Lasso/LassoNonPCA/Ten28.csv", row.names = FALSE)
 
 ```
 
-```{r}
-# Lasso on principal components for Ten3
 
+```{r LassoTen3Code}
+# Lasso on principal components for Ten3
 # This code is commented out because it takes a while to run. Results are stored in files.
 #source("Lasso/Lasso_ten3_CV.R", local = knitr::knit_global())
-
-
 ```
 
 ```{r}
@@ -690,12 +831,10 @@ data.frame(optimalPC = optimalPC, optimal_TestError = optimal_TestError, optimal
 MSE_Lasso_day3<-optimal_TestError
 ```
 
-```{r}
+```{r LassoTen14Code}
 # Lasso on principal components for Ten14
-
 # This code is commented out because it takes a while to run. Results are stored in files.
 # source("Lasso/Lasso_ten14_CV.R", local = knitr::knit_global())
-
 ```
 
 ```{r}
@@ -730,15 +869,12 @@ data.frame(optimalPC = optimalPC, optimal_TestError = optimal_TestError, optimal
 
 MSE_Lasso_day14<-optimal_TestError
 
-
 ```
-```{r}
-# Lasso on principal components for Ten28
 
+```{r LassoTen28Code}
+# Lasso on principal components for Ten28
 # This code is commented out because it takes a while to run. Results are stored in files.
 # source("Lasso/Lasso_ten28_CV.R", local = knitr::knit_global())
-
-
 ```
 
 ```{r}
@@ -774,9 +910,9 @@ data.frame(optimalPC = optimalPC, optimal_TestError = optimal_TestError, optimal
 MSE_Lasso_day28<-optimal_TestError
 ```
 
-        d) Splines
+### Splines
         
-```{r}
+```{r SplinesCode}
 # Spline model for Tenderness at day 3
 set.seed(1)
 dpart <- createDataPartition(REIMS$USDA.grade, p = 0.6, list = F)
@@ -835,7 +971,8 @@ min(Spline28$MSE)
 
 ```
 
-``` {r}
+### Summary of Regression Models
+``` {r RegModelSummary}
 #Summary results of regression
 
 data.frame(  Model = "Best Subset", 
@@ -860,3 +997,4 @@ kable(caption="Table 2. Mean Squared Error (MSE) of regression models for tender
 
 ```
 
+# CONCLUSION
