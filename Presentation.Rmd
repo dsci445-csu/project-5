@@ -65,7 +65,7 @@ library(kableExtra)
 - Classification models were performed to predict USDA quality grade.
 - Regression models were performed to predict tenderness.
 
-# PRINCIPAL COMPONENT ANALYSIS
+# PCA
 
 ## USDA quality grade
 ```{r}
@@ -113,6 +113,322 @@ p4 <- ggplot(data = dat1, aes(x = Dim.1, y = Dim.2,colour=Ten28)) +
   geom_point()
 print(p4 + labs(title= "PCA of REIMS data colored by tenderness at day 3",y="Comp 2", x = "Comp 1"))
 ```
+
+## Proportion of Variance Explained
+
+```{r, include=TRUE,fig.width = 6, fig.height = 4}
+#Performing PCA
+
+gradeResponse <- as.factor(gradeDF$USDA.grade)
+data <- gradeDF[,!(names(gradeDF) %in% c("USDA.grade"))] # dataframe without response
+pca_obj <- prcomp(data, center=TRUE, scale=TRUE)  # perform PCA
+pca_summary <- summary(pca_obj)
+pca_loadings <- pca_obj$rotation #store the loading vectors for future use
+
+#pca_summary
+
+PVE <- pca_summary$importance[2,] # store the proportion of variance explained by each PC
+PrincipalComponent <- seq(1, length(PVE), 1) # Vector of Principle components for plot
+
+#PLOT OF PVE VS. Principle Component
+ggplot() +
+  geom_line(aes(x=PrincipalComponent, y=PVE))+
+  geom_point()+
+  labs(title= "Proportion of Variance Explained (PVE) vs. Principal Component", y="PVE", x = "Prinicipal Component") +
+  theme(axis.text=element_text(size=10),
+        axis.title=element_text(size=10),
+        plot.title = element_text(hjust = 0.5))
+
+```
+
+
+# CATEGORIAL MODELS: USDA GRADE
+
+```{r}
+# Import Data
+LogModelDF <- read.csv("LogisticRegression/PCvsCV.csv")
+SVMLinResultsDF <- read.csv("SVM/Results/LinSVM.csv")
+SVMPolyResultsDF <- read.csv("SVM/Results/PolySVM.csv")
+SVMRadResultsDF <- read.csv("SVM/Results/radSVM.csv")
+
+#Process Data
+optimalIndex <- which.min(SVMLinResultsDF$CV_MSE_linSVM)
+optimalPC_SVMLin <- SVMLinResultsDF$PrincipalComponents_linSVM[optimalIndex]
+optimalCVError_SVMLin <- round(min(SVMLinResultsDF$CV_MSE_linSVM),3)
+optimalCost_SVMLin <- SVMLinResultsDF$Best_Cost[optimalIndex]
+
+optimalIndex <- which.min(SVMPolyResultsDF$CV_MSE_polySVM)
+optimalPC_SVMPoly <- SVMPolyResultsDF$PrincipalComponents[optimalIndex]
+optimalCVError_SVMPoly <- round(min(SVMPolyResultsDF$CV_MSE_polySVM),3)
+optimalCost_SVMPoly <- SVMPolyResultsDF$Best_Cost_polySVM[optimalIndex]
+optimalDegree_SVMPoly <- SVMPolyResultsDF$Best_Degree[optimalIndex] 
+
+optimalIndex <- which.min(SVMRadResultsDF$CV_MSE_radSVM)
+optimalPC_SVMRad <- SVMRadResultsDF$PrincipalComponents_radSVM[optimalIndex]
+optimalCVError_SVMRad <- round(min(SVMRadResultsDF$CV_MSE_radSVM),3)
+optimalCost_SVMRad <- SVMRadResultsDF$Best_Cost_radSVM[optimalIndex]
+optimalGamma_SVMRad <- SVMRadResultsDF$Best_Gamma_radSVM[optimalIndex] 
+
+optimalIndex <- which.min(LogModelDF$CV_Error)
+optimalPC_Log <- LogModelDF$PrincipalComponents[optimalIndex]
+optimalCVError_Log <- round(min(LogModelDF$CV_Error),3)
+
+```
+
+## Methodology
+
+- Several models were built to predict USDA Grade using the principal components:
+  - Logistic Regression
+  - Support Vector Machines (Linear, Polynomial, Radial)
+- 10-Fold cross validation was performed on each model using an increasing number of principal components
+- Optimal CV Error was recorded for each model and this was used to identify the optimal number of principal components to utilize for each model.
+
+## Radial Support Vector Machine
+
+- Support Vector Machine with a Radial kernel.
+- Built models using an increasing number of principal components from 2 to 60.
+- For each iteration of principal components, a SVM was tuned using:
+  - Costs from .0001 to 10,000
+  - $\gamma$ from .0001 to 10,000
+  
+
+```{r, include=TRUE}
+
+BestRadModel <- readRDS("SVM/BestSVMModels/BestRadModel.rds")
+BestRadModel<- BestRadModel[[1]]
+numSupportVectors <- nrow(BestRadModel$SV)
+SummaryDF <- data.frame(PC = optimalPC_SVMRad , CV_Error = optimalCVError_SVMRad, Cost = optimalCost_SVMRad, Gamma = optimalGamma_SVMRad, SV = numSupportVectors) 
+
+SummaryDF%>%
+kable(caption="Best performing Radial SVM Model.",digits=4)
+
+
+
+```
+
+## Radial Support Vector Machine
+
+
+```{r, include=TRUE,fig.width = 6, fig.height = 4}
+
+ggplot(data= SVMRadResultsDF, aes(x=PrincipalComponents_radSVM, y=CV_MSE_radSVM)) +
+  geom_line()+
+  geom_point()+
+  labs(title = "CV Error vs. Prinicipal Components",y="CV Error", x = "Number of Prinicipal Components") +
+  theme(axis.text=element_text(size=12),
+        axis.title=element_text(size=12),
+        plot.title = element_text(hjust = 0.5))
+
+
+
+
+```
+
+## Radial SVM: Optimal Parameters
+
+```{r, include=TRUE,fig.width = 6, fig.height = 2}
+abs_min_cost <- .0001
+abs_max_cost <- 10000
+
+ggplot(data= SVMRadResultsDF, aes(x=PrincipalComponents_radSVM, y=Best_Cost_radSVM)) +
+  geom_line()+
+  geom_point()+
+  geom_hline(yintercept=abs_min_cost, linetype="dashed", color = "red") +
+  geom_hline(yintercept=abs_max_cost, linetype="dashed", color = "red") +
+  scale_y_log10() +
+  labs(title= "Optimal Cost vs. Principal Components", y="Optimal Cost", x = "Number of Prinicipal Components") +
+  theme(axis.text=element_text(size=10),
+        axis.title=element_text(size=10),
+        plot.title = element_text(hjust = 0.5))
+
+```
+
+```{r, include=TRUE,fig.width = 6, fig.height = 2}
+abs_min_gamma <- .0001
+abs_max_gamma <-10000
+
+ggplot(data= SVMRadResultsDF, aes(x=PrincipalComponents_radSVM, y=Best_Gamma_radSVM)) +
+  geom_line()+
+  geom_point()+
+  geom_hline(yintercept=abs_min_gamma, linetype="dashed", color = "red") +
+  geom_hline(yintercept=abs_max_gamma, linetype="dashed", color = "red") +
+  scale_y_log10() +
+  labs(title = "Optimal Gamma vs. Principal Components",y="Optimal Gamma", x = "Number of Prinicipal Components") +
+  theme(axis.text=element_text(size=10),
+        axis.title=element_text(size=10),
+        plot.title = element_text(hjust = 0.5))
+
+```
+
+## Linear Support Vector Machine
+
+- Support Vector Machine with a Linear kernel.
+- Built models using an increasing number of principal components from 2 to 80.
+- For each iteration of principal components, a SVM was tuned using:
+  - Costs from .01 to 100
+  
+```{r, include=TRUE}
+
+BestLinModel <- readRDS("SVM/BestSVMModels/BestLinModel.rds")
+BestLinModel<- BestLinModel[[1]]
+numSupportVectors <- nrow(BestLinModel$SV)
+SummaryDF <- data.frame(PC = optimalPC_SVMLin , CV_Error = optimalCVError_SVMLin, Cost = optimalCost_SVMLin, SV = numSupportVectors) 
+
+SummaryDF%>%
+kable(caption="Best performing Linear SVM Model.",digits=4)
+
+
+
+```
+## Linear Support Vector Machine
+
+```{r, include=TRUE,fig.width = 6, fig.height = 4}
+
+ggplot(data= SVMLinResultsDF, aes(x=PrincipalComponents_linSVM, y=CV_MSE_linSVM)) +
+  geom_line()+
+  geom_point()+
+  labs(y="CV Error", x = "Number of Prinicipal Components") +
+  theme(axis.text=element_text(size=12),
+        axis.title=element_text(size=12),
+        plot.title = element_text(hjust = 0.5))
+
+
+```
+
+## Linear SVM: Optimal Parameters
+
+```{r, include=TRUE,fig.width = 6, fig.height = 2}
+abs_min_cost <- .01
+abs_max_cost <- 100
+
+ggplot(data= SVMLinResultsDF, aes(x=PrincipalComponents_linSVM, y=Best_Cost)) +
+  geom_line()+
+  geom_point()+
+  geom_hline(yintercept=abs_min_cost, linetype="dashed", color = "red") +
+  geom_hline(yintercept=abs_max_cost, linetype="dashed", color = "red") +
+  scale_y_log10() +
+  labs(title= "Optimal Cost vs. Principal Components", y="Optimal Cost", x = "Number of Prinicipal Components") +
+  theme(axis.text=element_text(size=10),
+        axis.title=element_text(size=10),
+        plot.title = element_text(hjust = 0.5))
+
+```
+
+
+
+## Polynomial Support Vector Machine
+- Support Vector Machine with a Polynomal kernel.
+- Built models using an increasing number of principal components from 2 to 60.
+- For each iteration of principal components, a SVM was tuned using:
+  - Costs from .01 to 100
+  - Degrees from 1 to 4
+  
+```{r, include=TRUE}
+
+BestPolyModel <- readRDS("SVM/BestSVMModels/BestPolyModel.rds")
+BestPolyModel<- BestPolyModel[[1]]
+numSupportVectors <- nrow(BestPolyModel$SV)
+SummaryDF <- data.frame(PC = optimalPC_SVMPoly , CV_Error = optimalCVError_SVMPoly, Cost = optimalCost_SVMPoly, Degree=optimalDegree_SVMPoly, SV = numSupportVectors) 
+
+SummaryDF%>%
+kable(caption="Best performing Linear SVM Model.",digits=4)
+
+
+
+```
+
+## Polynomial Support Vector Machine
+
+```{r, include=TRUE,fig.width = 6, fig.height = 4}
+
+ggplot(data= SVMPolyResultsDF, aes(x=PrincipalComponents, y=CV_MSE_polySVM)) +
+  geom_line()+
+  geom_point()+
+  labs(title="CV Error vs. Principal Components", y="CV Error", x = "Number of Prinicipal Components") +
+  theme(axis.text=element_text(size=10),
+        axis.title=element_text(size=10),
+        plot.title = element_text(hjust = 0.5))
+```
+
+## Polynomial SVM: Optimal Parameters
+
+```{r, include=TRUE,fig.width = 6, fig.height = 2}
+abs_min_cost <- .0001
+abs_max_cost <- 10000
+
+ggplot(data= SVMPolyResultsDF, aes(x=PrincipalComponents, y=Best_Cost_polySVM)) +
+  geom_line()+
+  geom_point()+
+  geom_hline(yintercept=abs_min_cost, linetype="dashed", color = "red") +
+  geom_hline(yintercept=abs_max_cost, linetype="dashed", color = "red") +
+  scale_y_log10() +
+  labs(title= "Optimal Cost vs. Principal Components", y="Optimal Cost", x = "Number of Prinicipal Components") +
+  theme(axis.text=element_text(size=10),
+        axis.title=element_text(size=10),
+        plot.title = element_text(hjust = 0.5))
+
+```
+
+```{r, include=TRUE,fig.width = 6, fig.height = 2}
+
+ggplot(data= SVMPolyResultsDF, aes(x=PrincipalComponents, y=Best_Degree)) +
+  geom_line()+
+  geom_point() +
+  labs(title = "Optimal Degree vs. Principal Components",y="Optimal Degree", x = "Number of Prinicipal Components") +
+  theme(axis.text=element_text(size=10),
+        axis.title=element_text(size=10),
+        plot.title = element_text(hjust = 0.5))
+
+```
+
+## Logistic Regression Model
+\tiny
+```{r, include=TRUE}
+
+
+SummaryDF <- data.frame(PrincipalComponents = c(optimalPC_Log), CV_Error = c(optimalCVError_Log))
+SummaryDF%>%
+kable(caption="Best performing logistic regression model.",digits=2)
+
+```
+
+```{r, include=TRUE,fig.width = 6, fig.height = 3}
+
+bestLogModelDF <- read.csv("LogisticRegression/bestLogModelDF.csv")
+PCvsCVLog <- read.csv("LogisticRegression/PCvsCV.csv")
+
+
+
+plot <- ggplot(data = PCvsCVLog, aes(x = PrincipalComponents, y= CV_Error)) +
+  geom_line()+
+  geom_point()+
+  labs(y="CV Error", x = "Number of Prinicipal Components") +
+  theme(axis.text=element_text(size=10),
+        axis.title=element_text(size=10),
+        plot.title = element_text(hjust = 0.5))
+
+
+print(plot)
+```
+
+
+## Summary of Categorical Model Results 
+
+
+```{r, include=TRUE}
+ModelNames <- c('Radial SVM', 'Linear SVM', 'Polynomial SVM', 'Logistic Regression')
+PrincipalComponents <- c(optimalPC_SVMRad, optimalPC_SVMLin, optimalPC_SVMPoly, optimalPC_Log)
+CV_Error <- c(optimalCVError_SVMRad, optimalCVError_SVMLin, optimalCVError_SVMPoly, optimalCVError_Log)
+
+SummaryDF <- data.frame(Model = ModelNames,PrincipalComponents = PrincipalComponents, CV_Error = CV_Error)
+
+SummaryDF%>%
+kable(caption="Best performing USDA Grade Models.",digits=4)
+```
+- Best Model: Radial SVM with 30 Principal Components: CV Error of .108
+  - Even though the Polynomial SVM outperformed the Radial SVM slightly, it required 48 more Principal Components to be utilized.
+  - The Linear SVM performed slightly worse than the Radial SVM, but required 6 less Principal Components.
+
 
 # REGRESSION MODELS: TENDERNESS
 
@@ -384,6 +700,6 @@ data.frame(  Model = "Best Subset",
   bind_rows(data.frame(Model = "PCA-Splines", 
             Size ="5", MSE_day3= min(Spline3$MSE), 
             Size ="2", MSE_day14= min(Spline14$MSE), 
-            Size ="4", MSE_day28= min(Spline28$MSE))) %>%
-kable(caption="Table 2. Mean Squared Error (MSE) of regression models for tenderness at day 3, 14, and 28",digits=2)
+            Size ="4", MSE_day28= min(Spline28$MSE)))%>% 
+kable(caption="Mean Squared Error (MSE) of regression models for tenderness at day 3, 14, and 28",digits=2)
 ```
