@@ -1,8 +1,9 @@
 ---
-title: "Evaluation of Rapid Evaporative Ionization Mass Spectrometry to predict beef tenderness and USDA grade"
+title: "Evaluation of Rapid Evaporative Ionization Mass Spectrometry to predict Beef Tenderness and USDA Grade"
 author: "Patrick Noe, Logan Perkins, Michael Hernandez"
-date: "12/05/2021"
+date: "12/16/2021"
 output: pdf_document
+abstract: "Beef grade and tenderness are important qualities to both understand and predict within the meat processing industry, and most contemporary technologies are limited in their capabilities in making timely and cost effective analysees of these qualities of beef. More modern technologies like Rapid Evaporative Ionization Mass Spectrometry (REIMS) are available to assess the chemical composition of beef in an efficient manner. The purpose of this study to analyze REIMs data on 83 pieces of beef to explore the predictive preformance of REIMS on both USDA Grade and the beefs tenderness at 3, 14, and 28 days. The study develops and compares several different statistical learning models trained on REIMs data to predict grade and tenderness. The purpose of these models are to (1) Discover if there is a predictive relationship between REIMs data and beef grade/tenderness, and (2) Select a model that performs the best at prediction."
 ---
 
 ```{r setup, include=FALSE}
@@ -33,7 +34,7 @@ library(FactoMineR)
 library(kableExtra)
 ```
 
-### INTRODUCTION
+# INTRODUCTION
  * Beef palatability depends on tenderness, juiciness, and flavor. In the United States, there is a quality grading system that classifies beef carcasses on different quality categories (USDA). Some of the most common USDA quality grades are Prime, Choice, and Select, with Prime the best quality and Select being the lowest quality of the three classifications. The USDA quality grade is based on animal maturity and marbling level (intramuscular fat), and it is correlated with the overall consumer acceptance (USDA). However, tenderness is not predicted with USDA quality grade. Beef industry stakeholders have been searching for a non-destructive, real-time instrument for determining the tenderness of beef for nearly 40 years. Although some technologies allow the determination of beef tenderness, they require sacrificing a loin steak and cannot be performed in real-time. Rapid Evaporative Ionization Mass Spectrometry (REIMS) is a novel environmental mass spectrometry technique that combines a sample vaporization device with a time-of-flight mass spectrometer. When a sampling device, which uses a high-frequency current, comes into contact with the sample surface, an aerosol of molecules is generated and transformed into a mass spectral fingerprint. This technology has the advantage that it can be used in-situ and in the real-time classification of biological tissues without any sample preparation. Therefore, the goal of this study was to evaluate the ability of REIMS to predict USDA quality grade and beef tenderness.
 
 ```{r}
@@ -53,8 +54,11 @@ responseVars <- c("USDA.grade", "Ten3", "Ten14","Ten28")
 gradeDF <- REIMS[,!(names(REIMS) %in% union(dropBase,setdiff(responseVars, c("USDA.grade"))))]
 ```
 
-### METHODOLOGY
+# METHODOLOGY
 ...
+The most challenging aspect of building statistical models using the REIMs dataset is that the dataset presents a high dimensional probelm with relatively few data points. The REIMs dataset is comprised of 1,700 predictors on 83 datapoints... 
+
+
 ``` {r}
 #Creating training and test subsets for regressions
 set.seed(1)
@@ -75,9 +79,9 @@ ten14DF <- na.omit(REIMS[,!(names(REIMS) %in% union(dropBase,setdiff(responseVar
 ten28DF <- na.omit(REIMS[,!(names(REIMS) %in% union(dropBase,setdiff(responseVars, c("Ten28"))))])
 ```
 
-### RESULTS
+# RESULTS
 
-# Data visualization using Principal Component Analysis (PCA)  
+## Data visualization using Principal Component Analysis (PCA)  
   There is not a evident cluster by USDA grade and tenderness at day 3, 14, and 28 days
 ```{r, include=TRUE,fig.width = 8, fig.height = 4}
 #Performing PCA
@@ -113,9 +117,6 @@ p4 <- ggplot(data = dat1, aes(x = Dim.1, y = Dim.2,colour=Ten28)) +
 print(p4 + labs(title= "PCA of REIMS data colored by tenderness at day 3",y="Comp 2", x = "Comp 1"))
 ```
 
-
-### Prediction of USDA grade using REIMS (classification models)  
-        a) Dimensionality reduction using Principal Component Analysis (PCA)
 ```{r}
 #CODE BY PATRICK
 # This section of code performs PCA on the predictors of the data set. It stores the loading vectors in the pca_loadings dataframe
@@ -139,13 +140,10 @@ ggplot() +
 
 ```
 
-        b) Dimensionality reduction using Recursive Feature Elimination (FS)
-```{r}
-#Dimensionality reduction using Recursive Feature Elimination (FS)
-FS_REIMS<-read.csv("REIMS_FS_data.csv")
-```
+## Categorical Prediction of USDA Grade 
 
-        c) Logistic regression with PCA data
+
+a) Logistic regression with PCA data
 ```{r}
 # CODED BY PATRICK
 
@@ -234,17 +232,19 @@ write.csv(PCvsCV_DF,"LogisticRegression/PCvsCV.csv", row.names = FALSE)
 
 ```
 
-        e) K-nearest neighbors using PCA data
+
+b) K-nearest neighbors using PCA data
 ```{r}
 
 ```
 
-        g) PCA using PCA data
+
+c) PCA using PCA data
 ```{r}
 
 ```
 
-        i) Support vector machine (SVM) using PCA data
+d) Support Vector Machine (SVM)
         
             
             iA) Linear SVM
@@ -386,7 +386,7 @@ data.frame(optimalPC = optimalPC , optimalCVError = optimalCVError, optimalCost 
 
 ```
 
-### Prediction of Tenderness over time using 36h REIMS (regression models)
+## Regression Prediction of Tenderness at 3, 14 and 28 Days
 
      Subsets
 ```{r, echo = FALSE}
