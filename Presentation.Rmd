@@ -214,7 +214,7 @@ kable(caption="Best performing Radial SVM Model.",digits=4)
 ggplot(data= SVMRadResultsDF, aes(x=PrincipalComponents_radSVM, y=CV_MSE_radSVM)) +
   geom_line()+
   geom_point()+
-  labs(title = "CV Error vs. Prinicipal Components",y="CV Error", x = "Number of Prinicipal Components") +
+  labs(title = "CV Error vs. Principal Components",y="CV Error", x = "Number of Principal Components") +
   theme(axis.text=element_text(size=12),
         axis.title=element_text(size=12),
         plot.title = element_text(hjust = 0.5))
@@ -236,7 +236,7 @@ ggplot(data= SVMRadResultsDF, aes(x=PrincipalComponents_radSVM, y=Best_Cost_radS
   geom_hline(yintercept=abs_min_cost, linetype="dashed", color = "red") +
   geom_hline(yintercept=abs_max_cost, linetype="dashed", color = "red") +
   scale_y_log10() +
-  labs(title= "Optimal Cost vs. Principal Components", y="Optimal Cost", x = "Number of Prinicipal Components") +
+  labs(title= "Optimal Cost vs. Principal Components", y="Optimal Cost", x = "Number of Principal Components") +
   theme(axis.text=element_text(size=10),
         axis.title=element_text(size=10),
         plot.title = element_text(hjust = 0.5))
@@ -287,7 +287,7 @@ kable(caption="Best performing Linear SVM Model.",digits=4)
 ggplot(data= SVMLinResultsDF, aes(x=PrincipalComponents_linSVM, y=CV_MSE_linSVM)) +
   geom_line()+
   geom_point()+
-  labs(y="CV Error", x = "Number of Prinicipal Components") +
+  labs(y="CV Error", x = "Number of Principal Components") +
   theme(axis.text=element_text(size=12),
         axis.title=element_text(size=12),
         plot.title = element_text(hjust = 0.5))
@@ -307,7 +307,7 @@ ggplot(data= SVMLinResultsDF, aes(x=PrincipalComponents_linSVM, y=Best_Cost)) +
   geom_hline(yintercept=abs_min_cost, linetype="dashed", color = "red") +
   geom_hline(yintercept=abs_max_cost, linetype="dashed", color = "red") +
   scale_y_log10() +
-  labs(title= "Optimal Cost vs. Principal Components", y="Optimal Cost", x = "Number of Prinicipal Components") +
+  labs(title= "Optimal Cost vs. Principal Components", y="Optimal Cost", x = "Number of Principal Components") +
   theme(axis.text=element_text(size=10),
         axis.title=element_text(size=10),
         plot.title = element_text(hjust = 0.5))
@@ -344,7 +344,7 @@ kable(caption="Best performing Linear SVM Model.",digits=4)
 ggplot(data= SVMPolyResultsDF, aes(x=PrincipalComponents, y=CV_MSE_polySVM)) +
   geom_line()+
   geom_point()+
-  labs(title="CV Error vs. Principal Components", y="CV Error", x = "Number of Prinicipal Components") +
+  labs(title="CV Error vs. Principal Components", y="CV Error", x = "Number of Principal Components") +
   theme(axis.text=element_text(size=10),
         axis.title=element_text(size=10),
         plot.title = element_text(hjust = 0.5))
@@ -362,7 +362,7 @@ ggplot(data= SVMPolyResultsDF, aes(x=PrincipalComponents, y=Best_Cost_polySVM)) 
   geom_hline(yintercept=abs_min_cost, linetype="dashed", color = "red") +
   geom_hline(yintercept=abs_max_cost, linetype="dashed", color = "red") +
   scale_y_log10() +
-  labs(title= "Optimal Cost vs. Principal Components", y="Optimal Cost", x = "Number of Prinicipal Components") +
+  labs(title= "Optimal Cost vs. Principal Components", y="Optimal Cost", x = "Number of Principal Components") +
   theme(axis.text=element_text(size=10),
         axis.title=element_text(size=10),
         plot.title = element_text(hjust = 0.5))
@@ -374,7 +374,7 @@ ggplot(data= SVMPolyResultsDF, aes(x=PrincipalComponents, y=Best_Cost_polySVM)) 
 ggplot(data= SVMPolyResultsDF, aes(x=PrincipalComponents, y=Best_Degree)) +
   geom_line()+
   geom_point() +
-  labs(title = "Optimal Degree vs. Principal Components",y="Optimal Degree", x = "Number of Prinicipal Components") +
+  labs(title = "Optimal Degree vs. Principal Components",y="Optimal Degree", x = "Number of Principal Components") +
   theme(axis.text=element_text(size=10),
         axis.title=element_text(size=10),
         plot.title = element_text(hjust = 0.5))
@@ -402,7 +402,7 @@ PCvsCVLog <- read.csv("LogisticRegression/PCvsCV.csv")
 plot <- ggplot(data = PCvsCVLog, aes(x = PrincipalComponents, y= CV_Error)) +
   geom_line()+
   geom_point()+
-  labs(y="CV Error", x = "Number of Prinicipal Components") +
+  labs(y="CV Error", x = "Number of Principal Components") +
   theme(axis.text=element_text(size=10),
         axis.title=element_text(size=10),
         plot.title = element_text(hjust = 0.5))
