@@ -754,6 +754,6 @@ kable(caption="Mean and standard deviation of tenderness at day 3, 14, and 28",d
 
 ## Results
 
-- In the table, we can observe that the regression models at day 28 performed better than the models of day 3.
-- Some of the best Lasso models were constants.
-- If we compare the results obtained with the mean and standard deviation of tenderness at the different aging periods, the results are not accurate.
+- In the table, we can observe that the regression models at day 28 performed better than the models of day 3. Particularly, the PCA-Splines model is shown to be the most effective at predicting tenderness at days 3 and 28. Best subset selection is shown to be the most effective at day 14.
+- Using PCA as a means to reduce dimensionality, we tuned these models using cross-validation to get four components. 
+- We believed a PCA-Splines model would be useful in predicting tenderness, as its low MSE across the different time periods compared to the other models suggested a low RMSE and thus implied low variance.
