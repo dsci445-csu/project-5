@@ -14,6 +14,7 @@ knitr::opts_chunk$set(echo = FALSE)
 knitr::opts_chunk$set(message = FALSE)
 knitr::opts_chunk$set(warning = FALSE)
 knitr::opts_chunk$set(include = FALSE)
+knitr::opts_chunk$set(fig.pos = 'H')
 library(ggplot2)
 library(MASS)
 library(GGally)
@@ -340,7 +341,11 @@ ggplot(data= svmLinResultsDF, aes(x=PrincipalComponents_linSVM, y=Best_Cost)) +
   geom_point()+
   geom_hline(yintercept=abs_min_cost, linetype="dashed", color = "red") +
   geom_hline(yintercept=abs_max_cost, linetype="dashed", color = "red") +
-  scale_y_log10()
+  scale_y_log10()+
+  labs(title= "Optimal Cost vs. Principal Components", y="Optimal Cost", x = "Number of Principal Components") +
+  theme(axis.text=element_text(size=10),
+        axis.title=element_text(size=10),
+        plot.title = element_text(hjust = 0.5))
 
 ```
 
@@ -403,7 +408,11 @@ ggplot(data= svmPolyResultsDF, aes(x=PrincipalComponents, y=Best_Cost_polySVM)) 
   geom_point()+
   geom_hline(yintercept=abs_min_cost_poly, linetype="dashed", color = "red") +
   geom_hline(yintercept=abs_max_cost_poly, linetype="dashed", color = "red") +
-  scale_y_log10()
+  scale_y_log10()+
+  labs(title= "Optimal Cost vs. Principal Components", y="Optimal Cost", x = "Number of Principal Components") +
+  theme(axis.text=element_text(size=10),
+        axis.title=element_text(size=10),
+        plot.title = element_text(hjust = 0.5))
 
 ```
 
@@ -423,7 +432,7 @@ ggplot(data= svmPolyResultsDF, aes(x=PrincipalComponents, y=Best_Degree)) +
 
 ```{r svmPoly-Results, include=TRUE}
 SummaryDF%>%
-kable(caption="Best performing Linear SVM Model.",digits=4)
+kable(caption="Best performing Polynomial SVM Model.",digits=4)
 
 ```
 
@@ -497,7 +506,7 @@ ggplot(data= svmRadResultsDF, aes(x=PrincipalComponents_radSVM, y=Best_Gamma_rad
   geom_hline(yintercept=abs_min_gamma, linetype="dashed", color = "red") +
   geom_hline(yintercept=abs_max_gamma, linetype="dashed", color = "red") +
   scale_y_log10()+
-  labs(title= "Optimal Gamma vs. Principal Components", y="Optimal Cost", x = "Number of Prinicipal Components") +
+  labs(title= "Optimal Gamma vs. Principal Components", y="Optimal Gamma", x = "Number of Prinicipal Components") +
   theme(axis.text=element_text(size=10),
         axis.title=element_text(size=10),
         plot.title = element_text(hjust = 0.5))
@@ -531,7 +540,7 @@ kable(caption="Best performing USDA Grade Models.",digits=4)
 
 ## Regression Prediction of Tenderness at 3, 14 and 28 Days
 
-     Subsets
+
 ```{r, echo = FALSE}
 #Here are the names of the data sets for all the following models. They correspond to a 60/40 training/test subsets.
 ten3DF_train
@@ -695,14 +704,14 @@ lambdaPlot3 <- ggplot() +
   geom_point(aes(cv_lasso$lambda, cv_lasso$cvm)) +
   scale_x_log10()
 
-lambdaMin <- cv_lasso$lambda.min
-cv_error_min <- min(cv_lasso$cvm)
+lambdaMin_3 <- cv_lasso$lambda.min
+cv_error_min_3 <- min(cv_lasso$cvm)
 
-lasso_mdl <- glmnet(X_train, Y_train, alpha = 1, lambda = lambdaMin)
+lasso_mdl <- glmnet(X_train, Y_train, alpha = 1, lambda = lambdaMin_3)
 
-predictions <- predict(lasso_mdl,newx=X_test,s=lambdaMin, type="response")
+predictions <- predict(lasso_mdl,newx=X_test,s=lambdaMin_3, type="response")
 
-testErrorLasso <- mean(( predictions[,'s1'] - Y_test )^2)
+testErrorLasso_3 <- mean(( predictions[,'s1'] - Y_test )^2)
 
 predictionPlot3 <- ggplot() +
   geom_point(aes(predictions, Y_test))+
@@ -711,7 +720,7 @@ predictionPlot3 <- ggplot() +
 coefs_3 <- coef(lasso_mdl)
 size_3 <- length(coefs_3[coefs_3[,1]!=0,]) - 1
 
-Ten3NonPCA_Results <- data.frame(CV_MSE = cv_error_min, Lambda = lambdaMin, TestError = testErrorLasso, Size = size_3)
+Ten3NonPCA_Results <- data.frame(CV_MSE = cv_error_min_3, Lambda = lambdaMin_3, TestError = testErrorLasso_3, Size = size_3)
 Ten3NonPCA_Results
 
 
@@ -732,14 +741,14 @@ lambdaPlot14 <- ggplot() +
   geom_point(aes(cv_lasso$lambda, cv_lasso$cvm)) +
   scale_x_log10()
 
-lambdaMin <- cv_lasso$lambda.min
-cv_error_min <- min(cv_lasso$cvm)
+lambdaMin_14 <- cv_lasso$lambda.min
+cv_error_min_14 <- min(cv_lasso$cvm)
 
-lasso_mdl <- glmnet(X_train, Y_train, alpha = 1, lambda = lambdaMin)
+lasso_mdl <- glmnet(X_train, Y_train, alpha = 1, lambda = lambdaMin_14)
 
-predictions <- predict(lasso_mdl,newx=X_test,s=lambdaMin, type="response")
+predictions <- predict(lasso_mdl,newx=X_test,s=lambdaMin_14, type="response")
 
-testErrorLasso <- mean(( predictions[,'s1'] - Y_test )^2)
+testErrorLasso_14 <- mean(( predictions[,'s1'] - Y_test )^2)
 
 predictionPlot14 <- ggplot() +
   geom_point(aes(predictions, Y_test))+
@@ -748,7 +757,7 @@ predictionPlot14 <- ggplot() +
 coefs_14 <- coef(lasso_mdl)
 size_14 <- length(coefs_14[coefs_14[,1]!=0,]) - 1
 
-Ten14NonPCA_Results <- data.frame(CV_MSE = cv_error_min, Lambda = lambdaMin, TestError = testErrorLasso, Size = size_14)
+Ten14NonPCA_Results <- data.frame(CV_MSE = cv_error_min_14, Lambda = lambdaMin_14, TestError = testErrorLasso_14, Size = size_14)
 Ten14NonPCA_Results
 
 #Lasso on Ten28 (Non-PCA)
@@ -766,14 +775,14 @@ lambdaPlot28 <- ggplot() +
   geom_point(aes(cv_lasso$lambda, cv_lasso$cvm)) +
   scale_x_log10()
 
-lambdaMin <- cv_lasso$lambda.min
-cv_error_min <- min(cv_lasso$cvm)
+lambdaMin_28 <- cv_lasso$lambda.min
+cv_error_min_28 <- min(cv_lasso$cvm)
 
-lasso_mdl <- glmnet(X_train, Y_train, alpha = 1, lambda = lambdaMin)
+lasso_mdl <- glmnet(X_train, Y_train, alpha = 1, lambda = lambdaMin_28)
 
-predictions <- predict(lasso_mdl,newx=X_test,s=lambdaMin, type="response")
+predictions <- predict(lasso_mdl,newx=X_test,s=lambdaMin_28, type="response")
 
-testErrorLasso <- mean(( predictions[,'s1'] - Y_test )^2)
+testErrorLasso_28 <- mean(( predictions[,'s1'] - Y_test )^2)
 
 predictionPlot28 <- ggplot() +
   geom_point(aes(predictions, Y_test))+
@@ -782,12 +791,28 @@ predictionPlot28 <- ggplot() +
 coefs_28 <- coef(lasso_mdl)
 size_28 <- length(coefs_28[coefs_28[,1]!=0,]) - 1
 
-Ten28NonPCA_Results <- data.frame(CV_MSE = cv_error_min, Lambda = lambdaMin, TestError = testErrorLasso, Size = size_28)
+Ten28NonPCA_Results <- data.frame(CV_MSE = cv_error_min_28, Lambda = lambdaMin_28, TestError = testErrorLasso_28, Size = size_28)
 Ten28NonPCA_Results
 
 write.csv(Ten3NonPCA_Results,"Lasso/LassoNonPCA/Ten3.csv", row.names = FALSE)
 write.csv(Ten14NonPCA_Results,"Lasso/LassoNonPCA/Ten14.csv", row.names = FALSE)
 write.csv(Ten28NonPCA_Results,"Lasso/LassoNonPCA/Ten28.csv", row.names = FALSE)
+
+```
+
+```{r LassoNonPCA-summary, include=TRUE}
+#Report the Lasso results
+days <- c(3, 14, 28)
+cv_mse <- c(cv_error_min_3,cv_error_min_14,cv_error_min_28)
+test_error <- c(testErrorLasso_3,testErrorLasso_14,testErrorLasso_28)
+size <- c(size_3,size_14,size_28)
+lambda <- c(lambdaMin_3,lambdaMin_14,lambdaMin_28)
+
+
+SummaryLassoNonPCADF <- data.frame(Day = days, Test_MSE=cv_mse, Lambda = lambda, Size = size)
+SummaryLassoNonPCADF%>%
+kable(caption="Summary of Lasso models for tenderness at days 3, 14, and 28",digits=4)
+
 
 ```
 
@@ -804,31 +829,16 @@ lambda_max_over <- 8
 
 LassoTen3Results <- read.csv("Lasso/Results/Ten3.csv")
 BestTen3LassoModel <- readRDS("Lasso/BestModels/BestLassoTen3Model.rds")
-BestTen3LassoModel
+BestTen3LassoModel <- BestTen3LassoModel[[1]]
+optimalPC_LassoPCATen3 <- LassoTen3Results$PrincipalComponents[which.min(LassoTen3Results$CV_MSE)]
+optimal_TestError_LassoPCATen3 <-  min(LassoTen3Results$CV_MSE)
+optimalLambda_LassoPCATen3 <- LassoTen3Results$Best_Lambda[which.min(LassoTen3Results$CV_MSE)]
+optimalSize_LassoPCATen3 <- LassoTen3Results$Size[which.min(LassoTen3Results$CV_MSE)]
 
-ggplot(data=LassoTen3Results, aes(x= PrincipalComponents, y = CV_MSE)) +
-  geom_line() +
-  geom_point()
+summaryDF_LassoTen3PCA <- data.frame(PrincipalComponents = optimalPC_LassoPCATen3, CV_Error = optimal_TestError_LassoPCATen3, Lambda = optimalLambda_LassoPCATen3, Size = optimalSize_LassoPCATen3)
 
 
-ggplot(data=LassoTen3Results, aes(x= PrincipalComponents, y = Size)) +
-  geom_line() +
-  geom_point()
-
-ggplot(data=LassoTen3Results, aes(x= PrincipalComponents, y = Best_Lambda)) +
-  geom_line() +
-  geom_point() +
-  geom_hline(yintercept=10^lambda_max_over, linetype="dashed", color = "red") +
-  geom_hline(yintercept=10^lambda_min_under, linetype="dashed", color = "red") +
-  scale_y_log10()
-
-optimalPC <- LassoTen3Results$PrincipalComponents[which.min(LassoTen3Results$CV_MSE)]
-optimal_TestError <-  min(LassoTen3Results$CV_MSE)
-optimalLambda <- LassoTen3Results$Best_Lambda[which.min(LassoTen3Results$CV_MSE)]
-
-data.frame(optimalPC = optimalPC, optimal_TestError = optimal_TestError, optimalLambda = optimalLambda)
-
-MSE_Lasso_day3<-optimal_TestError
+MSE_Lasso_day3<-optimal_TestError_LassoPCATen3
 ```
 
 ```{r LassoTen14Code}
@@ -844,30 +854,16 @@ lambda_max_over <- 8
 
 LassoTen14Results <- read.csv("Lasso/Results/Ten14.csv")
 BestTen14LassoModel <- readRDS("Lasso/BestModels/BestLassoTen14Model.rds")
-BestTen14LassoModel
+BestTen14LassoModel <- BestTen14LassoModel[[1]]
+optimalPC_LassoPCATen14 <- LassoTen14Results$PrincipalComponents[which.min(LassoTen14Results$CV_MSE)]
+optimal_TestError_LassoPCATen14 <-  min(LassoTen14Results$CV_MSE)
+optimalLambda_LassoPCATen14 <- LassoTen14Results$Best_Lambda[which.min(LassoTen14Results$CV_MSE)]
+optimalSize_LassoPCATen14 <- LassoTen14Results$Size[which.min(LassoTen14Results$CV_MSE)]
 
-ggplot(data=LassoTen14Results, aes(x= PrincipalComponents, y = CV_MSE)) +
-  geom_line() +
-  geom_point()
+summaryDF_LassoTen14PCA <- data.frame(PrincipalComponents = optimalPC_LassoPCATen14, CV_Error = optimal_TestError_LassoPCATen14, Lambda = optimalLambda_LassoPCATen14, Size = optimalSize_LassoPCATen14)
 
-ggplot(data=LassoTen14Results, aes(x= PrincipalComponents, y = Size)) +
-  geom_line() +
-  geom_point()
 
-ggplot(data=LassoTen14Results, aes(x= PrincipalComponents, y = Best_Lambda)) +
-  geom_line() +
-  geom_point() +
-  geom_hline(yintercept=10^lambda_max_over, linetype="dashed", color = "red") +
-  geom_hline(yintercept=10^lambda_min_under, linetype="dashed", color = "red") +
-  scale_y_log10()
-
-optimalPC <- LassoTen14Results$PrincipalComponents[which.min(LassoTen14Results$CV_MSE)]
-optimal_TestError <-  min(LassoTen14Results$CV_MSE)
-optimalLambda <- LassoTen14Results$Best_Lambda[which.min(LassoTen14Results$CV_MSE)]
-
-data.frame(optimalPC = optimalPC, optimal_TestError = optimal_TestError, optimalLambda = optimalLambda)
-
-MSE_Lasso_day14<-optimal_TestError
+MSE_Lasso_day14<-optimal_TestError_LassoPCATen14
 
 ```
 
@@ -884,31 +880,72 @@ lambda_max_over <- 10
 
 LassoTen28Results <- read.csv("Lasso/Results/Ten28.csv")
 BestTen28LassoModel <- readRDS("Lasso/BestModels/BestLassoTen28Model.rds")
-BestTen28LassoModel
+BestTen28LassoModel <- BestTen28LassoModel[[1]]
+optimalPC_LassoPCATen28 <- LassoTen28Results$PrincipalComponents[which.min(LassoTen28Results$CV_MSE)]
+optimal_TestError_LassoPCATen28 <-  min(LassoTen28Results$CV_MSE)
+optimalLambda_LassoPCATen28 <- LassoTen28Results$Best_Lambda[which.min(LassoTen28Results$CV_MSE)]
+optimalSize_LassoPCATen28 <- LassoTen28Results$Size[which.min(LassoTen28Results$CV_MSE)]
 
-ggplot(data=LassoTen28Results, aes(x= PrincipalComponents, y = CV_MSE)) +
+summaryDF_LassoTen28PCA <- data.frame(PrincipalComponents = optimalPC_LassoPCATen28, CV_Error = optimal_TestError_LassoPCATen28, Lambda = optimalLambda_LassoPCATen28, Size = optimalSize_LassoPCATen28)
+
+
+MSE_Lasso_day28<-optimal_TestError_LassoPCATen28
+```
+
+```{r LassoPCA-summary, include=TRUE}
+#Summary of Lasso PCA Analysis table
+days <- c(3,14,28)
+principalComponents <- c(optimalPC_LassoPCATen3,  optimalPC_LassoPCATen14, optimalPC_LassoPCATen28)
+CV_MSE <- c(optimal_TestError_LassoPCATen3, optimal_TestError_LassoPCATen14, optimal_TestError_LassoPCATen28)
+Lambda <- c(optimalLambda_LassoPCATen3, optimalLambda_LassoPCATen14,optimalLambda_LassoPCATen28)
+Size <- c(optimalSize_LassoPCATen3, optimalSize_LassoPCATen14, optimalSize_LassoPCATen28)
+
+summaryLassoPCADF <- data.frame(Day = days, Test_MSE=CV_MSE, PrincipalComponents = principalComponents, Lambda = Lambda, Size = Size)
+summaryLassoPCADF%>%
+kable(caption="Summary of Lasso models using PCA for tenderness at days 3, 14, and 28",digits=4)
+
+```
+
+```{r LassoPCATen3-CVPlot, include=TRUE,fig.width = 6, fig.height = 3, fig.cap="Cross Validation Mean Squared Error for the Lasso Models that were built using differing numbers of principal components to predict tenderness at three days."}
+#Because Ten3 Lasso with PCA had the only meaningful results, show a little more of these results
+
+lambda_min_under <- -2
+lambda_max_over <- 8
+
+ggplot(data=LassoTen3Results, aes(x= PrincipalComponents, y = CV_MSE)) +
   geom_line() +
-  geom_point()
+  geom_point()+
+  labs(y="CV Error", x = "Number of Prinicipal Components") +
+  theme(axis.text=element_text(size=10),
+        axis.title=element_text(size=10),
+        plot.title = element_text(hjust = 0.5))
+```
 
-ggplot(data=LassoTen28Results, aes(x= PrincipalComponents, y = Size)) +
+
+```{r LassoPCATen3-Size, include=TRUE, fig.width = 6, fig.height = 2.5, fig.cap="The number of predictors for tenderness at 3 days that were included in the Lasso Model given the number of principal components that were used to generate the Lasso Model."}
+ggplot(data=LassoTen3Results, aes(x= PrincipalComponents, y = Size)) +
   geom_line() +
-  geom_point()
+  geom_point()+
+  labs(y="Size", x = "Number of Prinicipal Components") +
+  theme(axis.text=element_text(size=10),
+        axis.title=element_text(size=10),
+        plot.title = element_text(hjust = 0.5))
+```
 
-ggplot(data=LassoTen28Results, aes(x= PrincipalComponents, y = Best_Lambda)) +
+```{r LassoPCATen3-Lambda, include=TRUE, fig.width = 6, fig.height = 2.5, fig.cap="The optimal lambda of the Lasso Models used to predict tenderness at 3 days given the number of principal components that were used to generate the Lasso Model."}
+ggplot(data=LassoTen3Results, aes(x= PrincipalComponents, y = Best_Lambda)) +
   geom_line() +
   geom_point() +
-  geom_hline(yintercept=10^lambda_min_under, linetype="dashed", color = "red") +
   geom_hline(yintercept=10^lambda_max_over, linetype="dashed", color = "red") +
-  scale_y_log10()
+  geom_hline(yintercept=10^lambda_min_under, linetype="dashed", color = "red") +
+  scale_y_log10()+
+  labs(y="Optimal Lambda", x = "Number of Prinicipal Components") +
+  theme(axis.text=element_text(size=10),
+        axis.title=element_text(size=10),
+        plot.title = element_text(hjust = 0.5))
 
-optimalPC <- LassoTen28Results$PrincipalComponents[which.min(LassoTen28Results$CV_MSE)]
-optimal_TestError <-  min(LassoTen28Results$CV_MSE)
-optimalLambda <- LassoTen28Results$Best_Lambda[which.min(LassoTen28Results$CV_MSE)]
-
-data.frame(optimalPC = optimalPC, optimal_TestError = optimal_TestError, optimalLambda = optimalLambda)
-
-MSE_Lasso_day28<-optimal_TestError
 ```
+
 
 ### Splines
         
@@ -972,7 +1009,7 @@ min(Spline28$MSE)
 ```
 
 ### Summary of Regression Models
-``` {r RegModelSummary}
+``` {r RegModelSummary,include=TRUE}
 #Summary results of regression
 
 data.frame(  Model = "Best Subset", 
@@ -980,9 +1017,9 @@ data.frame(  Model = "Best Subset",
              Size_day14 = "1", MSE_day14=MSE_subset_day14,
              Size_day28 = "1", MSE_day28=MSE_subset_day28)%>%
   bind_rows(data.frame(Model = "PCA-Lasso", 
-            Size_day3 ="18", MSE_day3=MSE_Lasso_day3, 
-            Size_day14 ="10", MSE_day14=MSE_Lasso_day14, 
-            Size_day28 ="58", MSE_day28=MSE_Lasso_day28))%>%
+            Size_day3 =toString(optimalSize_LassoPCATen3), MSE_day3=optimal_TestError_LassoPCATen3, 
+            Size_day14 =toString(optimalSize_LassoPCATen14), MSE_day14=optimal_TestError_LassoPCATen14, 
+            Size_day28 =toString(optimalSize_LassoPCATen28), MSE_day28=optimal_TestError_LassoPCATen28))%>%
   bind_rows(data.frame(Model = "PCR", 
             Size_day3 ="6", MSE_day3= MSE_PCR_day3, 
             Size_day14 ="1", MSE_day14= MSE_PCR_day14, 
@@ -991,7 +1028,12 @@ data.frame(  Model = "Best Subset",
             Size_day3 ="5", MSE_day3= min(Spline3$MSE), 
             Size_day14 ="2", MSE_day14= min(Spline14$MSE), 
             Size_day28 ="4", MSE_day28= min(Spline28$MSE))) %>%
+  bind_rows(data.frame(Model = "Lasso", 
+          Size_day3 =toString(size_3), MSE_day3= testErrorLasso_3, 
+          Size_day14 =toString(size_14), MSE_day14= testErrorLasso_14, 
+          Size_day28 =toString(size_28), MSE_day28= testErrorLasso_28)) %>% 
 kable(caption="Table 2. Mean Squared Error (MSE) of regression models for tenderness at day 3, 14, and 28",digits=2)
+
 
 
 
