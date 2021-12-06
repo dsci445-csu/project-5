@@ -44,7 +44,6 @@ library(kableExtra)
 - Beef palatability depends on tenderness, juiciness, and flavor. 
 - In the United States, there is a quality grading system that classifies beef carcasses on different quality categories (USDA) based on animal maturity and marbling level (intramuscular fat).
 - Tenderness is not predicted with USDA quality grade.
-- Although some technologies allow the determination of beef tenderness, they require sacrificing a loin steak and cannot be performed in real-time.
 
 ## Rapid Evaporative Ionization Mass Spectrometry (REIMS)
 
@@ -56,12 +55,11 @@ library(kableExtra)
 
 # METHODOLOGY
 
-## Data collection
+## Data structure
 
-- Eighty-three whole striploins were collected at 36h post-mortem (42 USDA quality grade Choice, and 41 USDA quality grade Select).
-- They were cut into three sections, which were aged at 3 different aging treatments (3 days, 14 days, 28 days).
-- Tenderness were measure at each aging period.
-- The number of observations is 83, and the number of predictors is 1700.
+- Number of observations: 83 (42 USDA quality grade Choice, and 41 USDA quality grade Select).
+- Aging treatments: 3 days, 14 days, 28 days.
+- Number of predictors (REIMS): 1700.
 - Classification models were performed to predict USDA quality grade.
 - Regression models were performed to predict tenderness.
 
@@ -76,6 +74,11 @@ set.seed(1)
 ```{r}
 ### Uploading data
 REIMS <- read.csv("REIMS machine learning class.csv")
+dropBase <- c("SampleID", "Cx", "GS_1", "GS_2", "UNIQ_ID", "Ten42", "Ten56", "Ten70")
+responseVars <- c("USDA.grade", "Ten3", "Ten14","Ten28")
+ten3DF <- na.omit(REIMS[,!(names(REIMS) %in% union(dropBase,setdiff(responseVars, c("Ten3"))))])
+ten14DF <- na.omit(REIMS[,!(names(REIMS) %in% union(dropBase,setdiff(responseVars, c("Ten14"))))])
+ten28DF <- na.omit(REIMS[,!(names(REIMS) %in% union(dropBase,setdiff(responseVars, c("Ten28"))))])
 
 dropBase <- c("SampleID", "Cx", "GS_1", "GS_2", "UNIQ_ID", "Ten42", "Ten56", "Ten70")
 responseVars <- c("USDA.grade", "Ten3", "Ten14","Ten28")
@@ -98,7 +101,7 @@ print(p + labs(title= "PCA of REIMS data faced by USDA quality grade",y="Comp 2"
 #Plotting PCA faced by USDA grade
 p1 <- ggplot(data = dat1, aes(x = Dim.2, y = Dim.3,colour=USDA.grade)) +
   geom_point()
-print(p1 + labs(title= "PCA of REIMS data faced by USDA quality grade",y="Comp 2", x = "Comp 1"))
+print(p1 + labs(title= "PCA of REIMS data faced by USDA quality grade",y="Comp 3", x = "Comp 2"))
 ```
 
 ## Tenderness 
@@ -432,6 +435,15 @@ kable(caption="Best performing USDA Grade Models.",digits=4)
 
 # REGRESSION MODELS: TENDERNESS
 
+## Methodology
+- Several models were used to predict tenderness:
+  - Best subset selection
+  - Lasso
+  - PCR
+  - Splines
+- For Lasso and Splines we used PCA as a dimensionality reduction method.
+- The number of principal components used for the Lasso and Splines models were tuned using cross-validation.
+
 ``` {r}
 #Data
 #Creating training and test subsets for regressions
@@ -700,7 +712,8 @@ data.frame(optimalPC = optimalPC, optimal_TestError = optimal_TestError, optimal
 MSE_Lasso_day28<-optimal_TestError
 ```
 
-## Summary results
+## Results
+
 \tiny
 ```{r,include=TRUE,size="huge"}
 
@@ -725,4 +738,22 @@ data.frame(  Model = "Best Subset",
           Size =toString(Size_LassoNonPCA_14), MSE_day14= MSE_LassoNonPCA_14, 
           Size =toString(Size_LassoNonPCA_28), MSE_day28= MSE_LassoNonPCA_28)) %>% 
 kable(caption="Mean Squared Error (MSE) of regression models for tenderness at day 3, 14, and 28",digits=2)
+
+data.frame(  Aging = "day 3", 
+             Mean = mean(ten3DF$Ten3),
+             SD = sd(ten3DF$Ten3))%>%
+  bind_rows(data.frame(Aging = "day 14",  
+              Mean =mean(ten14DF$Ten14),
+             SD = sd(ten14DF$Ten14)))%>%
+  bind_rows(data.frame(Aging = "day 28",  
+            Mean = mean(ten28DF$Ten28),
+             SD = sd(ten28DF$Ten28)))%>%
+kable(caption="Mean and standard deviation of tenderness at day 3, 14, and 28",digits=2)
+
 ```
+
+## Results
+
+- In the table, we can observe that the regression models at day 28 performed better than the models of day 3.
+- Some of the best Lasso models were constants.
+- If we compare the results obtained with the mean and standard deviation of tenderness at the different aging periods, the results are not accurate.
