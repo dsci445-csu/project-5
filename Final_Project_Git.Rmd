@@ -251,7 +251,7 @@ write.csv(PCvsCV_DF,"LogisticRegression/PCvsCV.csv", row.names = FALSE)
 ```{r}
 
 # This calls a script to run the Linear SVM
-source("SVM/SVM_linear.R", local = knitr::knit_global())
+#source("SVM/SVM_linear.R", local = knitr::knit_global())
 
 
 ```
@@ -259,7 +259,9 @@ source("SVM/SVM_linear.R", local = knitr::knit_global())
 
 ```{r}
 #Linear SVM Plotting and Results
-
+abs_min_cost <- .01
+abs_max_cost <- 100
+  
 svmLinResultsDF <- read.csv("SVM/Results/LinSVM.csv")
 BestLinModel <- readRDS("SVM/BestSVMModels/BestLinModel.rds")
 BestLinModel
@@ -271,8 +273,8 @@ ggplot(data= svmLinResultsDF, aes(x=PrincipalComponents_linSVM, y=CV_MSE_linSVM)
 ggplot(data= svmLinResultsDF, aes(x=PrincipalComponents_linSVM, y=Best_Cost)) +
   geom_line()+
   geom_point()+
-  geom_hline(yintercept=abs_min_cost_lin, linetype="dashed", color = "red") +
-  geom_hline(yintercept=abs_max_cost_lin, linetype="dashed", color = "red") +
+  geom_hline(yintercept=abs_min_cost, linetype="dashed", color = "red") +
+  geom_hline(yintercept=abs_max_cost, linetype="dashed", color = "red") +
   scale_y_log10()
 
 optimalPC = c(svmLinResultsDF$PrincipalComponents_linSVM[which.min(svmLinResultsDF$CV_MSE_linSVM)])
@@ -291,7 +293,7 @@ data.frame(optimalPC = optimalPC, optimalCVError =optimalCVError,optimalCost= op
 
 
 # This calls a script to run the Poly SVM
-source("SVM/SVM_Poly.R", local = knitr::knit_global())
+#source("SVM/SVM_Poly.R", local = knitr::knit_global())
 
 
 
@@ -339,7 +341,7 @@ data.frame(optimalPC = optimalPC , optimalCVError = optimalCVError, optimalCost 
 
 
 # This calls a script to run the Radial SVM
-source("SVM/SVM_rad.R", local = knitr::knit_global())
+#source("SVM/SVM_rad.R", local = knitr::knit_global())
 
 
 ```
@@ -639,6 +641,10 @@ size_28 <- length(coefs_28[coefs_28[,1]!=0,]) - 1
 
 Ten28NonPCA_Results <- data.frame(CV_MSE = cv_error_min, Lambda = lambdaMin, TestError = testErrorLasso, Size = size_28)
 Ten28NonPCA_Results
+
+write.csv(Ten3NonPCA_Results,"Lasso/LassoNonPCA/Ten3.csv", row.names = FALSE)
+write.csv(Ten14NonPCA_Results,"Lasso/LassoNonPCA/Ten14.csv", row.names = FALSE)
+write.csv(Ten28NonPCA_Results,"Lasso/LassoNonPCA/Ten28.csv", row.names = FALSE)
 
 ```
 
