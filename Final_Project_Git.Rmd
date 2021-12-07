@@ -4,7 +4,7 @@ author: "Patrick Noe, Logan Perkins, Michael Hernandez"
 date: "12/16/2021"
 output: 
   bookdown::pdf_document2: default
-abstract: "Beef grade and tenderness are important qualities to both understand and predict within the meat processing industry, and most contemporary technologies are limited in their capabilities in making timely and cost effective analysees of these qualities of beef. More modern technologies like Rapid Evaporative Ionization Mass Spectrometry (REIMS) are available to assess the chemical composition of beef in an efficient manner. The purpose of this study to analyze REIMs data on 83 pieces of beef to explore the predictive preformance of REIMS on both USDA Grade and the beefs tenderness at 3, 14, and 28 days. The study develops and compares several different statistical learning models trained on REIMs data to predict grade and tenderness. The purpose of these models are to (1) Discover if there is a predictive relationship between REIMs data and beef grade/tenderness, and (2) Select a model that performs the best at prediction."
+abstract: "Beef grade and tenderness are important qualities to both understand and predict within the meat processing industry, and most contemporary technologies are limited in their capabilities in making timely and cost effective analysees of these qualities of beef. More modern technologies like Rapid Evaporative Ionization Mass Spectrometry (REIMS) are available to assess the chemical composition of beef in an efficient manner. The purpose of this study was to analyze REIMs data on 83 beef striploins to explore the predictive preformance of REIMS on both USDA quality grade and the beef tenderness at three aging periods (3, 14, and 28 days). The study develops and compares several different statistical learning models trained on REIMs data to predict grade and tenderness. The purpose of these models are to (1) Discover if there is a predictive relationship between REIMs data and beef grade/tenderness, and (2) Select a model that performs the best at prediction."
 ---
 
 ```{r setup, include=FALSE}
@@ -59,7 +59,9 @@ gradeDF <- REIMS[,!(names(REIMS) %in% union(dropBase,setdiff(responseVars, c("US
 
 # METHODOLOGY
 
-The most challenging aspect of building statistical models using the REIMs dataset is that the dataset presents a high dimensional probelm with relatively few data points. The REIMs dataset is comprised of 1,700 predictors on 83 datapoints... 
+## Sample collection and aging
+To assess the ability of REIMS to predict beef tenderness and USDA quality grade, samples consisting on 2 USDA quality grades (USDA Select, and USDA upper 2/3 Choice), and 3 aging periods (3, 14, and 28 postmortem days) were evaluated. A total of eithy-three beef carcasses were selected at the time of grading (36h postmortem). Forty-one carcasses graded as USDA Select, and forty-two carcasses graded as upper 2/3 Choice were selected to ensure a balanced data. Additionally to the carcasses data, a sliver of the *longissimus lumborum* was collected. During fabrication, whole strip loins were collected from the carcasses selected and each strip loin were divided into three pieces and randomly assigned to one of three aging treatments (3, 14, 28 days). After 
+
 
 
 ``` {r}
