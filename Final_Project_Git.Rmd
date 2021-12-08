@@ -145,6 +145,11 @@ p4 <- ggplot(data = dat1, aes(x = Dim.1, y = Dim.2,colour=Ten28)) +
 print(p4 + labs(title= "PCA of REIMS data colored by tenderness at day 3",y="Comp 2", x = "Comp 1"))
 ```
 
+### Proportion of Variance Explained
+While analyzing the first several principal components did not show significant clustering of either USDA Grade or beef tenderness, principal components analysis did provide a useful tool to reducing the dimensionality of several of the models that were tested in this study. The Proportion of Variance Explained (PVE) by each principal component is shown in  \@ref(fig:pvePlot). The figure shows that the majority of the variability in the predictors lies within the first twenty principal components. More specifically, almost 31% of variability in the data is captured by the first principal component. There is a noticeable drop in variability explained by principal component 2 (PVE = .19) and principal component 3 (PVE = .06). As shown in the figure, there is another significant drop in variability explained between principal component 9 and 10. The proportion of variance explained drops at a mostly consistent rate between principal components 10 and 24. After this, much less information is contained in each of the remaining principal components. \@ref(tab:PVE-table) shows the cumulative variance that is explained using increasing values of principal components. As shown by the table, nearly 100% of the variability in the data is captured by the first 80 principal components. 
+
+This information and the transformed predictor space provided by PCA allowed for the dimensionality reduction of the predictor space. This reduced dimensionality allowed models that do not have inherent dimension reduction techniques, like logistic regression and support vector machines, to be utilized by this study. The way that Principal Component Analysis was utilized within models will be discussed in further detail within the sections of the report that describe these models. It is worth noting that, often times, the optimal was identified where an "elbow" on the PVE plot did occur.  
+
 ```{r pvePlot, include=TRUE,fig.width = 6, fig.height = 3, fig.cap = "Proportion of Variance Explained in the data by each principal component."}
 #CODE BY PATRICK
 # This section of code performs PCA on the predictors of the data set. It stores the loading vectors in the pca_loadings dataframe
@@ -172,10 +177,26 @@ ggplot() +
 
 ```
 
+```{r PVE-table, include=TRUE}
+cummVarExp <- unname(pca_summary$importance[3,])
+
+cummVar <- c(cummVarExp[1], cummVarExp[5], cummVarExp[10],cummVarExp[15],cummVarExp[20],cummVarExp[30], cummVarExp[40], cummVarExp[50],cummVarExp[60], cummVarExp[80])*100
+
+PCs <- c(1,5, 10,15,20,30, 40, 50, 60, 80)
+
+SummaryDF <- data.frame(PrincipalComponents = PCs, CummulativeVariabilityExplained = cummVar)
+
+SummaryDF%>%
+kable(caption="Cummulative percentage of predictor variability explained for increasing numbers of principal components.",digits=1)
+```
+
 ## Categorical Prediction of USDA Grade 
 
+The capability of using REIMs data to predict the USDA Grade of beef samples is a categorical problem. For the purposes of this study, the response, USDA Grade, could be of two classes: Choice or Select. Several models were built to assess predictive performance including a Logistic Regression Model, a Linear Support Vector Machine, a Polynomial Support Vector Machine, and a Radial Support Vector Machine. This section of the report discusses each of this models, their predictive performance, and a selection of the best performing model. It is important to note that model performance for each of these models was assessed in terms of the 10-fold Cross Validation Error Rate. Because the dataset is small (83 samples), it was determined that cross validation error would be a better estimation of model performance than simple test error because it allowed for less data to be withheld from the training of the model and a more comprehensive assessment of how the model would perform on new samples.
 
 ### Logistic Regression
+
+
 ```{r LogRegressionCode}
 
 # CODED BY PATRICK
@@ -190,7 +211,7 @@ set.seed(1)
 predictorsDF <- gradeDF[,!(names(gradeDF) %in% c("USDA.grade"))] # dataframe without response
 gradeResponse <- as.factor(gradeDF$USDA.grade)
 
-max_components <- 30 #maximum number of components to use in cross validation
+max_components <- 80 #maximum number of components to use in cross validation
 n <- nrow(predictorsDF) 
 k<-10 # number of folds
 p <- .5 #probability threshold to bin logistic regression response
@@ -255,7 +276,7 @@ write.csv(PCvsCV_DF,"LogisticRegression/PCvsCV.csv", row.names = FALSE)
 
 ```
 
-
+The Logistic Regression technique was implemented with the principal component scores provided by the PCA analysis.The general technique used to arrive at the "best" logistic regression model was to build a logistic regression model using increasing numbers of principal component directions of the predictor dataset. This process was done using between 1 to 80 principal components. 80 was selected as the maximum number of principal components to utilize to build the model because, as discussed in the PCA Analysis above, 99.8% of the predictor variability was contained in the first 80 principal components. For each model containing differing numbers of principal components, 10-fold Cross Validation was performed to identify a cross validation error to assess the model performance. 
 
 ```{r log-plot, include=TRUE,fig.width = 6, fig.height = 3, fig.cap = "Logistic Regression Model CV Error vs. Number of Principal Components included."}
 # Log Model Visualization
@@ -273,7 +294,8 @@ ggplot(data = data.frame(PrincipalComponent = PrincipalComponent, cv_mse = cv_ms
 
 ```
 
-Practicing figure references. See Figure \@ref(fig:log-plot). See Table \@ref(tab:log-summary)
+The results of how cross validation error (CV Error) varied for models with differing numbers of principal components are shown in \@ref(fig:log-plot). As is shown in the figure, CV Error for USDA Grade prediction decreased rapidly between models that utilized from 1 to 5 principal components. The best Logistic Regression model was identified as that that minimized CV Error, and this occurred in the model that included the first 9 principal components (see \@ref(tab:log-summary)), and had a CV Error of 20%. This is interesting because, as was mentioned in the discussion of PCA to explore the predictor space, there is a significant decreased in the proportion of variance explained between the 9th and 10th principal component (see \@ref(fig:pvePlot)), and the optimal logistic regression model was determined to be one that utilized roughly 76% of the variability in the data. Furthermore, as the number of principal components that were utilized to build the logistic regression model were increased above 9, there was a noticeable (but not absolute) trend upwards of CV Error.
+
 
 ```{r log-summary, include=TRUE}
 # Log Model Performance
@@ -282,6 +304,8 @@ summaryDF%>%
 kable(caption="Best performing logistic regression model.",digits=2)
 
 ```
+
+
 
 
 ### K-Nearest Neighbors
@@ -296,18 +320,15 @@ kable(caption="Best performing logistic regression model.",digits=2)
 ```
 
 ### Support Vector Machines (SVM)
-        
+
+Three different Support Vector Machine (SVM) models were built to predict USDA Grade using data provided by REIMs: a SVM with a linear, polynomial, and radial kernel. The best SVM associated with each kernel were determined similarly to the best Logistic Regression model. For each kernel type, SVM's were built and tuned using an increasing number of principal components, and the best model was identified as the one that minimized 10-fold cross validation error.
             
 #### *Linear SVM*
 
-Linear Support Vector Machines....
 
-See Figure \@ref(fig:svmLin-CVPlot). 
-
-See Figure \@ref(fig:svmLin-CostPlot). 
 
 ```{r linSVMCode}
-# This calls a script to run the Linear SVM
+# This calls a script to run the Linear SVM. It takes a long time to run so results were saved in a CSV and imported for results.
 #source("SVM/SVM_linear.R", local = knitr::knit_global())
 ```
 
@@ -351,27 +372,23 @@ ggplot(data= svmLinResultsDF, aes(x=PrincipalComponents_linSVM, y=Best_Cost)) +
 
 ```
 
+
 ```{r svmLin-Results, include=TRUE}
 SummaryDF%>%
 kable(caption="Best performing Linear SVM Model.",digits=4)
 
 ```
+79 individual Support Vector Machines with a linear kernel were built that using a progressive number of scores  along principal components directions (from 2 to 80) as predictors. 80 was the maximum number of principal components directions included in a single model because, as discussed in the section on PCA, nearly all of the variability of the data is included in the first 80 principal component directions. On each iteration of the model, the Linear SVM was tuned to the optimal cost using 10-fold cross validation. For each model, the optimal cost was searched for in a range between .01 and 100. Once the optimal CV Error was identified for each Linear SVM containing an increasing number of principal component directions, the best model was identified as the linear SVM that minimized the CV Error.  
 
-The best performing model is shown in Table \@ref(tab:svmLin-Results).
+Figure \@ref(fig:svmLin-CVPlot) shows the CV Error of each Linear SVM that was built. As shown in the figure, the CV Error, in general, trended downward in models from 2 principal components included to 24 principal components. As the number of principal components included in the linear SVMs were increased, the CV Error generally (but not absolutely) trended upward. \@ref(fig:svmLin-CostPlot) shows the optimal cost for each model. As is shown in the figure, the optimal cost lies within the range of costs that was searched in when tuning the model, so it is assumed that an optimal model was identified in all cases. 
 
-
+The best Linear SVM model that was identified is summarized in \@ref(tab:svmLin-Results). The model included 24 principal components, had 32 support vectors, and had a CV Error of 11.8%. 
 
 #### *Polynomial SVM*
 
-Polynomial Support Vector Machines....
 
-See Figure \@ref(fig:svmPoly-CVPlot). 
-
-See Figure \@ref(fig:svmPoly-CostPlot).
-
-See Figure \@ref(fig:svmPoly-DegreePlot).
 ```{r polySVMCode}
-# This calls a script to run the Poly SVM
+# This calls a script to run the Poly SVM. Code commented out because it takes a long time to run. Results were stored in a csv and brought in for plotting.
 #source("SVM/SVM_Poly.R", local = knitr::knit_global())
 ```
 
@@ -438,17 +455,16 @@ kable(caption="Best performing Polynomial SVM Model.",digits=4)
 
 ```
 
-The best performing model is shown in Table \@ref(tab:svmPoly-Results).
+79 individual Support Vector Machines with a polynomial were built using a progressive number of scores along principal component direcitons (from 2 to 80) as predictors. Similarly to the linear SVM, 80 was the maximum number of principal components included in a single model because nearly all of the variability of the data is included in the first 80 principal component directions. On each iteration of the model, the Polynomial SVM was tuned to both the optimal cost and optimal degree using 10-fold cross validation. For each model, the optimal cost was searched for in a range between .001 and 1000, and the optimal degree was searched for between degrees 1 to 4. Higher degree polynomials were not included on the findings that higher degree Polynomial SVM's did not produce the optimal results and only served to increase computing times. Once the optimal CV Error was identified for each Polynomial SVM containing an increasing number of principal component directions, the best model was identified as the Polynomial SVM that minimized the CV Error.  
+
+Figure \@ref(fig:svmPoly-CVPlot) shows the optimal CV Error of each Polynomial SVM that was built. As shown in the figure, the CV Error, in general, trended downward in models from 2 principal components included to 16 principal components. As the number of principal components included in the polynomial SVMs were increased, the CV Error generally remained relatively flat, which is different from the results of the linear SVM analysis that showed a clearer minimum.
+
+\@ref(fig:svmPoly-CostPlot) shows the optimal cost for each model. As is shown in the figure, the optimal cost lies within the range of costs that was searched in when tuning the model, so it is assumed that an optimal model was identified in all cases. \@ref(fig:svmPoly-DegreePlot) shows the optimal degree for each Polynomial SVM. Interestingly, all models that included scores from more than 11 principal component directions had an optimal degree of 1, which suggests that as more principal component direction are added to the model, an SVM with a linear kernel perform better than an SVM with a higher order polynomial kernel. 
+
+The best Polynomial SVM model that was identified is summarized in \@ref(tab:svmPoly-Results). The model included 48 principal components, had 48 support vectors, and had a CV Error of 10.7%. 
+
 
 #### *Radial SVM*
-
-Radial Support Vector Machines....
-
-See Figure \@ref(fig:svmRad-CVPlot). 
-
-See Figure \@ref(fig:svmRad-CostPlot).
-
-See Figure \@ref(fig:svmRad-GammaPlot).
 
 ```{r radSVMCode}
 # This calls a script to run the Radial SVM
@@ -522,12 +538,26 @@ SummaryDF%>%
 kable(caption="Best performing Radial SVM Model.",digits=4)
 ```
 
-The best performing radial SVM model is shown in Table \@ref(tab:svmRad-Results).
+59 individual Support Vector Machines with a radial kernel were built using a progressive number of scores along principal components directions (from 2 to 60) as predictors. Unlike the linear and polynomial SVM analysis, 60, not 80, was the maximum number of principal components included in a single model. This change was due to computing limitations. It was determined that the 97% of the variability in the predictor data can be found in the first 60 principal component directions was sufficient to make conlusions on the best radial SVM. 
+
+Each Radial SVM including differing numbers of principal component directions was tuned to both the optimal cost and optimal gamma using 10-fold cross validation. For each model, the optimal cost was searched for in a range between .001 and 10,000, and the optimal gammas was searched for between .001 to 1,000. Once the optimal CV Error was identified for each Radial SVM containing an increasing number of principal component directions, the best model was identified as the Radial SVM that minimized the CV Error.  
+
+Figure \@ref(fig:svmRad-CVPlot) shows the optimal CV Error of each Radial SVM that was built. As shown in the figure, the CV Error, in general, trended downward in models from 2 principal component directions included to 30 principal component directions. As the number of principal component directions included in the Radial SVMs were increased from 30, the CV Error generally (but not absolutely) increased.
+
+\@ref(fig:svmRad-CostPlot) shows the optimal cost that was identified for each model. As is shown in the figure, the optimal cost lies within the range of costs that was searched in when tuning the model. \@ref(fig:svmRad-GammaPlot) shows the optimal gamma that was identified for each model. As is shown in the figure, the optimal gammas lies within the range of gamma that was searched in when tuning the model. Because the optimal gamma and cost identfied for each model was within their respective search ranges, it is assumed that an optimal model was identified in all cases.
+
+The best Radial SVM model that was identified is summarized in \@ref(tab:svmRad-Results). The model included 30 principal components, had 45 support vectors, and had a CV Error of 10.8%. 
 
 
 ### Summary of Categorical Models
 
-The best performing model is shown in Table \@ref(tab:catModelSummary).
+A summary table of the best performing Logistic Regression Model, Linear SVM, Polynomial SVM, and Radial SVM is provided in \@ref(tab:catModelSummary). As shown in the table, simplest, yet worst, performing model was the Logistic Regression that included 9 principal component directions. The CV Error for the Logistic Regression model was more than 8% worse than that of any other model. 
+
+The best performing model as measured by Cross Validation error was the Polynomial SVM that utilized the scores from 48 principal component directions. However, this model only outperformed the Radial SVM that utilized the scores from 30 principal component directions by .1%. Even though the Polynomial SVM performed slightly better, it did require the use of 18 more principal component directions, which is a lot more complexity in the model. In other words, the Radial SVM was able to perform almost just as well with significantly less complexity. Furthermore, the CV Error vs. Number of Principal Components plots for the Radial SVM (\@ref(fig:svmRad-CVPlot)) showed a much more distinct minimum of CV Error against the inlcuded number of principal components than that of the Polynomial SVM (\@ref(fig:svmPoly-CVPlot)) which is much more flat. This potentially suggests the the "better" results seen by the Polynomial SVM could have been more by chance than an actual optimal performance.
+
+The optimal Radial SVM outperformed the Linear SVM with 24 principal component directions included by roughly 1%. Thus, by including 6 less principal component directions, the Linear SVM only performed slightly worse. Again, it is rather subjective, but it was decided that the added complexity of the Radial SVM was worth the 1% of accuracy gained.
+
+In summation, the overall best model was the Radial SVM that included 30 principal component directions. This model was able, through PCA, to reduce the dimensional of the problem from 1,700 to only 30 and still perform with an accuracy of 89.2% of predicting USDA Grade from REIMs data. Overall, this is a good model and could potentially see real world application!
 
 ```{r catModelSummary, include=TRUE}
 ModelNames <- c('Logistic Regression', 'Linear SVM', 'Polynomial SVM', 'Radial SVM')
@@ -687,6 +717,8 @@ mean(ten28DF$Ten28)
 
 ### Lasso Regression
 
+#### Standard Lasso Regression
+
 ```{r LassoNonPCACode}
 
 #Lasso on Ten3 (Non-PCA)
@@ -704,7 +736,11 @@ cv_lasso <- cv.glmnet(X_train, Y_train, alpha = 1, lambda = lambda)
 lambdaPlot3 <- ggplot() +
   geom_line(aes(cv_lasso$lambda, cv_lasso$cvm)) +
   geom_point(aes(cv_lasso$lambda, cv_lasso$cvm)) +
-  scale_x_log10()
+  scale_x_log10()+
+  labs(title= "Optimal Lambda vs. Principal Components for Tenderness at 3 Days Postmortem", y="CV MSE", x = "Lambda") +
+  theme(axis.text=element_text(size=10),
+        axis.title=element_text(size=10),
+        plot.title = element_text(hjust = 0.5))
 
 lambdaMin_3 <- cv_lasso$lambda.min
 cv_error_min_3 <- min(cv_lasso$cvm)
@@ -741,7 +777,11 @@ cv_lasso <- cv.glmnet(X_train, Y_train, alpha = 1, lambda = lambda)
 lambdaPlot14 <- ggplot() +
   geom_line(aes(cv_lasso$lambda, cv_lasso$cvm)) +
   geom_point(aes(cv_lasso$lambda, cv_lasso$cvm)) +
-  scale_x_log10()
+  scale_x_log10()+
+  labs(title= "Optimal Lambda vs. Principal Components for Tenderness at 14 Days Postmortem",y="CV MSE", x = "Lambda") +
+  theme(axis.text=element_text(size=10),
+        axis.title=element_text(size=10),
+        plot.title = element_text(hjust = 0.5))
 
 lambdaMin_14 <- cv_lasso$lambda.min
 cv_error_min_14 <- min(cv_lasso$cvm)
@@ -775,7 +815,11 @@ cv_lasso <- cv.glmnet(X_train, Y_train, alpha = 1, lambda = lambda)
 lambdaPlot28 <- ggplot() +
   geom_line(aes(cv_lasso$lambda, cv_lasso$cvm)) +
   geom_point(aes(cv_lasso$lambda, cv_lasso$cvm)) +
-  scale_x_log10()
+  scale_x_log10()+
+  labs(title= "Optimal Lambda vs. Principal Components for Tenderness at 28 Days Postmortem", y="CV MSE", x = "Lambda") +
+  theme(axis.text=element_text(size=10),
+        axis.title=element_text(size=10),
+        plot.title = element_text(hjust = 0.5))
 
 lambdaMin_28 <- cv_lasso$lambda.min
 cv_error_min_28 <- min(cv_lasso$cvm)
@@ -802,6 +846,27 @@ write.csv(Ten28NonPCA_Results,"Lasso/LassoNonPCA/Ten28.csv", row.names = FALSE)
 
 ```
 
+
+
+
+```{r LassoNonPCA-Lambda3Plot, include=TRUE,fig.width = 6, fig.height = 2, fig.cap="CV MSE associated with differening values for lambda in for the Tenderness at Day 3 Lasso Model"}
+
+lambdaPlot3
+
+```
+```{r LassoNonPCA-Lambda14Plot, include=TRUE,fig.width = 6, fig.height = 2, fig.cap="CV MSE associated with differening values for lambda in for the Tenderness at Day 14 Lasso Model"}
+
+lambdaPlot14
+
+```
+
+```{r LassoNonPCA-Lambda28Plot, include=TRUE,fig.width = 6, fig.height = 2, fig.cap="CV MSE associated with differening values for lambda in for the Tenderness at Day 28 Lasso Model"}
+
+lambdaPlot28
+
+```
+
+
 ```{r LassoNonPCA-summary, include=TRUE}
 #Report the Lasso results
 days <- c(3, 14, 28)
@@ -818,6 +883,13 @@ kable(caption="Summary of Lasso models for tenderness at days 3, 14, and 28",dig
 
 ```
 
+Three Lasso Regression model were built to predict beef tenderness on the 83 samples at 3, 14, and 28 days postmortem. Each of the models were developed using 10-fold cross validation to tune the parameter lambda on a training dataset that represented 51 of the 83 samples. Once the models were trained optimally, they were used to predict the remained samples to predict the test error. 
+
+\@ref(fig:LassoNonPCA-Lambda3Plot), \@ref(fig:LassoNonPCA-Lambda14Plot), \@ref(fig:LassoNonPCA-Lambda28Plot) show how the Cross Validation Mean Squared Error (MSE) of the Tenderness at Day 3, 14, and 28 (respectively) changed with differing values of lambda. To tune the model, the value of lambda was identified that minimized the CV MSE for each model.
+
+Using these tuned models, the Test MSE was calculated on the data left out of the Training set. \@ref(tab:LassoNonPCA-summary) provides a summary of the three models. As shown in the table, the Tenderness at 3 days model shows a Test MSE of 19.05 and it only included one predictor in the model. The tenderness at 14 days model shows a Test MSE of 15.36 and it included no predictors in the model. That is to say, the model only includes an intercept that is the average of the training values and the Lasso algorithm could not identify a model that was simply better than taking the average of the Training dataset tenderness at day 14. Lastly, the tenderness at 28 days model has a Test MSE of 6.61 and included 18 predictors in the model. A more in depth summary of how valuable these test errors are will be include below in the summary section of the regression analysis. 
+
+#### Lasso using Principal Components Regression
 
 ```{r LassoTen3Code}
 # Lasso on principal components for Ten3
@@ -902,7 +974,7 @@ CV_MSE <- c(optimal_TestError_LassoPCATen3, optimal_TestError_LassoPCATen14, opt
 Lambda <- c(optimalLambda_LassoPCATen3, optimalLambda_LassoPCATen14,optimalLambda_LassoPCATen28)
 Size <- c(optimalSize_LassoPCATen3, optimalSize_LassoPCATen14, optimalSize_LassoPCATen28)
 
-summaryLassoPCADF <- data.frame(Day = days, Test_MSE=CV_MSE, PrincipalComponents = principalComponents, Lambda = Lambda, Size = Size)
+summaryLassoPCADF <- data.frame(Day = days, CV_MSE =CV_MSE, PrincipalComponents = principalComponents, Lambda = Lambda, Size = Size)
 summaryLassoPCADF%>%
 kable(caption="Summary of Lasso models using PCA for tenderness at days 3, 14, and 28",digits=4)
 
@@ -947,6 +1019,13 @@ ggplot(data=LassoTen3Results, aes(x= PrincipalComponents, y = Best_Lambda)) +
         plot.title = element_text(hjust = 0.5))
 
 ```
+
+A second attempt at Lasso Regression was made utilizing the principal components to answer the question of if there be a direction of variability along a principal component that is unrelated to tenderness at 3, 14, and 28 days. 
+
+For each of the tenderness at 3, 14, and 28 day datasets, a process similar to that which was used for the categorical analysis was performed here. Several Lasso models were created using, in each, a progressive number of principal component directions (from 2 to 40). Each of these lasso models utilized the full dataset and reported a 10-Fold Cross Validation MSE error that was used for model evaluation. Furthermore, each of these models were tuned to use the appropriate value of lambda. The results for this analysis are provided in  \@ref(tab: LassoPCA-summary).  As shown in the table, the optimal value for the tenderness at 14 and 28 day models had a size of zero. That is to say, it was no better than the average values of the responses. The tenderness at day 3 model did have a non-zero size. It used 18 principal components, determined 12 non-zero coefficients for these 18 principal component directions, and it resulted in a CV Error of 17.93.
+
+\@ref(tab:LassoPCATen3-CVPlot) shows the results for CV MSE vs. number of principle components included in the model for tenderness at day 3. As shown in the plot, there is a clear minimum of the CV MSE in the model with 18 principal components. \@ref(tab:LassoPCATen3-Lambda).
+
 
 
 ### Splines
