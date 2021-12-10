@@ -4,7 +4,7 @@ author: "Patrick Noe, Logan Perkins, Michael Hernandez"
 date: "12/16/2021"
 output: 
   bookdown::pdf_document2: default
-abstract: "Beef grade and tenderness are important qualities to both understand and predict within the meat processing industry, and most contemporary technologies are limited in their capabilities in making timely and cost effective analysees of these qualities of beef. More modern technologies like Rapid Evaporative Ionization Mass Spectrometry (REIMS) are available to assess the chemical composition of beef in an efficient manner. The purpose of this study was to analyze REIMs data on 83 beef striploins to explore the predictive preformance of REIMS on both USDA quality grade and the beef tenderness at three aging periods (3, 14, and 28 days). The study develops and compares several different statistical learning models trained on REIMs data to predict grade and tenderness. The purpose of these models are to (1) Discover if there is a predictive relationship between REIMs data and beef grade/tenderness, and (2) Select a model that performs the best at prediction."
+abstract: "Beef USDA quality grade and tenderness are important attributes that help to predict consumers eating experience and improve beef marketability. Currently, almost 80% of the beef plants implement USDA quality grading to add value to their products by sorting carcasses based on expected quality. However, USDA quality grade does not work well to predict tenderness, and the current technologies to measure tenderness are not widely applied because they are invasive, increase waste, and are difficult to apply in real-time. Therefore, technologies that can classify beef carcasses based on USDA quality grade and predict tenderness over time with just one measure have a great potential for the beef industry. Modern technologies like Rapid Evaporative Ionization Mass Spectrometry (REIMS) are available to assess the chemical composition of beef products in real-time and without sample preparation. The purpose of this study was to analyze REIMs data on beef strip loins (n=83)  to explore the predictive performance of REIMS (number of predictors generated = 1700) on both USDA quality grade and the beef tenderness at three aging periods (3, 14, and 28 days). For this purpose, the dimensionality of the data was reduced using PCA and then classification models for USDA grade, and regression models for tenderness. For USDA grade, the highest performance classification model was the Support Vector Machine (SVM) polynomial with 89.3% of accuracy, and the best regression was the Splines for day 3 (MSE=17.22), the Lasso for day 14 (MSE=10.01), and Splines for day 28 (MSE=5.31). REIMS showed a potential to classify beef carcasses by USDA grade, but the predictive models for beef tenderness did not perform well."
 ---
 
 ```{r setup, include=FALSE}
@@ -38,7 +38,9 @@ library(kableExtra)
 ```
 
 # INTRODUCTION
-Beef palatability depends on tenderness, juiciness, and flavor. In the United States, there is a quality grading system that classifies beef carcasses on different quality categories (USDA). Some of the most common USDA quality grades are Prime, Choice, and Select, with Prime the best quality and Select being the lowest quality of the three classifications. The USDA quality grade is based on animal maturity and marbling level (intramuscular fat), and it is correlated with the overall consumer acceptance (USDA). However, tenderness is not predicted with USDA quality grade. Beef industry stakeholders have been searching for a non-destructive, real-time instrument for determining the tenderness of beef for nearly 40 years. Although some technologies allow the determination of beef tenderness, they require sacrificing a loin steak and cannot be performed in real-time. Rapid Evaporative Ionization Mass Spectrometry (REIMS) is a novel environmental mass spectrometry technique that combines a sample vaporization device with a time-of-flight mass spectrometer. When a sampling device, which uses a high-frequency current, comes into contact with the sample surface, an aerosol of molecules is generated and transformed into a mass spectral fingerprint. This technology has the advantage that it can be used in-situ and in the real-time classification of biological tissues without any sample preparation. Therefore, the goal of this study was to evaluate the ability of REIMS to predict USDA quality grade and beef tenderness.
+Beef palatability depends on three pillars: tenderness, juiciness, and flavor (Calkins and Hodgen, 2007). Beef tenderness plays a large role in consumer acceptance of beef, so measuring this attribute is important to the industry (de Huidobro et al., 2005). The current USDA quality grading systems for beef classify carcasses based on animal maturity and marbling score (intramuscular fat, USDA, 2019), and many studies have demonstrated that the USDA quality grade is correlated with beef consumer satisfaction (Behrends et al., 2005). Although the USDA quality grade correlates with beef consumer satisfaction, the correlation with tenderness is not strong because this attribute depends on intrinsic and extrinsic factors that the grading system does not consider (e.g. aging process, electrical stimulation, breed). Although there are current technologies to determine beef tenderness, they require sacrificing a loin steak and cannot be performed in real-time (Belk et al., 2001). The beef industry stakeholders have been searching for a non-destructive, real-time instrument for determining the tenderness of beef for nearly 40 years. 
+
+Rapid Evaporative Ionization Mass Spectrometry (REIMS) is a novel environmental mass spectrometry technique that combines a sample vaporization device with a time-of-flight mass spectrometer (Barlow et al., 2021). When the sampling device, which uses a high-frequency current, comes into contact with the sample surface, an aerosol of molecules is generated and transformed into a mass spectral fingerprint. Studies have demonstrated that this technology can classify biological tissues with more than 90% accuracy (Ross et al., 2021). In addition, this technology has the advantage that it can be used in-situ and in real-time classification without any sample preparation (Ross et al., 2021). Therefore, the goal of this study was to evaluate the ability of REIMS to predict USDA quality grade and beef tenderness.  
 
 ```{r}
 ### Reproducibility
@@ -60,9 +62,16 @@ gradeDF <- REIMS[,!(names(REIMS) %in% union(dropBase,setdiff(responseVars, c("US
 # METHODOLOGY
 
 ## Sample collection and aging
-To assess the ability of REIMS to predict beef tenderness and USDA quality grade, samples consisting on 2 USDA quality grades (USDA Select, and USDA upper 2/3 Choice), and 3 aging periods (3, 14, and 28 postmortem days) were evaluated. A total of eithy-three beef carcasses were selected at the time of grading (36h postmortem). Forty-one carcasses graded as USDA Select, and forty-two carcasses graded as upper 2/3 Choice were selected to ensure a balanced data. Additionally to the carcasses data, a sliver of the *longissimus lumborum* was collected. During fabrication, whole strip loins were collected from the carcasses selected and each strip loin were divided into three pieces and randomly assigned to one of three aging treatments (3, 14, 28 days). After 
+  To assess the ability of REIMS to predict beef tenderness and USDA quality grade, samples consisting of 2 USDA quality grades (USDA Select and USDA upper 2/3 Choice) and 3 aging periods (3, 14, and 28 postmortem days) were evaluated. A total of eighty-three (n=83) beef carcasses were selected at the time of grading (36h postmortem). Forty-one carcasses graded as USDA Select, and forty-two carcasses graded as upper 2/3 Choice were selected to ensure balanced data. Additional to the carcasses data, a sliver of the *longissimus lumborum* muscle was collected. During fabrication, whole strip loins were collected from selected carcasses and divided into three pieces. Each piece was randomly assigned to one of the three aging treatments (3, 14, 28 days). After aging, tenderness was measured in each sample using Warner-Bratzler shear force method as described by de Huidobro et al. (2005).  
 
+## Data preprocessing and analysis  
+REIMS data was preprocessed using LiveID software (Waters Corporation) to reduce noise and normalize the mass spectra and ended up with 1700 mass bins used as predictors to build predictive models using R Studio. Then Principal Component Analysis (PCA) was performed to the 1700 mass bins (p=1700) to evaluate any underlying data structure.  
 
+## Classification models for USDA quality grade 
+Before performing machine learning algorithms, PCA was performed to the mass bins as a dimensionality reduction method. Principal components were used as predictors in all the models built, and the number of components was tuned with 10-fold cross-validation error. In total, 4 models were built using logistic regression with the function `glm`  from the stats packages, Support Vector Machine (SVM) linear, SVM-polynomial, and SVM-radial using function `tune.svm` from the e1071 package. The optimal values of cost, lambda, and degree of the SVM algorithms were selected by tuning the models with the cross-validation error.    
+
+## Regression models for beef tenderness  
+Predictive models were built using Best Subset Selection (BSS), Lasso, Splines, and Principal Component Regression (PCR) to predict beef tenderness at different aging periods (3, 14, and 28 days postmortem). BSS was performed using function `regsubsets` from the leaps package, Lasso using `glmnet` from glmnet package, Splines with `gam` from mgcv package, and PCR with `pcr` from the analogue package. For Splines and Lasso, PCA was performed as dimensionality reduction method.  
 
 ``` {r}
 #Creating training and test subsets for regressions
@@ -305,19 +314,6 @@ kable(caption="Best performing logistic regression model.",digits=2)
 
 ```
 
-
-
-
-### K-Nearest Neighbors
-```{r}
-
-```
-
-
-### PCA
-```{r}
-
-```
 
 ### Support Vector Machines (SVM)
 
@@ -571,7 +567,6 @@ kable(caption="Best performing USDA Grade Models.",digits=4)
 ```
 
 ## Regression Prediction of Tenderness at 3, 14 and 28 Days
-
 
 ```{r, echo = FALSE}
 #Here are the names of the data sets for all the following models. They correspond to a 60/40 training/test subsets.
@@ -1121,3 +1116,19 @@ kable(caption="Table 2. Mean Squared Error (MSE) of regression models for tender
 ```
 
 # CONCLUSION
+
+
+# REFERENCES
+Barlow, R. S., A. G. Fitzgerald, J. M. Hughes, K. E. McMillan, S. C. Moore, A. L. Sikes, A. B. Tobin, and P. J. Watkins. 2021. Rapid Evaporative Ionization Mass Spectrometry: A Review on Its Application to the Red Meat Industry with an Australian Context. Metabolites. 11:171. doi:10.3390/metabo11030171.  
+
+Behrends, J. M., K. J. Goodson, M. Koohmaraie, S. D. Shackelford, T. L. Wheeler, W. W. Morgan, J. O. Reagan, B. L. Gwartney, J. W. Wise, and J. W. Savell. 2005. Beef customer satisfaction: Factors affecting consumer evaluations of calcium chloride-injected top sirloin steaks when given instructions for preparation1. Anim. Sci. J. 83:2869–2875. doi:10.2527/2005.83122869x.  
+
+Belk, K. E., M. H. George, J. D. Tatum, G. G. Hilton, R. K. Miller, M. Koohmaraie, J. O. Reagan, and G. C. Smith. 2001. Evaluation of the Tendertec beef grading instrument to predict the tenderness of steaks from beef carcasses1. Journal of Animal Science. 79:688–697. doi:10.2527/2001.793688x.  
+
+Calkins, C. R., and J. M. Hodgen. 2007. A fresh look at meat flavor. Meat Science. 77:63–80. doi:10.1016/j.meatsci.2007.04.016.  
+
+de Huidobro, F. R., E. Miguel, B. Blázquez, and E. Onega. 2005. A comparison between two methods (Warner–Bratzler and texture profile analysis) for testing either raw meat or cooked meat. Meat Science. 69:527–536. doi:10.1016/j.meatsci.2004.09.008.  
+
+Ross, A., C. Brunius, O. Chevallier, G. Dervilly, C. Elliott, Y. Guitton, J. E. Prenni, O. Savolainen, L. Hemeryck, N. H. Vidkjær, N. Scollan, S. L. Stead, R. Zhang, and L. Vanhaecke. 2021. Making complex measurements of meat composition fast: Application of rapid evaporative ionisation mass spectrometry to measuring meat quality and fraud. Meat Sci. 181:108333. doi:10.1016/j.meatsci.2020.108333.  
+
+USDA. 2019. What’s Your Beef – Prime, Choice or Select? Available from: https://www.usda.gov/media/blog/2013/01/28/whats-your-beef-prime-choice-or-select
