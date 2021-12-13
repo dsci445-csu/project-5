@@ -1115,6 +1115,7 @@ kable(caption="Table 2. Mean Squared Error (MSE) of regression models for tender
 
 # CONCLUSION
 
+Of the models used to predict meat tenderness above, the MSEs obtained from each model as well as the amount of predictors used to obtain them are particularly important in assessing which of the models would be most effective in predictions. A notable observation that is present when shown this information is that the best models were the ones whose data was made with meat aged for 28 days, of those models, PCA-Splines appears to have the lowest MSE, indicating that it was the most effective at predicting meat tenderness than the other models. This is also the case with meat that was aged for 3 days, but best subset selection appears to be the best model for meat aged for 14 days. Something else that can be observed from the MSEs of the regression models is the amount of predictors used in the PCA-Lasso models, particularly, the use of no predictors when modelling for meat aged for 14 days and 28 days. This is about as useful as just taking the average of the respective data and calling the result the model's prediction.
 
 # REFERENCES
 Barlow, R. S., A. G. Fitzgerald, J. M. Hughes, K. E. McMillan, S. C. Moore, A. L. Sikes, A. B. Tobin, and P. J. Watkins. 2021. Rapid Evaporative Ionization Mass Spectrometry: A Review on Its Application to the Red Meat Industry with an Australian Context. Metabolites. 11:171. doi:10.3390/metabo11030171.  
