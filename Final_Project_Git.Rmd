@@ -693,7 +693,7 @@ ggplot(data=sub28, aes(x= PrincipalComponents, y = CV_MSE)) +
 
 
 ### Principal Component Regression (PCR)
-Three PCR models were trained using 10-fold cross-validation to predict tenderness at days 3, 14, and 28. Figures \@ref(fig:PCRCode-PCR3Plot), \@ref(fig:PCRCode-PCR14Plot), and \@ref(fig:PCRCode-PCR28Plot) 3 show the mean squared error (MSE) of the cross-validation obtained for different PC numbers. In Figure \@ref(fig:PCRCode-PCR3Plot) the MSE decreases when the number of PC increases up to 6, and then MSE increases with the number of PC. In figures \@ref(fig:PCRCode-PCR14Plot) and \@ref(fig:PCRCode-PCR28Plot) the MSE increases PC. Therefore the PC used for tenderness models at days 14 and 28 were 1 and 2, respectively.
+Three PCR models were trained using 10-fold cross-validation to predict tenderness at days 3, 14, and 28. Figures \@ref(fig:PCRCode-PCRPlot) A, B and C show the mean squared error (MSE) of the cross-validation obtained for different PC numbers. In Figure \@ref(fig:PCRCode-PCRPlot) A the MSE decreases when the number of PC increases up to 6, and then MSE increases with the number of PC. In figures \@ref(fig:PCRCode-PCRPlot) B and C the MSE increases PC. Therefore the PC used for tenderness models at days 14 and 28 were 1 and 2, respectively.
 ```{r PCRCode}
 #Fitting the PCR Ten3 model using 10-fold cross-validation
 set.seed(1)
@@ -712,10 +712,6 @@ mean(ten3DF$Ten3)
 plot(mse3$val)
 ```
 
-```{r PCRCode-PCR3Plot, include=TRUE,fig.width = 6, fig.height = 3, fig.cap="PCR model size vs. MSE (test) tenderness at day 3"}
-#Plot
-validationplot (pcr.fit_ten3, val.type = "MSE",main=NULL,xlab="Number of PC")
-```
 
 ```{r}
 
@@ -736,10 +732,6 @@ sqrt(MSE_PCR_day14)
 mean(ten14DF$Ten14)
 ```
 
-```{r PCRCode-PCR14Plot, include=TRUE,fig.width = 6, fig.height = 2, fig.cap="PCR model size vs. MSE (test) tenderness at day 14"}
-#Plot
-validationplot (pcr.fit_ten14, val.type = "MSE",main=NULL,xlab="Number of PC")
-```
 
 ```{r}
 #Fitting the PCR Ten28 model using 10-fold cross-validation
@@ -760,9 +752,14 @@ sqrt(MSE_PCR_day28)
 mean(ten28DF$Ten28)
 ```
 
-```{r PCRCode-PCR28Plot, include=TRUE,fig.width = 6, fig.height = 2, fig.cap="PCR model size vs. MSE (test) tenderness at day 28"}
+```{r PCRCode-PCRPlot, include=TRUE,fig.width = 8, fig.height = 4, fig.cap="PCR model size vs. MSE (test) tenderness at day 28"}
+
+par(mfrow = c(1, 3))
 #Plot
-validationplot (pcr.fit_ten28, val.type = "MSE",main=NULL,xlab="Number of PC")
+validationplot (pcr.fit_ten3, val.type = "MSE",main="(A) 3 days",xlab=" ",ylab="MSE")
+validationplot (pcr.fit_ten28, val.type = "MSE",main="(B) 14 days",xlab="Number of PC",ylab=" ")
+validationplot (pcr.fit_ten14, val.type = "MSE",main="(C) 28 days",xlab=" ",ylab=" ")
+
 ```
 
 
