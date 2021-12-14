@@ -155,7 +155,7 @@ print(p4 + labs(y="Comp 2", x = "Comp 1"))
 ```
 
 ### Proportion of Variance Explained
-While analyzing the first several principal components did not show significant clustering of either USDA Grade or beef tenderness, principal components analysis did provide a useful tool to reducing the dimensionality of several of the models that were tested in this study. The Proportion of Variance Explained (PVE) by each principal component is shown in Figure \@ref(fig:pvePlot). The figure shows that the majority of the variability in the predictors lies within the first twenty principal components. More specifically, almost 31% of variability in the data is captured by the first principal component. There is a noticeable drop in variability explained by principal component 2 (PVE = .19) and principal component 3 (PVE = .06). As shown in the figure, there is another significant drop in variability explained between principal component 9 and 10. The proportion of variance explained drops at a mostly consistent rate between principal components 10 and 24. After this, much less information is contained in each of the remaining principal components.Table \@ref(tab:PVE-table) shows the cumulative variance that is explained using increasing values of principal components. As shown by the table, nearly 100% of the variability in the data is captured by the first 80 principal components. 
+While analyzing the first several principal components did not show significant clustering of either USDA Grade or beef tenderness, principal components analysis did provide a useful tool to reducing the dimensionality of several of the models that were tested in this study. The Proportion of Variance Explained (PVE) by each principal component is shown in Figure \@ref(fig:pvePlot). The figure shows that the majority of the variability in the predictors lies within the first twenty principal components. More specifically, almost 31% of variability in the data is captured by the first principal component. There is a noticeable drop in variability explained by principal component 2 (PVE = .19) and principal component 3 (PVE = .06). As shown in the figure, there is another significant drop in variability explained between principal component 9 and 10. The proportion of variance explained drops at a mostly consistent rate between principal components 10 and 24. After this, much less information is contained in each of the remaining principal components. Table \@ref(tab:PVE-table) shows the cumulative variance that is explained using increasing values of principal components. As shown by the table, nearly 100% of the variability in the data is captured by the first 80 principal components. 
 
 This information and the transformed predictor space provided by PCA allowed for the dimensionality reduction of the predictor space. This reduced dimensionality allowed models that do not have inherent dimension reduction techniques, like logistic regression and support vector machines, to be utilized by this study. The way that Principal Component Analysis was utilized within models will be discussed in further detail within the sections of the report that describe these models. It is worth noting that, often times, the optimal was identified where an "elbow" on the PVE plot did occur.  
 
@@ -581,7 +581,8 @@ ten28DF_test
 ```
 
 ### Best subset selection  
-Figure    \@ref(fig:BestSubsetSelectionCode-Bestsubset3Plot), Figure \@ref(fig:BestSubsetSelectionCode-Bestsubset14Plot), and Figure \@ref(fig:BestSubsetSelectionCode-Bestsubset28Plot) show the number of components versus the cross-validation error rate of day-3, day-14, and day-28 tenderness models. In the three graphs we can notice that the error rate increases with the number of components and the best models are the ones with only the principal component 1. In addition the error rates of day-28 models are lower than the error rates of day-14 models, and the error rates of day-3 models are the highest ones. The lastest results were expected since tenderness decreased over time.
+Figure    \@ref(fig:BestSubsetSelectionCode-Bestsubset3Plot), Figure \@ref(fig:BestSubsetSelectionCode-Bestsubset14Plot), and Figure \@ref(fig:BestSubsetSelectionCode-Bestsubset28Plot) show the number of components versus the cross-validation error rate of day-3, day-14, and day-28 tenderness models. In the three graphs we can notice that the error rate increases with the number of components and the best models are the ones with only the principal component 1. In addition the error rates of day-28 models are lower than the error rates of day-14 models, and the error rates of day-3 models are the highest ones. The lastest results were expected since tenderness decreases over time.  
+The selection of predictors in the different models were different to each others. In the day-3 model, the best predictor was X752, the best predictor for day-14 model was X831, and for day 28 model was X483.5. This implies that there is not a clear association of tenderness with any mass bin.
 ```{r BestSubsetSelectionCode}
 #Tenderness at day 3
 set.seed(1)
@@ -594,7 +595,6 @@ res.sum <- summary(reg.fwd)
 test.mat <- model.matrix(Ten3~., data=ten3DF_test)
 val.errors3 <- rep(NA, 20)
 coefi<-seq(0)
-
 for (i in 1:20) {
   coefi<-coef(reg.fwd , id = i)
   pred <- test.mat[, names(coefi)] %*% coefi
@@ -611,7 +611,7 @@ sub3<-data.frame(PrincipalComponents=seq(1,20),CV_MSE=val.errors3)
 ggplot(data=sub3, aes(x= PrincipalComponents, y = CV_MSE)) +
   geom_line() +
   geom_point()+
-  labs(y="CV Error", x = "Number of Prinicipal Components") +
+  labs(y="MSE", x = "Number of PC") +
   theme(axis.text=element_text(size=10),
         axis.title=element_text(size=10),
         plot.title = element_text(hjust = 0.5))
@@ -635,6 +635,7 @@ for (i in 1:20) {
   pred <- test.mat[, names(coefi)] %*% coefi
   val.errors14[i] <- mean((ten14DF_test$Ten14-pred)^2)
 }
+
 ```
 
 ``` {r BestSubsetSelectionCode-Bestsubset14Plot, include=TRUE,fig.width = 6, fig.height = 2, fig.cap="Best subset model size vs. MSE (test) tenderness at day 14"}
@@ -647,7 +648,7 @@ sub14<-data.frame(PrincipalComponents=seq(1,20),CV_MSE=val.errors14)
 ggplot(data=sub14, aes(x= PrincipalComponents, y = CV_MSE)) +
   geom_line() +
   geom_point()+
-  labs(y="CV Error", x = "Number of Prinicipal Components") +
+  labs(y="MSE", x = "Number of PC") +
   theme(axis.text=element_text(size=10),
         axis.title=element_text(size=10),
         plot.title = element_text(hjust = 0.5))
@@ -682,15 +683,15 @@ sub28<-data.frame(PrincipalComponents=seq(1,20),CV_MSE=val.errors28)
 ggplot(data=sub28, aes(x= PrincipalComponents, y = CV_MSE)) +
   geom_line() +
   geom_point()+
-  labs(y="CV Error", x = "Number of Prinicipal Components") +
+  labs(y="MSE", x = "Number of PC") +
   theme(axis.text=element_text(size=10),
         axis.title=element_text(size=10),
         plot.title = element_text(hjust = 0.5))
 ```
 
 
-### PCR
-
+### Principal Component Regression (PCR)
+Three PCR models were trained using 10-fold cross-validation to predict tenderness at days 3, 14, and 28. Figures \@ref(fig:PCRCode-PCR3Plot), \@ref(fig:PCRCode-PCR14Plot), and \@ref(fig:PCRCode-PCR28Plot) 3 show the mean squared error (MSE) of the cross-validation obtained for different PC numbers. In Figure \@ref(fig:PCRCode-PCR3Plot) the MSE decreases when the number of PC increases up to 6, and then MSE increases with the number of PC. In figures \@ref(fig:PCRCode-PCR14Plot) and \@ref(fig:PCRCode-PCR28Plot) the MSE increases PC. Therefore the PC used for tenderness models at days 14 and 28 were 1 and 2, respectively.
 ```{r PCRCode}
 #Fitting the PCR Ten3 model using 10-fold cross-validation
 set.seed(1)
@@ -711,7 +712,7 @@ plot(mse3$val)
 
 ```{r PCRCode-PCR3Plot, include=TRUE,fig.width = 6, fig.height = 3, fig.cap="PCR model size vs. MSE (test) tenderness at day 3"}
 #Plot
-validationplot (pcr.fit_ten3, val.type = "MSEP",main=NULL,xlab="CV Error")
+validationplot (pcr.fit_ten3, val.type = "MSE",main=NULL,xlab="Number of PC")
 ```
 
 ```{r}
@@ -735,7 +736,7 @@ mean(ten14DF$Ten14)
 
 ```{r PCRCode-PCR14Plot, include=TRUE,fig.width = 6, fig.height = 2, fig.cap="PCR model size vs. MSE (test) tenderness at day 14"}
 #Plot
-validationplot (pcr.fit_ten14, val.type = "MSEP",main=NULL,xlab="CV Error")
+validationplot (pcr.fit_ten14, val.type = "MSE",main=NULL,xlab="Number of PC")
 ```
 
 ```{r}
@@ -759,7 +760,7 @@ mean(ten28DF$Ten28)
 
 ```{r PCRCode-PCR28Plot, include=TRUE,fig.width = 6, fig.height = 2, fig.cap="PCR model size vs. MSE (test) tenderness at day 28"}
 #Plot
-validationplot (pcr.fit_ten28, val.type = "MSEP",main=NULL,xlab="CV Error")
+validationplot (pcr.fit_ten28, val.type = "MSE",main=NULL,xlab="Number of PC")
 ```
 
 
@@ -784,7 +785,7 @@ cv_lasso <- cv.glmnet(X_train, Y_train, alpha = 1, lambda = lambda)
 lambdaPlot3 <- ggplot() +
   geom_line(aes(cv_lasso$lambda, cv_lasso$cvm)) +
   scale_x_log10()+
-  labs(title= "Optimal Lambda vs. Principal Components for Tenderness at 3 Days", y="CV MSE", x = "Lambda") +
+  labs(y="CV MSE", x = "Lambda") +
   theme(axis.text=element_text(size=10),
         axis.title=element_text(size=10),
         plot.title = element_text(hjust = 0.5))
@@ -824,7 +825,7 @@ cv_lasso <- cv.glmnet(X_train, Y_train, alpha = 1, lambda = lambda)
 lambdaPlot14 <- ggplot() +
   geom_line(aes(cv_lasso$lambda, cv_lasso$cvm)) +
   scale_x_log10()+
-  labs(title= "Optimal Lambda vs. Principal Components for Tenderness at 14 Days",y="CV MSE", x = "Lambda") +
+  labs(y="CV MSE", x = "Lambda") +
   theme(axis.text=element_text(size=10),
         axis.title=element_text(size=10),
         plot.title = element_text(hjust = 0.5))
@@ -861,7 +862,7 @@ cv_lasso <- cv.glmnet(X_train, Y_train, alpha = 1, lambda = lambda)
 lambdaPlot28 <- ggplot() +
   geom_line(aes(cv_lasso$lambda, cv_lasso$cvm)) +
   scale_x_log10()+
-  labs(title= "Optimal Lambda vs. Principal Components for Tenderness at 28 Days", y="CV MSE", x = "Lambda") +
+  labs(y="CV MSE", x = "Lambda") +
   theme(axis.text=element_text(size=10),
         axis.title=element_text(size=10),
         plot.title = element_text(hjust = 0.5))
@@ -1022,7 +1023,7 @@ kable(caption="Summary of Lasso models using PCA for tenderness at days 3, 14, a
 
 ```
 
-```{r LassoPCATen3-CVPlot, include=TRUE,fig.width = 6, fig.height = 3, fig.cap="Cross Validation Mean Squared Error for the Lasso Models that were built using differing numbers of principal components to predict tenderness at three days."}
+```{r LassoPCATen3-CVPlot, include=TRUE,fig.width = 6, fig.height = 2, fig.cap="Cross Validation Mean Squared Error for the Lasso Models that were built using differing numbers of principal components to predict tenderness at three days."}
 #Because Ten3 Lasso with PCA had the only meaningful results, show a little more of these results
 
 lambda_min_under <- -2
@@ -1031,18 +1032,18 @@ lambda_max_over <- 8
 ggplot(data=LassoTen3Results, aes(x= PrincipalComponents, y = CV_MSE)) +
   geom_line() +
   geom_point()+
-  labs(y="CV Error", x = "Number of Prinicipal Components") +
+  labs(y="CV MSE", x = "Number of PC") +
   theme(axis.text=element_text(size=10),
         axis.title=element_text(size=10),
         plot.title = element_text(hjust = 0.5))
 ```
 
 
-```{r LassoPCATen3-Size, include=FALSE, fig.width = 6, fig.height = 2.5, fig.cap="The number of predictors for tenderness at 3 days that were included in the Lasso Model given the number of principal components that were used to generate the Lasso Model."}
+```{r LassoPCATen3-Size, include=FALSE, fig.width = 6, fig.height = 2, fig.cap="The number of predictors for tenderness at 3 days that were included in the Lasso Model given the number of principal components that were used to generate the Lasso Model."}
 ggplot(data=LassoTen3Results, aes(x= PrincipalComponents, y = Size)) +
   geom_line() +
   geom_point()+
-  labs(y="Size", x = "Number of Prinicipal Components") +
+  labs(y="Size", x = "Number of PC") +
   theme(axis.text=element_text(size=10),
         axis.title=element_text(size=10),
         plot.title = element_text(hjust = 0.5))
@@ -1055,7 +1056,7 @@ ggplot(data=LassoTen3Results, aes(x= PrincipalComponents, y = Best_Lambda)) +
   geom_hline(yintercept=10^lambda_max_over, linetype="dashed", color = "red") +
   geom_hline(yintercept=10^lambda_min_under, linetype="dashed", color = "red") +
   scale_y_log10()+
-  labs(y="Optimal Lambda", x = "Number of Prinicipal Components") +
+  labs(y="Optimal Lambda", x = "Number of PC") +
   theme(axis.text=element_text(size=10),
         axis.title=element_text(size=10),
         plot.title = element_text(hjust = 0.5))
@@ -1128,10 +1129,11 @@ err28[i]<-mean((ten28_test$Ten28 - preds)^2)
 Spline28<-data.frame(N.comp=seq(1,10),MSE=err28)
 which.min(Spline28$MSE)
 min(Spline28$MSE)
-
 ```
 
-### Summary of Regression Models
+### Summary of Regression Models  
+
+Table \@ref(tab:RegModelSummary) shows the MSE of the models for tenderness at days 3, 14, and 28 and the number of predictors used for those models. In general, the MSE of all models decreases with the number of days. However, comparing the results obtained for all the models with the standard deviation (SD) of tenderness in Table \@ref(tab:RegModelSummary1), the error rate of the models is close to one SD or the equivalent to more than 20% of error compared with the mean. These results suggest that the models are inaccurate in predicting tenderness, and the REIMS has no ability to predict tenderness. A possible explanation of these findings is that components detected by REIMS are mostly fatty acids, and tenderness is a complex attribute of meat that depends on multiple intrinsic (connective tissue, myofibrillar structure, enzymatic proteolysis) and extrinsic factors (breed, production system) that cannot be measure with REIMS.
 ``` {r RegModelSummary,include=TRUE}
 #Summary results of regression
 
@@ -1155,11 +1157,20 @@ data.frame(  Model = "Best Subset",
           Size_day3 =toString(size_3), MSE_day3= testErrorLasso_3, 
           Size_day14 =toString(size_14), MSE_day14= testErrorLasso_14, 
           Size_day28 =toString(size_28), MSE_day28= testErrorLasso_28)) %>% 
-kable(caption="Table 2. Mean Squared Error (MSE) of regression models for tenderness at day 3, 14, and 28",digits=2)
+kable(caption="Mean Squared Error (MSE) of regression models for tenderness at day 3, 14, and 28",digits=2)  
+```
 
-
-
-
+```{r RegModelSummary1,include=TRUE}
+data.frame(  Aging = "day 3", 
+             Mean = mean(ten3DF$Ten3),
+             SD = sd(ten3DF$Ten3))%>%
+  bind_rows(data.frame(Aging = "day 14",  
+              Mean =mean(ten14DF$Ten14),
+             SD = sd(ten14DF$Ten14)))%>%
+  bind_rows(data.frame(Aging = "day 28",  
+            Mean = mean(ten28DF$Ten28),
+             SD = sd(ten28DF$Ten28)))%>%
+kable(caption="Mean and standard deviation of tenderness at day 3, 14, and 28",digits=2)
 ```
 
 # CONCLUSION
