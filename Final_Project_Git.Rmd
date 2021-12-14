@@ -35,6 +35,7 @@ library(randomForest)
 library(e1071)
 library(FactoMineR)
 library(kableExtra)
+library(egg)
 ```
 
 # INTRODUCTION
@@ -97,9 +98,9 @@ ten28DF <- na.omit(REIMS[,!(names(REIMS) %in% union(dropBase,setdiff(responseVar
 
 ## Data visualization using Principal Component Analysis (PCA)  
 
-To visualize if there was an underlying cluster of the data, PCA was performed to the REIMS data and Principal Components (PC) 1, 2, and 3 were graphed in figures  \@ref(fig:pcaGradePlot1) to \@ref(fig:pcaTen28Plot). As we can see in figures \@ref(fig:pcaGradePlot1) and \@ref(fig:pcaGradePlot2), there is no evident clustering of the data by USDA grade. Similarly, there is no evident pattern in graphs  \@ref(fig:pcaTen3Plot) to \@ref(fig:pcaTen28Plot) that could suggest a data structure by tenderness in any of the aging treatments.
+To visualize if there was an underlying cluster of the data, PCA was performed to the REIMS data and Principal Components (PC) 1, 2, and 3 were graphed in figures  \@ref(fig:pcaGradePlot1) A and B, to \@ref(fig:pcaTen28Plot). As we can see in figures \@ref(fig:pcaGradePlot) and \@ref(fig:pcaGradePlot2), there is no evident clustering of the data by USDA grade. Similarly, there is no evident pattern in graphs  \@ref(fig:pcaTen3Plot) to \@ref(fig:pcaTen28Plot) that could suggest a data structure by tenderness in any of the aging treatments.
 
-```{r pcaGradePlot1, include=TRUE,fig.width = 6, fig.height = 2, fig.cap = "Plot of PC 1 vs. PC 2 colored by USDA Grade"}
+```{r pcaGradePlot1,include=TRUE,fig.width = 6, fig.height = 2, fig.cap = "Plot of PC 1 vs. PC 2 colored by USDA Grade"}
 #Performing PCA
 pca1 <- PCA(REIMS[,-c(1:12)], ncp = 100, scale.unit=TRUE ,graph = F)
 dat1<-REIMS[,6]
@@ -153,6 +154,7 @@ p4 <- ggplot(data = dat1, aes(x = Dim.1, y = Dim.2,colour=Ten28)) +
         plot.title = element_text(hjust = 0.5))
 print(p4 + labs(y="Comp 2", x = "Comp 1"))
 ```
+
 
 ### Proportion of Variance Explained
 While analyzing the first several principal components did not show significant clustering of either USDA Grade or beef tenderness, principal components analysis did provide a useful tool to reducing the dimensionality of several of the models that were tested in this study. The Proportion of Variance Explained (PVE) by each principal component is shown in Figure \@ref(fig:pvePlot). The figure shows that the majority of the variability in the predictors lies within the first twenty principal components. More specifically, almost 31% of variability in the data is captured by the first principal component. There is a noticeable drop in variability explained by principal component 2 (PVE = .19) and principal component 3 (PVE = .06). As shown in the figure, there is another significant drop in variability explained between principal component 9 and 10. The proportion of variance explained drops at a mostly consistent rate between principal components 10 and 24. After this, much less information is contained in each of the remaining principal components. Table \@ref(tab:PVE-table) shows the cumulative variance that is explained using increasing values of principal components. As shown by the table, nearly 100% of the variability in the data is captured by the first 80 principal components. 
@@ -296,7 +298,7 @@ optimalCVError_Log <- round(min(bestLogModelDF$optimalCVerror),3)
 ggplot(data = data.frame(PrincipalComponent = PrincipalComponent, cv_mse = cv_mse), aes(y=cv_mse, x=PrincipalComponent)) +
   geom_line()+
   geom_point()+
-  labs(y="CV Error", x = "Number of Prinicipal Components") +
+  labs(y="CV Error", x = "Number of PC") +
   theme(axis.text=element_text(size=10),
         axis.title=element_text(size=10),
         plot.title = element_text(hjust = 0.5))
@@ -1071,7 +1073,8 @@ Figure \@ref(fig:LassoPCATen3-CVPlot) shows the results for CV MSE vs. number of
 
 
 
-### Splines
+### Splines  
+Before training the models, REIMS data was transformed using PCA. Then, predictive natural splines models with grade=3 were trained with 60% of the data and PC as predictors. The number of PC was selected by tuning the models with the cross-validation error of the remaining 40% test data (Figure \@ref(fig:SplinesCode-Plot)). In Figure \@ref(fig:SplinesCode-Plot) A, we can see that the highest performing model used 5 PC, while in B and C the highest ones used 2 and 4 PC, respectively. These results are similar to the other models built that used a small number of PC. Increasing the number of PC in the models increases noise and model error.
         
 ```{r SplinesCode}
 # Spline model for Tenderness at day 3
@@ -1093,6 +1096,15 @@ Spline3<-data.frame(N.comp=seq(1,10),MSE=err3)
 which.min(Spline3$MSE)
 min(Spline3$MSE)
 
+spline3<-data.frame(PrincipalComponents=seq(1,10),CV_MSE=err3)
+sp3<-ggplot(data=spline3, aes(x= PrincipalComponents, y = CV_MSE)) +
+  geom_line() +
+  geom_point()+
+  labs(y="CV MSE", x = "Number of PC") +
+  theme(axis.text=element_text(size=10),
+        axis.title=element_text(size=10),
+        plot.title = element_text(hjust = 0.5))
+
 
 # Spline model for Tenderness at day 14
 set.seed(1)
@@ -1112,6 +1124,15 @@ Spline14<-data.frame(N.comp=seq(1,10),MSE=err14)
 which.min(Spline14$MSE)
 min(Spline14$MSE)
 
+spline14<-data.frame(PrincipalComponents=seq(1,10),CV_MSE=err14)
+sp14<-ggplot(data=spline14, aes(x= PrincipalComponents, y = CV_MSE)) +
+  geom_line() +
+  geom_point()+
+  labs(y="CV MSE", x = "Number of PC") +
+  theme(axis.text=element_text(size=10),
+        axis.title=element_text(size=10),
+        plot.title = element_text(hjust = 0.5))
+
 # Spline model for Tenderness at day 28
 set.seed(1)
 ten28<-na.omit( dat1[,-c(1:3)])
@@ -1129,6 +1150,19 @@ err28[i]<-mean((ten28_test$Ten28 - preds)^2)
 Spline28<-data.frame(N.comp=seq(1,10),MSE=err28)
 which.min(Spline28$MSE)
 min(Spline28$MSE)
+
+spline28<-data.frame(PrincipalComponents=seq(1,10),CV_MSE=err28)
+sp28<-ggplot(data=spline28, aes(x= PrincipalComponents, y = CV_MSE)) +
+  geom_line() +
+  geom_point()+
+  labs(y="CV MSE", x = "Number of PC") +
+  theme(axis.text=element_text(size=10),
+        axis.title=element_text(size=10),
+        plot.title = element_text(hjust = 0.5))
+```
+
+```{r SplinesCode-Plot, include=TRUE,fig.width = 6, fig.height = 2, fig.cap="Number of PC versus MSE of predictive models PCA-natural splines of degree = 3 for tenderness. (A) Tenderness models day 3, (B) tenderness models day 14, (C) Tenderness models day 28"}
+ggarrange(sp3, sp14, sp28,ncol = 3, nrow = 1,   labels = c("A", "B", "C"))
 ```
 
 ### Summary of Regression Models  
@@ -1175,7 +1209,7 @@ kable(caption="Mean and standard deviation of tenderness at day 3, 14, and 28",d
 
 # CONCLUSION
 
-Of the models used to predict meat tenderness above, the MSEs obtained from each model as well as the amount of predictors used to obtain them are particularly important in assessing which of the models would be most effective in predictions. A notable observation that is present when shown this information is that the best models were the ones whose data was made with meat aged for 28 days, of those models, PCA-Splines appears to have the lowest MSE, indicating that it was the most effective at predicting meat tenderness than the other models. This is also the case with meat that was aged for 3 days, but best subset selection appears to be the best model for meat aged for 14 days. Something else that can be observed from the MSEs of the regression models is the amount of predictors used in the PCA-Lasso models, particularly, the use of no predictors when modelling for meat aged for 14 days and 28 days. This is about as useful as just taking the average of the respective data and calling the result the model's prediction.
+Tenderness and USDA quality grade are two quality attributes of beef that can increase product marketability. Therefore, rapid and real-time methods to determine this attribute simultaneously are valuable for the industry. REIMS has been used successfully to classify biological tissues based on fatty acid profiles. In this study, we found that REIMS can classify beef samples by USDA quality grade with almost 90% accuracy using SVM with a polynomial or radial kernel. However, the ability of REIMS to predict beef tenderness was limited. The best predictive models for tenderness at the different aging periods were able to predict this attribute with a precision of one standard deviation of all the values. Additionally, the selected Lasso model for day 14 and PCA-Lasso models for days 14 and 28 were models with no predictors, implying that using a constant value was better than predicting tenderness based on any mass bin or PC. Although REIMS can predict the USDA grade of beef, its inability to predict tenderness limits its use in the beef industry.
 
 # REFERENCES
 Barlow, R. S., A. G. Fitzgerald, J. M. Hughes, K. E. McMillan, S. C. Moore, A. L. Sikes, A. B. Tobin, and P. J. Watkins. 2021. Rapid Evaporative Ionization Mass Spectrometry: A Review on Its Application to the Red Meat Industry with an Australian Context. Metabolites. 11:171. doi:10.3390/metabo11030171.  
