@@ -97,9 +97,9 @@ ten28DF <- na.omit(REIMS[,!(names(REIMS) %in% union(dropBase,setdiff(responseVar
 
 ## Data visualization using Principal Component Analysis (PCA)  
 
-There is not a evident cluster by USDA grade and tenderness at day 3, 14, and 28 days
+To visualize if there was an underlying cluster of the data, PCA was performed to the REIMS data and Principal Components (PC) 1, 2, and 3 were graphed in figures  \@ref(fig:pcaGradePlot1) to \@ref(fig:pcaTen28Plot). As we can see in figures \@ref(fig:pcaGradePlot1) and \@ref(fig:pcaGradePlot2), there is no evident clustering of the data by USDA grade. Similarly, there is no evident pattern in graphs  \@ref(fig:pcaTen3Plot) to \@ref(fig:pcaTen28Plot) that could suggest a data structure by tenderness in any of the aging treatments.
 
-```{r pcaGradePlot1, include=TRUE,fig.width = 6, fig.height = 3, fig.cap = "Plot of Principal Component 2 vs. Principal Component 1 colored by USDA Grade. As is seen in the plot, there is no apparent clustering of the first two principal components."}
+```{r pcaGradePlot1, include=TRUE,fig.width = 6, fig.height = 2, fig.cap = "Plot of PC 1 vs. PC 2 colored by USDA Grade"}
 #Performing PCA
 pca1 <- PCA(REIMS[,-c(1:12)], ncp = 100, scale.unit=TRUE ,graph = F)
 dat1<-REIMS[,6]
@@ -111,47 +111,47 @@ p <- ggplot(data = dat1, aes(x = Dim.1, y = Dim.2,colour=USDA.grade)) +
   theme(axis.text=element_text(size=10),
         axis.title=element_text(size=10),
         plot.title = element_text(hjust = 0.5))
-print(p + labs(title= "PCA of REIMS data faced by USDA quality grade",y="Principal Component 2", x = "Principal Component 1"))
+print(p + labs(y="PC 2", x = "PC 1"))
 ```
 
-```{r pcaGradePlot2, include=TRUE,fig.width = 6, fig.height = 3, fig.cap = "Plot of Principal Component 3 vs. Principal Component 2 colored by USDA Grade Data. As is seen in the plot, there is no apparent clustering between the second and third principal components."}
+```{r pcaGradePlot2, include=TRUE,fig.width = 6, fig.height = 2, fig.cap = "Plot of PC 2 vs. PC 3 colored by USDA Grade"}
 #Plotting PCA faced by USDA grade
 p1 <- ggplot(data = dat1, aes(x = Dim.2, y = Dim.3,colour=USDA.grade)) +
   geom_point()+
   theme(axis.text=element_text(size=10),
         axis.title=element_text(size=10),
         plot.title = element_text(hjust = 0.5))
-print(p1 + labs(title= "PCA of REIMS data faced by USDA quality grade",y="Principal Component 3", x = "Principal Component 2"))
+print(p1 + labs(y="PC 3", x = "PC 2"))
 ```
 
-```{r pcaTen3Plot, include=TRUE, fig.width = 6, fig.height = 3, fig.cap = "Plot of Principal Component 2 vs. Principal Component 1 colored by beef tenderness at 3 days. As is seen in the plot, there is no apparent clustering between the second and first principal components."}
+```{r pcaTen3Plot, include=TRUE, fig.width = 6, fig.height = 2, fig.cap = "Plot of PC 1 vs. PC 2 colored by USDA tenderness at day 3 postmortem"}
 #Plotting PCA colored by tenderness at day 3
 p2 <- ggplot(data = dat1, aes(x = Dim.1, y = Dim.2,colour=Ten3)) +
   geom_point()+
   theme(axis.text=element_text(size=10),
         axis.title=element_text(size=10),
         plot.title = element_text(hjust = 0.5))
-print(p2 + labs(title= "PCA of REIMS data colored by tenderness at day 3",y="Comp 2", x = "Comp 1"))
+print(p2 + labs(y="PC 2", x = "PC 1"))
 ```
 
-```{r pcaTen14Plot, include=TRUE, fig.width = 6, fig.height = 3, fig.cap ="Plot of Principal Component 2 vs. Principal Component 1 colored by beef tenderness at 14 days. As is seen in the plot, there is no apparent clustering between the second and first principal components."}
+```{r pcaTen14Plot, include=TRUE, fig.width = 6, fig.height = 2, fig.cap ="Plot of PC 1 vs. PC 2 colored by USDA tenderness at day 14 postmortem"}
 #Plotting PCA colored by tenderness at day 14
 p3 <- ggplot(data = dat1, aes(x = Dim.1, y = Dim.2,colour=Ten14)) +
   geom_point()+
   theme(axis.text=element_text(size=10),
         axis.title=element_text(size=10),
         plot.title = element_text(hjust = 0.5))
-print(p3 + labs(title= "PCA of REIMS data colored by tenderness at day 3",y="Comp 2", x = "Comp 1"))
+print(p3 + labs(y="Comp 2", x = "Comp 1"))
 ```
 
-```{r pcaTen28Plot, include=TRUE, fig.width = 6, fig.height = 3, fig.cap ="Plot of Principal Component 2 vs. Principal Component 1 colored by beef tenderness at 28 days. As is seen in the plot, there is no apparent clustering between the second and first principal components."}
+```{r pcaTen28Plot, include=TRUE, fig.width = 6, fig.height = 2, fig.cap ="Plot of PC 1 vs. PC 2 colored by USDA tenderness at day 28 postmortem"}
 #Plotting PCA colored by tenderness at day 28
 p4 <- ggplot(data = dat1, aes(x = Dim.1, y = Dim.2,colour=Ten28)) +
   geom_point()+
   theme(axis.text=element_text(size=10),
         axis.title=element_text(size=10),
         plot.title = element_text(hjust = 0.5))
-print(p4 + labs(title= "PCA of REIMS data colored by tenderness at day 3",y="Comp 2", x = "Comp 1"))
+print(p4 + labs(y="Comp 2", x = "Comp 1"))
 ```
 
 ### Proportion of Variance Explained
@@ -159,7 +159,7 @@ While analyzing the first several principal components did not show significant 
 
 This information and the transformed predictor space provided by PCA allowed for the dimensionality reduction of the predictor space. This reduced dimensionality allowed models that do not have inherent dimension reduction techniques, like logistic regression and support vector machines, to be utilized by this study. The way that Principal Component Analysis was utilized within models will be discussed in further detail within the sections of the report that describe these models. It is worth noting that, often times, the optimal was identified where an "elbow" on the PVE plot did occur.  
 
-```{r pvePlot, include=TRUE,fig.width = 6, fig.height = 3, fig.cap = "Proportion of Variance Explained in the data by each principal component."}
+```{r pvePlot, include=TRUE,fig.width = 6, fig.height = 2, fig.cap = "Proportion of Variance Explained (PVE) in the data by each principal component."}
 #CODE BY PATRICK
 # This section of code performs PCA on the predictors of the data set. It stores the loading vectors in the pca_loadings dataframe
 # for use in the models below. It also provides a plot of Proportion of Variance Explained (PVE) vs. Principal Component.
@@ -179,7 +179,7 @@ PrincipalComponent <- seq(1, length(PVE), 1) # Vector of Principle components fo
 ggplot() +
   geom_line(aes(x=PrincipalComponent, y=PVE))+
   geom_point()+
-  labs(title= "Proportion of Variance Explained (PVE) vs. Principal Component", y="PVE", x = "Prinicipal Component") +
+  labs(y="PVE", x = "Prinicipal Component") +
   theme(axis.text=element_text(size=10),
         axis.title=element_text(size=10),
         plot.title = element_text(hjust = 0.5))
@@ -287,7 +287,7 @@ write.csv(PCvsCV_DF,"LogisticRegression/PCvsCV.csv", row.names = FALSE)
 
 The Logistic Regression technique was implemented with the principal component scores provided by the PCA analysis. The general technique used to arrive at the "best" logistic regression model was to build a logistic regression model using increasing numbers of principal component directions of the predictor dataset. This process was done using between 1 to 80 principal components. 80 was selected as the maximum number of principal components to utilize to build the model because, as discussed in the PCA Analysis above, 99.8% of the predictor variability was contained in the first 80 principal components. For each model containing differing numbers of principal components, 10-fold Cross Validation was performed to identify a cross validation error to assess the model performance. 
 
-```{r log-plot, include=TRUE,fig.width = 6, fig.height = 3, fig.cap = "Logistic Regression Model CV Error vs. Number of Principal Components included."}
+```{r log-plot, include=TRUE,fig.width = 6, fig.height = 2, fig.cap = "Logistic Regression Model CV Error vs. Number of Principal Components included."}
 # Log Model Visualization
 optimalIndex <- which.min(bestLogModelDF$optimalCVerror)
 optimalPC_Log <- bestLogModelDF$optimalNumPrincpleCompoents[optimalIndex]
@@ -319,7 +319,7 @@ kable(caption="Best performing logistic regression model.",digits=2)
 
 Three different Support Vector Machine (SVM) models were built to predict USDA Grade using data provided by REIMs: a SVM with a linear, polynomial, and radial kernel. The best SVM associated with each kernel were determined similarly to the best Logistic Regression model. For each kernel type, SVM's were built and tuned using an increasing number of principal components, and the best model was identified as the one that minimized 10-fold cross validation error.
             
-#### *Linear SVM*
+#### Linear SVM  
 
 
 
@@ -328,7 +328,7 @@ Three different Support Vector Machine (SVM) models were built to predict USDA G
 #source("SVM/SVM_linear.R", local = knitr::knit_global())
 ```
 
-```{r svmLin-CVPlot, include=TRUE,fig.width = 6, fig.height = 3, fig.cap = "Linear Support Vector Machine Optimal Cross Validation error for differing numbers of principal components included." }
+```{r svmLin-CVPlot, include=TRUE,fig.width = 6, fig.height = 2.5, fig.cap = "Linear Support Vector Machine Optimal Cross Validation error for differing numbers of principal components included." }
 #Linear SVM Plotting and Results
 svmLinResultsDF <- read.csv("SVM/Results/LinSVM.csv")
 BestLinModel <- readRDS("SVM/BestSVMModels/BestLinModel.rds")
@@ -344,14 +344,14 @@ SummaryDF <- data.frame(PC = optimalPC_linSVM , CV_Error = optimalCVError_linSVM
 ggplot(data= svmLinResultsDF, aes(x=PrincipalComponents_linSVM, y=CV_MSE_linSVM)) +
   geom_line()+
   geom_point()+
-  labs(y="CV Error", x = "Number of Prinicipal Components") +
+  labs(y="CV Error", x = "Number of PC") +
   theme(axis.text=element_text(size=12),
         axis.title=element_text(size=12),
         plot.title = element_text(hjust = 0.5))
 ```
 
 
-```{r svmLin-CostPlot, include=TRUE,fig.width = 6, fig.height = 2.5, fig.cap="Optimal Cost identfied for each linear support vector machine of differing numbers of principal components. The red dashed lines represent the mininum and maximum of the search range used to tune the support vector machine."}
+```{r svmLin-CostPlot, include=TRUE,fig.width = 6, fig.height = 2, fig.cap="Optimal Cost identfied for each linear support vector machine of differing numbers of principal components. The red dashed lines represent the mininum and maximum of the search range used to tune the support vector machine."}
 abs_min_cost <- .01
 abs_max_cost <- 100
 
@@ -361,7 +361,7 @@ ggplot(data= svmLinResultsDF, aes(x=PrincipalComponents_linSVM, y=Best_Cost)) +
   geom_hline(yintercept=abs_min_cost, linetype="dashed", color = "red") +
   geom_hline(yintercept=abs_max_cost, linetype="dashed", color = "red") +
   scale_y_log10()+
-  labs(title= "Optimal Cost vs. Principal Components", y="Optimal Cost", x = "Number of Principal Components") +
+  labs(y="Optimal Cost", x = "Number of PC") +
   theme(axis.text=element_text(size=10),
         axis.title=element_text(size=10),
         plot.title = element_text(hjust = 0.5))
@@ -374,13 +374,14 @@ SummaryDF%>%
 kable(caption="Best performing Linear SVM Model.",digits=4)
 
 ```
+
 79 individual Support Vector Machines with a linear kernel were built that using a progressive number of scores  along principal components directions (from 2 to 80) as predictors. 80 was the maximum number of principal components directions included in a single model because, as discussed in the section on PCA, nearly all of the variability of the data is included in the first 80 principal component directions. On each iteration of the model, the Linear SVM was tuned to the optimal cost using 10-fold cross validation. For each model, the optimal cost was searched for in a range between .01 and 100. Once the optimal CV Error was identified for each Linear SVM containing an increasing number of principal component directions, the best model was identified as the linear SVM that minimized the CV Error.  
 
 Figure \@ref(fig:svmLin-CVPlot) shows the CV Error of each Linear SVM that was built. As shown in the figure, the CV Error, in general, trended downward in models from 2 principal components included to 24 principal components. As the number of principal components included in the linear SVMs were increased, the CV Error generally (but not absolutely) trended upward. Figure \@ref(fig:svmLin-CostPlot) shows the optimal cost for each model. As is shown in the figure, the optimal cost lies within the range of costs that was searched in when tuning the model, so it is assumed that an optimal model was identified in all cases. 
 
 The best Linear SVM model that was identified is summarized in Table \@ref(tab:svmLin-Results). The model included 24 principal components, had 32 support vectors, and had a CV Error of 11.8%. 
 
-#### *Polynomial SVM*
+#### Polynomial SVM  
 
 
 ```{r polySVMCode}
@@ -388,7 +389,7 @@ The best Linear SVM model that was identified is summarized in Table \@ref(tab:s
 #source("SVM/SVM_Poly.R", local = knitr::knit_global())
 ```
 
-```{r svmPoly-CVPlot, include=TRUE,fig.width = 6, fig.height = 3, fig.cap = "Polynomial Support Vector Machine Optimal Cross Validation error for differing numbers of principal components included." }
+```{r svmPoly-CVPlot, include=TRUE,fig.width = 6, fig.height = 2.5, fig.cap = "Polynomial Support Vector Machine Optimal Cross Validation error for differing numbers of principal components included." }
 #Plotting and Results for Poly SVM
 
 svmPolyResultsDF <- read.csv("SVM/Results/PolySVM.csv")
@@ -406,14 +407,14 @@ SummaryDF <- data.frame(PC = optimalPC_polySVM , CV_Error = optimalCVError_polyS
 ggplot(data= svmPolyResultsDF, aes(x=PrincipalComponents, y=CV_MSE_polySVM)) +
   geom_line()+
   geom_point()+
-  labs(title="CV Error vs. Principal Components", y="CV Error", x = "Number of Prinicipal Components") +
+  labs(y="CV Error", x = "Number of PC") +
   theme(axis.text=element_text(size=10),
         axis.title=element_text(size=10),
         plot.title = element_text(hjust = 0.5))
 ```
 
 
-```{r svmPoly-CostPlot, include=TRUE,fig.width = 6, fig.height = 2.5, fig.cap="Optimal Cost identfied for each polynomial support vector machine of differing numbers of principal components. The red dashed lines represent the mininum and maximum of the search range used to tune the support vector machine."}
+```{r svmPoly-CostPlot, include=TRUE,fig.width = 6, fig.height = 2, fig.cap="Optimal Cost identfied for each polynomial support vector machine of differing numbers of principal components. The red dashed lines represent the mininum and maximum of the search range used to tune the support vector machine."}
 
 abs_min_cost_poly <- .0001
 abs_max_cost_poly <- 10000
@@ -424,7 +425,7 @@ ggplot(data= svmPolyResultsDF, aes(x=PrincipalComponents, y=Best_Cost_polySVM)) 
   geom_hline(yintercept=abs_min_cost_poly, linetype="dashed", color = "red") +
   geom_hline(yintercept=abs_max_cost_poly, linetype="dashed", color = "red") +
   scale_y_log10()+
-  labs(title= "Optimal Cost vs. Principal Components", y="Optimal Cost", x = "Number of Principal Components") +
+  labs(y="Optimal Cost", x = "Number of PC") +
   theme(axis.text=element_text(size=10),
         axis.title=element_text(size=10),
         plot.title = element_text(hjust = 0.5))
@@ -432,12 +433,12 @@ ggplot(data= svmPolyResultsDF, aes(x=PrincipalComponents, y=Best_Cost_polySVM)) 
 ```
 
 
-```{r svmPoly-DegreePlot, include=TRUE,fig.width = 6, fig.height = 2.5, fig.cap="Optimal Degree identfied for each polynomial support vector machine of differing numbers of principal components."}
+```{r svmPoly-DegreePlot, include=TRUE,fig.width = 6, fig.height = 2, fig.cap="Optimal Degree identfied for each polynomial support vector machine of differing numbers of principal components."}
 
 ggplot(data= svmPolyResultsDF, aes(x=PrincipalComponents, y=Best_Degree)) +
   geom_line()+
   geom_point()+
-  labs(title = "Optimal Degree vs. Principal Components",y="Optimal Degree", x = "Number of Prinicipal Components") +
+  labs(y="Optimal Degree", x = "Number of PC") +
   theme(axis.text=element_text(size=10),
         axis.title=element_text(size=10),
         plot.title = element_text(hjust = 0.5))
@@ -460,14 +461,15 @@ Figure \@ref(fig:svmPoly-CostPlot) shows the optimal cost for each model. As is 
 The best Polynomial SVM model that was identified is summarized in \@ref(tab:svmPoly-Results). The model included 48 principal components, had 48 support vectors, and had a CV Error of 10.7%. 
 
 
-#### *Radial SVM*
+#### Radial SVM  
+
 
 ```{r radSVMCode}
 # This calls a script to run the Radial SVM
 #source("SVM/SVM_rad.R", local = knitr::knit_global())
 ```
 
-```{r svmRad-CVPlot, include=TRUE,fig.width = 6, fig.height = 3, fig.cap = "Radial Support Vector Machine Optimal Cross Validation error for differing numbers of principal components included." }
+```{r svmRad-CVPlot, include=TRUE,fig.width = 6, fig.height = 2.5, fig.cap = "Radial Support Vector Machine Optimal Cross Validation error for differing numbers of principal components included." }
 
 svmRadResultsDF <- read.csv("SVM/Results/radSVM.csv")
 BestRadModel <- readRDS("SVM/BestSVMModels/BestRadModel.rds")
@@ -483,7 +485,7 @@ SummaryDF <- data.frame(PC = optimalPC_radSVM , CV_Error = optimalCVError_radSVM
 ggplot(data= svmRadResultsDF, aes(x=PrincipalComponents_radSVM, y=CV_MSE_radSVM)) +
   geom_line()+
   geom_point()+
-  labs(title = "CV Error vs. Prinicipal Components",y="CV Error", x = "Number of Prinicipal Components") +
+  labs(y="CV Error", x = "Number of PC") +
   theme(axis.text=element_text(size=12),
         axis.title=element_text(size=12),
         plot.title = element_text(hjust = 0.5))
@@ -491,7 +493,7 @@ ggplot(data= svmRadResultsDF, aes(x=PrincipalComponents_radSVM, y=CV_MSE_radSVM)
 
 ```
 
-```{r svmRad-CostPlot, include=TRUE,fig.width = 6, fig.height = 2.5, fig.cap="Optimal Cost identfied for each radial support vector machine of differing numbers of principal components. The red dashed lines represent the mininum and maximum of the search range for cost used to tune the support vector machine."}
+```{r svmRad-CostPlot, include=TRUE,fig.width = 6, fig.height = 2, fig.cap="Optimal Cost identfied for each radial support vector machine of differing numbers of principal components. The red dashed lines represent the mininum and maximum of the search range for cost used to tune the support vector machine."}
 
 abs_min_cost <- .0001
 abs_max_cost <- 10000
@@ -502,14 +504,14 @@ ggplot(data= svmRadResultsDF, aes(x=PrincipalComponents_radSVM, y=Best_Cost_radS
   geom_hline(yintercept=abs_min_cost, linetype="dashed", color = "red") +
   geom_hline(yintercept=abs_max_cost, linetype="dashed", color = "red") +
   scale_y_log10()+
-  labs(title= "Optimal Cost vs. Principal Components", y="Optimal Cost", x = "Number of Prinicipal Components") +
+  labs(y="Optimal Cost", x = "Number of PC") +
   theme(axis.text=element_text(size=10),
         axis.title=element_text(size=10),
         plot.title = element_text(hjust = 0.5))
 
 ```
 
-```{r svmRad-GammaPlot, include=TRUE,fig.width = 6, fig.height = 2.5, fig.cap="Optimal Gamma identfied for each radial support vector machine of differing numbers of principal components. The red dashed lines represent the mininum and maximum of the search range for gamma used to tune the support vector machine."}
+```{r svmRad-GammaPlot, include=TRUE,fig.width = 6, fig.height = 2, fig.cap="Optimal Gamma identfied for each radial support vector machine of differing numbers of principal components. The red dashed lines represent the mininum and maximum of the search range for gamma used to tune the support vector machine."}
 
 abs_min_gamma <- .0001
 abs_max_gamma <-10000
@@ -520,7 +522,7 @@ ggplot(data= svmRadResultsDF, aes(x=PrincipalComponents_radSVM, y=Best_Gamma_rad
   geom_hline(yintercept=abs_min_gamma, linetype="dashed", color = "red") +
   geom_hline(yintercept=abs_max_gamma, linetype="dashed", color = "red") +
   scale_y_log10()+
-  labs(title= "Optimal Gamma vs. Principal Components", y="Optimal Gamma", x = "Number of Prinicipal Components") +
+  labs(y="Optimal Gamma", x = "Number of PC") +
   theme(axis.text=element_text(size=10),
         axis.title=element_text(size=10),
         plot.title = element_text(hjust = 0.5))
@@ -578,7 +580,8 @@ ten28DF_train
 ten28DF_test
 ```
 
-### Best subset selection
+### Best subset selection  
+Figure    \@ref(fig:BestSubsetSelectionCode-Bestsubset3Plot), Figure \@ref(fig:BestSubsetSelectionCode-Bestsubset14Plot), and Figure \@ref(fig:BestSubsetSelectionCode-Bestsubset28Plot) show the number of components versus the cross-validation error rate of day-3, day-14, and day-28 tenderness models. In the three graphs we can notice that the error rate increases with the number of components and the best models are the ones with only the principal component 1. In addition the error rates of day-28 models are lower than the error rates of day-14 models, and the error rates of day-3 models are the highest ones. The lastest results were expected since tenderness decreased over time.
 ```{r BestSubsetSelectionCode}
 #Tenderness at day 3
 set.seed(1)
@@ -589,20 +592,32 @@ res.sum <- summary(reg.fwd)
 
 #Loop to calculate CV test error
 test.mat <- model.matrix(Ten3~., data=ten3DF_test)
-val.errors <- rep(NA, 20)
+val.errors3 <- rep(NA, 20)
 coefi<-seq(0)
 
 for (i in 1:20) {
   coefi<-coef(reg.fwd , id = i)
   pred <- test.mat[, names(coefi)] %*% coefi
-  val.errors[i] <- mean((ten3DF_test$Ten3-pred)^2)
+  val.errors3[i] <- mean((ten3DF_test$Ten3-pred)^2)
 }
+```
 
+```{r BestSubsetSelectionCode-Bestsubset3Plot, include=TRUE,fig.width = 6, fig.height = 2, fig.cap="Best subset model size vs. MSE (test) tenderness at day 3"}
 # Graph of Model size vs. MSE
-plot(seq(1,20), val.errors, log="y", xlab = "number of variables", ylab="MSE",
-     main="Model size vs. MSE (test) tenderness at day 3",type = "o")
+MSE_subset_day3<-min(val.errors3)
 
-MSE_subset_day3<-min(val.errors)
+sub3<-data.frame(PrincipalComponents=seq(1,20),CV_MSE=val.errors3)
+
+ggplot(data=sub3, aes(x= PrincipalComponents, y = CV_MSE)) +
+  geom_line() +
+  geom_point()+
+  labs(y="CV Error", x = "Number of Prinicipal Components") +
+  theme(axis.text=element_text(size=10),
+        axis.title=element_text(size=10),
+        plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
 
 #Tenderness at day 14
 reg.fwd <- regsubsets(Ten14~., data = ten14DF_train, nvmax = 40,method = "forward") 
@@ -612,21 +627,34 @@ res.sum <- summary(reg.fwd)
 
 #Loop to calculate CV test error
 test.mat <- model.matrix(Ten14~., data=ten14DF_test)
-val.errors1 <- rep(NA, 20)
+val.errors14 <- rep(NA, 20)
 coefi<-seq(0)
 
 for (i in 1:20) {
   coefi<-coef(reg.fwd , id = i)
   pred <- test.mat[, names(coefi)] %*% coefi
-  val.errors1[i] <- mean((ten14DF_test$Ten14-pred)^2)
+  val.errors14[i] <- mean((ten14DF_test$Ten14-pred)^2)
 }
+```
 
+``` {r BestSubsetSelectionCode-Bestsubset14Plot, include=TRUE,fig.width = 6, fig.height = 2, fig.cap="Best subset model size vs. MSE (test) tenderness at day 14"}
 # Graph of Model size vs. MSE
-plot(seq(1,20), val.errors1, log="y", xlab = "number of variables", ylab="MSE",
-     main="Model size vs. MSE (test) tenderness at day 14",type = "o")
 
-MSE_subset_day14<-min(val.errors1)
+MSE_subset_day14<-min(val.errors14)
 
+sub14<-data.frame(PrincipalComponents=seq(1,20),CV_MSE=val.errors14)
+
+ggplot(data=sub14, aes(x= PrincipalComponents, y = CV_MSE)) +
+  geom_line() +
+  geom_point()+
+  labs(y="CV Error", x = "Number of Prinicipal Components") +
+  theme(axis.text=element_text(size=10),
+        axis.title=element_text(size=10),
+        plot.title = element_text(hjust = 0.5))
+
+```
+
+```{r}
 #Tenderness at day 28
 reg.fwd <- regsubsets(Ten28~., data = ten28DF_train, nvmax = 40,method = "forward") 
 #Best subset selection using forward selection.
@@ -635,30 +663,39 @@ res.sum <- summary(reg.fwd)
 
 #Loop to calculate CV test error
 test.mat <- model.matrix(Ten28~., data=ten28DF_test)
-val.errors2 <- rep(NA, 20)
+val.errors28 <- rep(NA, 20)
 coefi<-seq(0)
 
 for (i in 1:20) {
   coefi<-coef(reg.fwd , id = i)
   pred <- test.mat[, names(coefi)] %*% coefi
-  val.errors2[i] <- mean((ten28DF_test$Ten28-pred)^2)
+  val.errors28[i] <- mean((ten28DF_test$Ten28-pred)^2)
 }
+```
 
+```{r BestSubsetSelectionCode-Bestsubset28Plot, include=TRUE,fig.width = 6, fig.height = 2, fig.cap="Best subset model size vs. MSE (test) tenderness at day 28"}
 # Graph of Model size vs. MSE
-plot(seq(1,20), val.errors, log="y", xlab = "number of variables", ylab="MSE",
-     main="Model size vs. MSE (test) tenderness at day 28",type = "o")
+MSE_subset_day28<-min(val.errors28)
 
-MSE_subset_day28<-min(val.errors2)
+sub28<-data.frame(PrincipalComponents=seq(1,20),CV_MSE=val.errors28)
+
+ggplot(data=sub28, aes(x= PrincipalComponents, y = CV_MSE)) +
+  geom_line() +
+  geom_point()+
+  labs(y="CV Error", x = "Number of Prinicipal Components") +
+  theme(axis.text=element_text(size=10),
+        axis.title=element_text(size=10),
+        plot.title = element_text(hjust = 0.5))
 ```
 
 
 ### PCR
+
 ```{r PCRCode}
 #Fitting the PCR Ten3 model using 10-fold cross-validation
 set.seed(1)
 pcr.fit_ten3<- pcr (Ten3~., data=ten3DF_train, scale = TRUE,
 validation="CV")
-summary (pcr.fit_ten3)
 mse3 <- MSEP(pcr.fit_ten3)
 #M of the smallest CV error
 mse3$comps[which.min(as.data.frame(mse3$val)[1,])]
@@ -669,7 +706,15 @@ MSE_PCR_day3<-mean ((pcr.pred - ten3DF_test$Ten3)^2)
 #Error compare to average
 sqrt(MSE_PCR_day3)
 mean(ten3DF$Ten3)
+plot(mse3$val)
+```
 
+```{r PCRCode-PCR3Plot, include=TRUE,fig.width = 6, fig.height = 3, fig.cap="PCR model size vs. MSE (test) tenderness at day 3"}
+#Plot
+validationplot (pcr.fit_ten3, val.type = "MSEP",main=NULL,xlab="CV Error")
+```
+
+```{r}
 
 #Fitting the PCR Ten14 model using 10-fold cross-validation
 set.seed(1)
@@ -686,9 +731,14 @@ MSE_PCR_day14<-mean ((pcr.pred - ten14DF_test$Ten14)^2)
 #Error in the same scale
 sqrt(MSE_PCR_day14)
 mean(ten14DF$Ten14)
+```
 
+```{r PCRCode-PCR14Plot, include=TRUE,fig.width = 6, fig.height = 2, fig.cap="PCR model size vs. MSE (test) tenderness at day 14"}
+#Plot
+validationplot (pcr.fit_ten14, val.type = "MSEP",main=NULL,xlab="CV Error")
+```
 
-
+```{r}
 #Fitting the PCR Ten28 model using 10-fold cross-validation
 set.seed(1)
 pcr.fit_ten28<- pcr (Ten28~., data=ten28DF_train, scale = TRUE,
@@ -705,14 +755,17 @@ MSE_PCR_day28<-mean ((pcr.pred - ten28DF_test$Ten28)^2)
 #Error in the same scale
 sqrt(MSE_PCR_day28)
 mean(ten28DF$Ten28)
+```
 
-
+```{r PCRCode-PCR28Plot, include=TRUE,fig.width = 6, fig.height = 2, fig.cap="PCR model size vs. MSE (test) tenderness at day 28"}
+#Plot
+validationplot (pcr.fit_ten28, val.type = "MSEP",main=NULL,xlab="CV Error")
 ```
 
 
 ### Lasso Regression
 
-#### Standard Lasso Regression
+#### Standard Lasso Regression  
 
 ```{r LassoNonPCACode}
 
@@ -838,9 +891,6 @@ write.csv(Ten28NonPCA_Results,"Lasso/LassoNonPCA/Ten28.csv", row.names = FALSE)
 
 ```
 
-
-
-
 ```{r LassoNonPCA-Lambda3Plot, include=TRUE,fig.width = 6, fig.height = 2, fig.cap="CV MSE associated with differening values for lambda in for the Tenderness at Day 3 Lasso Model"}
 
 lambdaPlot3
@@ -858,7 +908,6 @@ lambdaPlot14
 lambdaPlot28
 
 ```
-
 
 ```{r LassoNonPCA-summary, include=TRUE}
 #Report the Lasso results
@@ -882,7 +931,7 @@ Figure \@ref(fig:LassoNonPCA-Lambda3Plot), Figure \@ref(fig:LassoNonPCA-Lambda14
 
 Using these tuned models, the Test MSE was calculated on the data left out of the Training set. Table \@ref(tab:LassoNonPCA-summary) provides a summary of the three models. As shown in the table, the Tenderness at 3 days model shows a Test MSE of 19.05 and it only included one predictor in the model. The tenderness at 14 days model shows a Test MSE of 15.36 and it included no predictors in the model. That is to say, the model only includes an intercept that is the average of the training values and the Lasso algorithm could not identify a model that was simply better than taking the average of the Training dataset tenderness at day 14. Lastly, the tenderness at 28 days model has a Test MSE of 6.61 and included 18 predictors in the model. A more in depth summary of how valuable these test errors are will be include below in the summary section of the regression analysis. 
 
-#### Lasso using Principal Components Regression
+#### Lasso using Principal Components Regression  
 
 ```{r LassoTen3Code}
 # Lasso on principal components for Ten3
