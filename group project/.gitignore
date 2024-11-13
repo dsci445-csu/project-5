@@ -39,3 +39,15 @@ vignettes/*.pdf
 
 # R Environment Variables
 .Renviron
+
+# Ignore generated HTML, PDF, and other output files
+*.html
+*.pdf
+*.Rhistory
+*.RData
+.Rproj.user/
+cache/
+
+/homeworks
+/labs
+/notes
