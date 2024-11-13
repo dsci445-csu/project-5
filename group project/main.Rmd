@@ -1,0 +1,100 @@
+---
+title: "DSCI445 - Group Project"
+authors: "Amanda Bartels, Mohamed Habibniaykoochesfahani, Isabella Kukor, Casey Martin"
+output: pdf_document
+---
+
+
+## Basic R
+
+# Remove NA fields
+
+```{r, include=FALSE}
+
+dataset <- read.csv("apartments_for_rent_classified_10K.csv", sep = ";")
+
+head(dataset)
+sapply(dataset, class)
+
+# View summary statistics for each column
+summary(dataset)
+
+table(dataset$category)
+table(dataset$currency)
+table(dataset$state)
+table(dataset$bedrooms)
+table(dataset$fee)
+table(dataset$has_photo)
+table(dataset$pets_allowed)
+table(dataset$price_type)
+table(dataset$source)
+
+```
+
+# Remove columns that do not contain useful information:
+
+Removed 'currency' column because all values in it are "USD".
+Removed 'fee' column because all values are "No" so this will not provide insights.
+Kept value 'has_photo' because it could correlate with listing quality and affect price.
+Removed 'price_display' column because it is a repeat of price column.
+Kept(?) 'source' column tracks the source of the listing (i.e. different websites). This is only useful for comparing listings across sources which we will/not be doing in this analysis.
+'title' and 'body' columns are removed because they contain text descriptions which are not going to be analyzed in this study.
+
+```{r, include=FALSE}
+
+library(dplyr)
+
+# Remove columns
+dataset <- dataset %>%
+  select(
+    -currency,
+    -fee,
+    -price_display,
+    -title,
+    -body
+    # Uncomment the line below to remove 'source' (website listing was posted on)
+    # -source
+  )
+
+# View cleaned dataset
+str(dataset)
+
+
+```
+
+
+# Remove null values.
+
+```{r, include=FALSE}
+# Replace "null" with NA across all character columns in the dataset for easier handling
+dataset[] <- lapply(dataset, function(x) {
+  if (is.character(x)) {
+    x[x == "null"] <- NA
+  }
+  return(x)
+})
+
+# Remove rows with any NA values
+dataset <- na.omit(dataset)
+
+# Get a summary of NA counts for each column in the dataset
+colSums(is.na(dataset))
+
+# Check the structure and summary of the dataset to verify changes
+str(dataset)
+summary(dataset)
+
+```
+
+
+# Standardizes categorical values for consistency.
+
+```{r}
+
+# Change `has_photo` entries containing "No Thumbnail" into "No" category so only categories are "Yes" or "No"
+dataset$has_photo[dataset$has_photo == "No Thumbnail"] <- "No"
+
+# Correct the special character in `source`
+dataset$source[dataset$source == "RENTCaf\xe9"] <- "RENTCafé"
+
+```
