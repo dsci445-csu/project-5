@@ -39,6 +39,7 @@ vignettes/*.pdf
 # R Environment Variables
 .Renviron
 
+<<<<<<< HEAD
 # Ignore generated HTML, PDF, and other output files
 *.html
 *.pdf
@@ -46,7 +47,7 @@ vignettes/*.pdf
 *.RData
 .Rproj.user/
 cache/
-
+=======
 # pkgdown site
 docs/
 
@@ -55,6 +56,7 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+>>>>>>> 39c70e31dad8f11b3201583eb66c54eec9f3b8e4
 
 /homeworks
 /labs

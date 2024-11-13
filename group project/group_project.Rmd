@@ -1,0 +1,19 @@
+
+```{r}
+
+dataset <- read.csv("apartments_for_rent_classified_10K.csv", sep = ";")
+
+head(dataset)
+sapply(dataset, class)
+
+dataset$column_name <- as.numeric(as.character(dataset$column_name))
+colSums(is.na(dataset))
+
+dataset <- na.omit(dataset)
+# Alternatively, fill NA with column mean for numeric columns
+#dataset$numeric_column[is.na(dataset$numeric_column)] <- mean(dataset$numeric_column, na.rm = TRUE)
+
+str(dataset)
+head(dataset)
+
+```
