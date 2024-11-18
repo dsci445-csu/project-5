@@ -15,3 +15,39 @@ library(rpart.plot)
 library(vip)
 ```
 
+```{r}
+# Remove unnescessary columns
+dataset_spread <- dataset_spread %>% select(-id, category)
+```
+
+# Train test split
+```{r}
+set.seed(445)
+
+dataset_split <- initial_split(dataset_spread)
+dataset_train <- training(dataset_split)
+dataset_test <- testing(dataset_split)
+```
+
+# Random Forest
+
+```{r}
+set.seed(445)
+
+rf_spec <- rand_forest(mtry = sqrt(.cols())) |>
+  set_engine("randomForest", importance = TRUE) |>
+  set_mode("regression")
+
+rf_fit <- rf_spec |>
+  fit(price ~ ., data = dataset_train)
+
+bind_cols(
+  augment(rf_fit, new_data = dataset_test),
+  predict(rf_fit, new_data = dataset_test)
+) -> dataset_pred_rf
+
+MSE <- (1/length(dataset_pred_rf$price))*(sum(dataset_test$price - dataset_pred_rf$.pred...21))^2
+MSE
+```
+
+

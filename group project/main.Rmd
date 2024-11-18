@@ -103,10 +103,17 @@ dataset$source[dataset$source == "RENTCaf\xe9"] <- "RENTCafé"
 
 ```
 
+# Make latitude and longitude numeric instead of character
+
+```{r}
+dataset <- transform(dataset, latitude = as.numeric(latitude), longitude = as.numeric(longitude))
+sapply(dataset, class)
+```
+
 # Split ammenities into binary columns
 
 ```{r}
-dataset_split <- dataset %>%
+dataset_spread <- dataset %>%
   # Split and widen amenities
   mutate(amenities_split = str_split(amenities, ",")) %>%
   unnest(amenities_split) %>%
