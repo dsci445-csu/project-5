@@ -17,7 +17,7 @@ library(vip)
 
 ```{r}
 # Remove unnescessary columns
-dataset_spread <- dataset_spread %>% select(-id, category)
+dataset_spread <- dataset_spread %>% select(-id, -category, -bedrooms, -cityname, -state, -source)
 ```
 
 # Train test split
