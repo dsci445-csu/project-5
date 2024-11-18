@@ -1,0 +1,17 @@
+---
+title: "Trees"
+author: "Casey Martin"
+date: "2024-11-18"
+output: pdf_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+library(tidyverse)
+library(tidymodels)
+library(knitr)
+library(rpart.plot)
+library(vip)
+```
+
