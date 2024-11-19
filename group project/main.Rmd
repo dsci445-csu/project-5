@@ -2,6 +2,8 @@
 title: "DSCI445 - Group Project"
 authors: "Amanda Bartels, Mohamed Habibniaykoochesfahani, Isabella Kukor, Casey Martin"
 output: pdf_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 
@@ -37,12 +39,13 @@ Removed 'currency' column because all values in it are "USD".
 Removed 'fee' column because all values are "No" so this will not provide insights.
 Kept value 'has_photo' because it could correlate with listing quality and affect price.
 Removed 'price_display' column because it is a repeat of price column.
+Removed 'address' because it's not useful and has a large ammount of NAs.
 Kept(?) 'source' column tracks the source of the listing (i.e. different websites). This is only useful for comparing listings across sources which we will/not be doing in this analysis.
 'title' and 'body' columns are removed because they contain text descriptions which are not going to be analyzed in this study.
 
 ```{r, include=FALSE}
 
-library(dplyr)
+library(tidyverse)
 
 # Remove columns
 dataset <- dataset %>%
@@ -51,7 +54,8 @@ dataset <- dataset %>%
     -fee,
     -price_display,
     -title,
-    -body
+    -body,
+    -address
     # Uncomment the line below to remove 'source' (website listing was posted on)
     # -source
   )
@@ -74,11 +78,11 @@ dataset[] <- lapply(dataset, function(x) {
   return(x)
 })
 
-# Remove rows with any NA values
-dataset <- na.omit(dataset)
-
 # Get a summary of NA counts for each column in the dataset
 colSums(is.na(dataset))
+
+# Remove rows with any NA values
+dataset <- na.omit(dataset)
 
 # Check the structure and summary of the dataset to verify changes
 str(dataset)
@@ -98,3 +102,23 @@ dataset$has_photo[dataset$has_photo == "No Thumbnail"] <- "No"
 dataset$source[dataset$source == "RENTCaf\xe9"] <- "RENTCafé"
 
 ```
+
+# Make latitude and longitude numeric instead of character
+
+```{r}
+dataset <- transform(dataset, latitude = as.numeric(latitude), longitude = as.numeric(longitude))
+sapply(dataset, class)
+```
+
+# Split ammenities into binary columns
+
+```{r}
+dataset_spread <- dataset %>%
+  # Split and widen amenities
+  mutate(amenities_split = str_split(amenities, ",")) %>%
+  unnest(amenities_split) %>%
+  mutate(has_amenity = 1) %>%
+  pivot_wider(names_from = amenities_split, values_from = has_amenity, values_fill = 0) %>%
+  select(-amenities)
+```
+
