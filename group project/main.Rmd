@@ -50,7 +50,7 @@ Only 2 rows in the entire dataset have \textit{price_type} values other than 'Mo
 
 
 ```{r, include=FALSE}
-
+library(tidyverse)
 library(dplyr)
 
 # Remove rows
