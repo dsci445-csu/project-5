@@ -13,7 +13,7 @@ editor_options:
 
 ```{r, include=FALSE}
 
-dataset <- read.csv("apartments_for_rent_classified_10K.csv", sep = ";")
+dataset <- read.csv("group project/apartments_for_rent_classified_10K.csv", sep = ";")
 
 head(dataset)
 sapply(dataset, class)
