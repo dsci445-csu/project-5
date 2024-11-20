@@ -59,7 +59,6 @@ dataset <- dataset[dataset$price_type=='Monthly',]
 # Remove columns
 dataset <- dataset %>%
   select(
-    -id,
     -currency,
     -fee,
     -price_display,
@@ -130,7 +129,7 @@ dataset_spread <- dataset %>%
   unnest(amenities_split) %>%
   mutate(has_amenity = 1) %>%
   pivot_wider(names_from = amenities_split, values_from = has_amenity, values_fill = 0) %>%
-  select(-amenities)
+  select(-amenities, -id)
 ```
 
 # Train test split
