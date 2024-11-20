@@ -59,6 +59,7 @@ dataset <- dataset[dataset$price_type=='Monthly',]
 # Remove columns
 dataset <- dataset %>%
   select(
+    -id,
     -currency,
     -fee,
     -price_display,
@@ -120,6 +121,8 @@ dataset$source[dataset$source == "RENTCaf\xe9"] <- "RENTCafé"
 
 ```
 
+# Spread amenities column
+
 ```{r}
 dataset_spread <- dataset %>%
   # Split and widen amenities
@@ -130,3 +133,11 @@ dataset_spread <- dataset %>%
   select(-amenities)
 ```
 
+# Train test split
+```{r}
+set.seed(445)
+
+dataset_split <- initial_split(dataset_spread, prop = 0.6)
+dataset_train <- training(dataset_split)
+dataset_test <- testing(dataset_split)
+```
