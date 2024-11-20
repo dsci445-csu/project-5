@@ -59,7 +59,6 @@ dataset <- dataset[dataset$price_type=='Monthly',]
 # Remove columns
 dataset <- dataset %>%
   select(
-    #-id,
     -currency,
     -fee,
     -price_display,
