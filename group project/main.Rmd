@@ -134,6 +134,8 @@ dataset_spread <- dataset %>%
 
 # Train test split
 ```{r}
+library(tidymodels)
+
 set.seed(445)
 
 dataset_split <- initial_split(dataset_spread, prop = 0.6)
