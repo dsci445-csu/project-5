@@ -64,3 +64,47 @@ tree_fit |>
   rpart.plot()
 ```
 
+
+# Bagging
+
+```{r}
+bagging_spec <- rand_forest(mtry = .cols()) |>
+  set_engine("randomForest", importance = TRUE) |>
+  set_mode("regression")
+
+bagging_fit <- bagging_spec |>
+  fit(price ~ ., data = dataset_train)
+
+vip(bagging_fit)
+
+# bagging_fit |>
+#   extract_fit_engine() |>
+#   rpart.plot()
+
+# bagging_fit |>
+#   augment(new_data = dataset_test) |>
+#   accuracy(truth = price, estimate = .pred_class)
+```
+
+
+# Boosting
+
+```{r}
+boost_spec <- boost_tree(trees = 5000, tree_depth = 2, learn_rate = 0.01) |>
+  set_engine("xgboost") |>
+  set_mode("regression")
+
+boost_fit <- boost_spec |>
+  fit(price ~ ., data = dataset_train)
+
+vip(boost_fit)
+
+# boost_fit |>
+#   extract_fit_engine() |>
+#   rpart.plot()
+
+# boost_fit |>
+#   augment(new_data = dataset_test) |>
+#   accuracy(truth = price, estimate = .pred_class)
+```
+
