@@ -15,9 +15,14 @@ library(rpart.plot)
 library(vip)
 ```
 
+
 ```{r}
 # Remove unnescessary columns
 dataset_spread <- dataset_spread %>% select(-bedrooms, -state, -source)
+```
+
+```{r}
+sapply(dataset_spread, table)
 ```
 
 # Random Forest

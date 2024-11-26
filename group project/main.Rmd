@@ -14,6 +14,10 @@ editor_options:
 ```{r, include=FALSE}
 
 dataset <- read.csv("apartments_for_rent_classified_10K.csv", sep = ";")
+#dataset <- read.csv("apartments_for_rent_classified_100K.csv", sep = ";")
+
+# Remove duplicate rows
+dataset <- dataset %>% distinct(id, .keep_all = TRUE)
 
 head(dataset)
 sapply(dataset, class)
@@ -122,14 +126,16 @@ dataset$source[dataset$source == "RENTCaf\xe9"] <- "RENTCafé"
 
 # Spread amenities column
 
+
 ```{r}
 dataset_spread <- dataset %>%
   # Split and widen amenities
   mutate(amenities_split = str_split(amenities, ",")) %>%
+  distinct(id, amenities_split, .keep_all = TRUE) %>%
   unnest(amenities_split) %>%
   mutate(has_amenity = 1) %>%
-  pivot_wider(names_from = amenities_split, values_from = has_amenity, values_fill = 0) %>%
-  select(-amenities, -id)
+  pivot_wider(names_from = amenities_split, values_from = has_amenity, values_fill = 0, id_cols = id) %>%
+  select(-id)
 ```
 
 # Train test split
