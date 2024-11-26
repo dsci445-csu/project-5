@@ -15,32 +15,6 @@ library(rpart.plot)
 library(vip)
 ```
 
-```{r}
-# Check if levels are the same between training and testing sets.
-
-result <- mapply(function(col1, col2) {
-  identical(sort(unique(col1)), sort(unique(col2)))
-}, dataset_train, dataset_test)
-
-result
-
-result[result==FALSE]
-```
-
-```{r}
-# Remove columns with different levels between training and testing
-dataset_spread <- dataset_spread %>% select(-bedrooms, -state, -source)
-```
-
-# Train test split
-```{r}
-set.seed(445)
-
-dataset_split <- initial_split(dataset_spread, prop = 0.6)
-dataset_train <- training(dataset_split)
-dataset_test <- testing(dataset_split)
-```
-
 # Random Forest
 
 ```{r}

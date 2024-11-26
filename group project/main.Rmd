@@ -137,12 +137,33 @@ dataset_spread <- dataset %>%
   select(-id, -amenities)
 ```
 
-
 # Train test split
 ```{r}
 library(tidymodels)
 
 set.seed(445)
+
+dataset_split <- initial_split(dataset_spread, prop = 0.6)
+dataset_train <- training(dataset_split)
+dataset_test <- testing(dataset_split)
+```
+
+# Check if levels are the same between training and testing sets.
+```{r}
+result <- mapply(function(col1, col2) {
+  identical(sort(unique(col1)), sort(unique(col2)))
+}, dataset_train, dataset_test)
+
+result
+
+result[result==FALSE]
+```
+
+# Remove categorical columns with different levels between training and testing and recreate split
+```{r}
+set.seed(445)
+
+dataset_spread <- dataset_spread %>% select(-bedrooms, -state, -source)
 
 dataset_split <- initial_split(dataset_spread, prop = 0.6)
 dataset_train <- training(dataset_split)
