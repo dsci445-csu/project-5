@@ -33,6 +33,8 @@ rf_wf <- workflow() |>
 rf_fit <- rf_wf |>
   fit(dataset_train)
 
+vip(rf_fit)
+
 dataset_pred_rf <- predict(rf_fit, dataset_test)
 MSE <- (1/nrow(dataset_pred_rf))*(sum(dataset_test$price - dataset_pred_rf$.pred))^2
 MSE
@@ -56,6 +58,8 @@ tree_fit
 tree_fit |>
   extract_fit_engine() |>
   rpart.plot(roundint=FALSE)
+
+vip(tree_fit)
 
 dataset_pred_tree <- predict(tree_fit, dataset_test)
 MSE <- (1/nrow(dataset_pred_tree))*(sum(dataset_test$price - dataset_pred_tree$.pred))^2
