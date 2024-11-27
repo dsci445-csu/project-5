@@ -15,32 +15,6 @@ library(rpart.plot)
 library(vip)
 ```
 
-# Random Forest
-
-```{r}
-set.seed(445)
-
-rf_spec <- rand_forest(mtry = sqrt(.cols())) |>
-  set_engine("randomForest", importance = TRUE) |>
-  set_mode("regression")
-
-rf_rec <- recipe(price ~ ., data = dataset_train)
-
-rf_wf <- workflow() |>
-  add_model(rf_spec) |>
-  add_recipe(rf_rec)
-
-rf_fit <- rf_wf |>
-  fit(dataset_train)
-
-vip(rf_fit)
-
-dataset_pred_rf <- predict(rf_fit, dataset_test)
-MSE <- (1/nrow(dataset_pred_rf))*(sum(dataset_test$price - dataset_pred_rf$.pred))^2
-MSE
-```
-
-
 # Decision Tree
 
 ```{r}
@@ -62,36 +36,67 @@ tree_fit |>
 vip(tree_fit)
 
 dataset_pred_tree <- predict(tree_fit, dataset_test)
-MSE <- (1/nrow(dataset_pred_tree))*(sum(dataset_test$price - dataset_pred_tree$.pred))^2
-MSE
+RMSE <- sqrt((1/nrow(dataset_pred_tree))*(sum(dataset_test$price - dataset_pred_tree$.pred))^2)
+RMSE
+```
+
+# Random Forest
+
+```{r}
+set.seed(445)
+
+rf_spec <- rand_forest(mtry = sqrt(.cols())) |>
+  set_engine("randomForest", importance = TRUE) |>
+  set_mode("regression")
+
+rf_rec <- recipe(price ~ ., data = dataset_train)
+
+rf_wf <- workflow() |>
+  add_model(rf_spec) |>
+  add_recipe(rf_rec)
+
+rf_fit <- rf_wf |>
+  fit(dataset_train)
+
+vip(rf_fit)
+
+dataset_pred_rf <- predict(rf_fit, dataset_test)
+RMSE <- sqrt((1/nrow(dataset_pred_rf))*(sum(dataset_test$price - dataset_pred_rf$.pred))^2)
+RMSE
 ```
 
 
 # Bagging
 
 ```{r}
+set.seed(445)
+
 bagging_spec <- rand_forest(mtry = .cols()) |>
   set_engine("randomForest", importance = TRUE) |>
   set_mode("regression")
 
-bagging_fit <- bagging_spec |>
-  fit(price ~ ., data = dataset_train)
+bagging_rec <- recipe(price ~ ., data = dataset_train)
+
+bagging_wf <- workflow() |>
+  add_model(bagging_spec) |>
+  add_recipe(bagging_rec)
+
+bagging_fit <- bagging_wf |>
+  fit(dataset_train)
 
 vip(bagging_fit)
 
-# bagging_fit |>
-#   extract_fit_engine() |>
-#   rpart.plot()
-
-# bagging_fit |>
-#   augment(new_data = dataset_test) |>
-#   accuracy(truth = price, estimate = .pred_class)
+dataset_pred_bagging <- predict(bagging_fit, dataset_test)
+RMSE <- sqrt((1/nrow(dataset_pred_bagging))*(sum(dataset_test$price - dataset_pred_bagging$.pred))^2)
+RMSE
 ```
 
 
 # Boosting
 
 ```{r}
+set.seed(445)
+
 boost_spec <- boost_tree(trees = 5000, tree_depth = 2, learn_rate = 0.01) |>
   set_engine("xgboost") |>
   set_mode("regression")
@@ -101,12 +106,6 @@ boost_fit <- boost_spec |>
 
 vip(boost_fit)
 
-# boost_fit |>
-#   extract_fit_engine() |>
-#   rpart.plot()
 
-# boost_fit |>
-#   augment(new_data = dataset_test) |>
-#   accuracy(truth = price, estimate = .pred_class)
 ```
 
