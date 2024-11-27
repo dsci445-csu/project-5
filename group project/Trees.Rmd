@@ -24,17 +24,20 @@ rf_spec <- rand_forest(mtry = sqrt(.cols())) |>
   set_engine("randomForest", importance = TRUE) |>
   set_mode("regression")
 
-rf_fit <- rf_spec |>
-  fit(price ~ ., data = dataset_train)
+rf_rec <- recipe(price ~ ., data = dataset_train)
 
-bind_cols(
-  augment(rf_fit, new_data = dataset_test),
-  predict(rf_fit, new_data = dataset_test)
-) -> dataset_pred_rf
+rf_wf <- workflow() |>
+  add_model(rf_spec) |>
+  add_recipe(rf_rec)
 
-MSE <- (1/length(dataset_pred_rf$price))*(sum(dataset_test$price - dataset_pred_rf$.pred...21))^2
+rf_fit <- rf_wf |>
+  fit(dataset_train)
+
+dataset_pred_rf <- predict(rf_fit, dataset_test)
+MSE <- (1/nrow(dataset_pred_rf))*(sum(dataset_test$price - dataset_pred_rf$.pred))^2
 MSE
 ```
+
 
 # Decision Tree
 
