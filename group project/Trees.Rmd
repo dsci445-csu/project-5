@@ -19,23 +19,38 @@ library(vip)
 
 ```{r, cache=TRUE}
 set.seed(445)
+train_cv_10fold <- vfold_cv(dataset_train, v = 10)
 
-tree_spec <- decision_tree() |>
+tree_spec <- decision_tree(tree_depth = tune("depth"), cost_complexity = tune("alpha")) |>
   set_engine("rpart") |>
   set_mode("regression")
 
-tree_fit <- tree_spec |>
-  fit(price ~ ., data = dataset_train)
+tree_rec <- recipe(price ~ ., data = dataset_train)
 
-tree_fit
+tree_wf <- workflow() |>
+  add_model(tree_spec) |>
+  add_recipe(tree_rec)
 
-tree_fit |>
+tune_df <- data.frame(depth = seq(1:10), alpha = 10^seq(-3, -1, length.out = 10))
+
+tree_tune_fit <- tree_wf |>
+  tune_grid(resamples = train_cv_10fold, grid = tune_df)
+
+tree_tune_fit |>
+  autoplot()
+
+tree_final <- finalize_workflow(tree_wf, select_best(tree_tune_fit, metric = "rmse"))
+
+tree_final_fit <- tree_final |>
+  fit(data = dataset_train)
+
+tree_final_fit |>
   extract_fit_engine() |>
   rpart.plot(roundint=FALSE)
 
-vip(tree_fit)
+vip(tree_final_fit)
 
-dataset_pred_tree <- predict(tree_fit, dataset_test)
+dataset_pred_tree <- predict(tree_final_fit, dataset_test)
 RMSE <- sqrt((1/nrow(dataset_pred_tree))*(sum(dataset_test$price - dataset_pred_tree$.pred))^2)
 RMSE
 ```
