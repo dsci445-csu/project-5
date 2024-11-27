@@ -17,7 +17,7 @@ library(vip)
 
 # Decision Tree
 
-```{r}
+```{r, cache=TRUE}
 set.seed(445)
 
 tree_spec <- decision_tree() |>
@@ -42,7 +42,7 @@ RMSE
 
 # Random Forest
 
-```{r}
+```{r, cache=TRUE}
 set.seed(445)
 
 rf_spec <- rand_forest(mtry = sqrt(.cols())) |>
@@ -68,7 +68,7 @@ RMSE
 
 # Bagging
 
-```{r}
+```{r, cache=TRUE}
 set.seed(445)
 
 bagging_spec <- rand_forest(mtry = .cols()) |>
@@ -94,18 +94,27 @@ RMSE
 
 # Boosting
 
-```{r}
+```{r, cache=TRUE}
 set.seed(445)
 
 boost_spec <- boost_tree(trees = 5000, tree_depth = 2, learn_rate = 0.01) |>
   set_engine("xgboost") |>
   set_mode("regression")
 
-boost_fit <- boost_spec |>
-  fit(price ~ ., data = dataset_train)
+boost_rec <- recipe(price ~ ., data = dataset_train) |>
+  step_dummy(all_nominal_predictors())
+
+boost_wf <- workflow() |>
+  add_model(boost_spec) |>
+  add_recipe(boost_rec)
+
+boost_fit <- boost_wf |>
+  fit(dataset_train)
 
 vip(boost_fit)
 
+dataset_pred_boost <- predict(boost_fit, dataset_test)
+RMSE <- sqrt((1/nrow(dataset_pred_boost))*(sum(dataset_test$price - dataset_pred_boost$.pred))^2)
+RMSE
 
 ```
-
