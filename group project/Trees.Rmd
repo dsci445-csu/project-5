@@ -53,13 +53,13 @@ tree_fit <- tree_spec |>
 
 tree_fit
 
-# tree_fit |>
-#   augment(new_data = dataset_train) |>
-#   accuracy(truth = price, estimate = .pred_class)
-
 tree_fit |>
   extract_fit_engine() |>
-  rpart.plot()
+  rpart.plot(roundint=FALSE)
+
+dataset_pred_tree <- predict(tree_fit, dataset_test)
+MSE <- (1/nrow(dataset_pred_tree))*(sum(dataset_test$price - dataset_pred_tree$.pred))^2
+MSE
 ```
 
 
