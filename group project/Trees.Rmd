@@ -13,6 +13,8 @@ library(tidymodels)
 library(knitr)
 library(rpart.plot)
 library(vip)
+library(doParallel)
+library(future)
 ```
 
 # Decision Tree
@@ -39,6 +41,8 @@ tree_tune_fit <- tree_wf |>
 tree_tune_fit |>
   autoplot()
 
+show_best(tree_tune_fit, metric = "rmse", n = 1)
+
 tree_final <- finalize_workflow(tree_wf, select_best(tree_tune_fit, metric = "rmse"))
 
 tree_final_fit <- tree_final |>
@@ -56,6 +60,51 @@ RMSE
 ```
 
 # Random Forest
+
+```{r, cache=TRUE}
+
+# all_cores <- parallel::detectCores(logical = FALSE)
+# 
+# cl <- makePSOCKcluster(all_cores)
+# registerDoParallel(cl)
+
+
+#plan(multisession)
+
+set.seed(445)
+
+rf_spec <- rand_forest(mtry = sqrt(.cols()), trees = tune('trees')) |>
+  set_engine("randomForest", importance = TRUE) |>
+  set_mode("regression")
+
+rf_rec <- recipe(price ~ ., data = dataset_train)
+
+rf_wf <- workflow() |>
+  add_model(rf_spec) |>
+  add_recipe(rf_rec)
+
+#tune_df <- data.frame(trees = seq(10, 100, length.out = 5))
+tune_df <- data.frame(trees = 500)
+
+rf_tune_fit <- rf_wf |>
+  tune_grid(resamples = train_cv_10fold, grid = tune_df)
+
+rf_tune_fit |>
+  autoplot()
+
+show_best(rf_tune_fit, metric = "rmse", n = 1)
+
+rf_final <- finalize_workflow(rf_wf, select_best(rf_tune_fit, metric = "rmse"))
+
+rf_final_fit <- rf_final |>
+  fit(data = dataset_train)
+
+vip(rf_final_fit)
+
+dataset_pred_rf <- predict(rf_final_fit, dataset_test)
+RMSE <- sqrt((1/nrow(dataset_pred_rf))*(sum(dataset_test$price - dataset_pred_rf$.pred))^2)
+RMSE
+```
 
 ```{r, cache=TRUE}
 set.seed(445)
@@ -112,7 +161,95 @@ RMSE
 ```{r, cache=TRUE}
 set.seed(445)
 
-boost_spec <- boost_tree(trees = 5000, tree_depth = 2, learn_rate = 0.01) |>
+all_cores <- parallel::detectCores(logical = FALSE)
+
+cl <- makePSOCKcluster(all_cores)
+registerDoParallel(cl)
+
+boost_spec <- boost_tree(trees = 5000, tree_depth = tune('depth')) |>
+  set_engine("xgboost") |>
+  set_mode("regression")
+
+boost_rec <- recipe(price ~ ., data = dataset_train) |>
+  step_dummy(all_nominal_predictors())
+
+boost_wf <- workflow() |>
+  add_model(boost_spec) |>
+  add_recipe(boost_rec)
+
+tune_df <- data.frame(depth = seq(1, 5, length.out = 5))
+#tune_df <- data.frame(depth = seq(1, 5), lambda = 10^seq(-3, 1, length.out = 5))
+#tune_df <- data.frame(depth = seq(1, 5, length.out = 5), lambda = 10^seq(-3, 1, length.out = 10), trees = seq(100, 1000, length.out = 5))
+
+boost_tune_fit <- boost_wf |>
+  tune_grid(resamples = train_cv_10fold, grid = tune_df) #|>
+  #control_grid(parallel_over = "resamples")
+
+boost_tune_fit |>
+  autoplot()
+
+show_best(boost_tune_fit, metric = "rmse", n = 1)
+
+boost_final <- finalize_workflow(boost_wf, select_best(boost_tune_fit, metric = "rmse"))
+
+boost_final_fit <- boost_final |>
+  fit(data = dataset_train)
+
+vip(boost_fit)
+
+dataset_pred_boost <- predict(boost_final_fit, dataset_test)
+RMSE <- sqrt((1/nrow(dataset_pred_boost))*(sum(dataset_test$price - dataset_pred_boost$.pred))^2)
+RMSE
+
+```
+
+```{r, cache=TRUE}
+set.seed(445)
+
+all_cores <- parallel::detectCores(logical = FALSE)
+
+cl <- makePSOCKcluster(all_cores)
+registerDoParallel(cl)
+
+boost_spec <- boost_tree(trees = 5000, tree_depth = 1, learn_rate = tune("lambda")) |>
+  set_engine("xgboost") |>
+  set_mode("regression")
+
+boost_rec <- recipe(price ~ ., data = dataset_train) |>
+  step_dummy(all_nominal_predictors())
+
+boost_wf <- workflow() |>
+  add_model(boost_spec) |>
+  add_recipe(boost_rec)
+
+#tune_df <- data.frame(depth = seq(1, 5, length.out = 5))
+tune_df <- data.frame(lambda = 10^seq(-3, 1, length.out = 5))
+#tune_df <- data.frame(depth = seq(1, 5, length.out = 5), lambda = 10^seq(-3, 1, length.out = 10), trees = seq(100, 1000, length.out = 5))
+
+boost_tune_fit <- boost_wf |>
+  tune_grid(resamples = train_cv_10fold, grid = tune_df) #|>
+  #control_grid(parallel_over = "resamples")
+
+boost_tune_fit |>
+  autoplot()
+
+show_best(boost_tune_fit, metric = "rmse", n = 1)
+
+boost_final <- finalize_workflow(boost_wf, select_best(boost_tune_fit, metric = "rmse"))
+
+boost_final_fit <- boost_final |>
+  fit(data = dataset_train)
+
+vip(boost_fit)
+
+dataset_pred_boost <- predict(boost_final_fit, dataset_test)
+RMSE <- sqrt((1/nrow(dataset_pred_boost))*(sum(dataset_test$price - dataset_pred_boost$.pred))^2)
+RMSE
+
+```
+
+```{r}
+boost_spec <- boost_tree(trees = 5000, tree_depth = 2, learn_rate = 1) |>
   set_engine("xgboost") |>
   set_mode("regression")
 
@@ -125,8 +262,6 @@ boost_wf <- workflow() |>
 
 boost_fit <- boost_wf |>
   fit(dataset_train)
-
-vip(boost_fit)
 
 dataset_pred_boost <- predict(boost_fit, dataset_test)
 RMSE <- sqrt((1/nrow(dataset_pred_boost))*(sum(dataset_test$price - dataset_pred_boost$.pred))^2)

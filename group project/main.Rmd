@@ -13,6 +13,7 @@ editor_options:
 
 ```{r, include=FALSE}
 library(tidyverse)
+library(tidymodels)
 
 dataset <- read.csv("apartments_for_rent_classified_10K.csv", sep = ";")
 #dataset <- read.csv("apartments_for_rent_classified_100K.csv", sep = ";")
@@ -139,8 +140,6 @@ dataset_spread <- dataset %>%
 
 # Train test split
 ```{r}
-library(tidymodels)
-
 set.seed(445)
 
 dataset_split <- initial_split(dataset_spread, prop = 0.6)
