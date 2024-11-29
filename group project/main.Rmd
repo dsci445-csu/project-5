@@ -46,10 +46,6 @@ Removed 'latitude', 'longitude', 'address', 'cityname', and 'time' columns becau
 Only 4 rows in the entire dataset have \textit{category} values other than 'apartment', so these rows and consequently the "category" column are deleted.  
 Only 2 rows in the entire dataset have \textit{price\_type} values other than 'Monthly', so these rows and consequently the "price\_type" column are deleted.
 
-
-
-
-
 ```{r, include=FALSE}
 library(tidyverse)
 
