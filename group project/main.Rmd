@@ -43,8 +43,9 @@ Kept(?) 'source' column tracks the source of the listing (i.e. different website
 'title' and 'body' columns are removed because they contain text descriptions which are not going to be analyzed in this study.
 Removed 'address' because it's not useful and has a large ammount of NAs.
 Removed 'latitude', 'longitude', 'address', 'cityname', and 'time' columns because they are not interpretable in this study.
-Only 4 rows in the entire dataset have \textit{category} values other than 'apartment' so these rows and consequently the "category" column is deleted.
-Only 2 rows in the entire dataset have \textit{price_type} values other than 'Monthly' so these rows and consequently the "price_type" column is deleted.
+Only 4 rows in the entire dataset have \textit{category} values other than 'apartment', so these rows and consequently the "category" column are deleted.  
+Only 2 rows in the entire dataset have \textit{price\_type} values other than 'Monthly', so these rows and consequently the "price\_type" column are deleted.
+
 
 
 
