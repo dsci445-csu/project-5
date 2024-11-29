@@ -158,11 +158,39 @@ result
 result[result==FALSE]
 ```
 
+```{r}
+table(dataset_spread$bedrooms)
+table(dataset_spread$state)
+table(dataset_spread$source)
+```
+
+```{r}
+dataset_copy <- dataset_spread
+```
+
+```{r}
+dataset_spread <- dataset_copy
+```
+
+
 # Remove categorical columns with different levels between training and testing and recreate split
 ```{r}
 set.seed(445)
 
-dataset_spread <- dataset_spread %>% select(-bedrooms, -state, -source)
+# dataset_spread <- dataset_spread %>% select(-bedrooms, -state, -source)
+dataset_spread <- dataset_spread %>% select(-bedrooms, -source, -state)
+
+bedroom_counts <- table(dataset_spread$bedrooms)
+valid_bedrooms <- names(bedroom_counts[bedroom_counts >= 5])
+dataset_spread <- dataset_spread[dataset_spread$bedrooms %in% valid_bedrooms, ]
+
+state_counts <- table(dataset_spread$state)
+valid_states <- names(state_counts[state_counts >= 5])
+dataset_spread <- dataset_spread[dataset_spread$state %in% valid_states, ]
+
+source_counts <- table(dataset_spread$source)
+valid_sources <- names(source_counts[source_counts >= 5])
+dataset_spread <- dataset_spread[dataset_spread$source %in% valid_sources, ]
 
 dataset_split <- initial_split(dataset_spread, prop = 0.6)
 dataset_train <- training(dataset_split)
