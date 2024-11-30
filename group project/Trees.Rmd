@@ -61,56 +61,9 @@ RMSE
 # Random Forest
 
 ```{r, cache=TRUE}
-
-all_cores <- parallel::detectCores(logical = FALSE)
-
-cl <- makePSOCKcluster(all_cores)
-registerDoParallel(cl)
-
 set.seed(445)
 
-rf_spec <- rand_forest(mtry = sqrt(.cols()), trees = tune('trees')) |>
-  set_engine("randomForest", importance = TRUE) |>
-  set_mode("regression")
-
-rf_rec <- recipe(price ~ ., data = dataset_train)
-
-rf_wf <- workflow() |>
-  add_model(rf_spec) |>
-  add_recipe(rf_rec)
-
-tune_df <- data.frame(trees = seq(10, 100, length.out = 5))
-
-start.time <- Sys.time()
-
-rf_tune_fit <- rf_wf |>
-  tune_grid(resamples = train_cv_5fold, grid = tune_df)
-
-end.time <- Sys.time()
-time.taken <- end.time - start.time
-print(paste("Time elapsed tuning:", time.taken))
-
-rf_tune_fit |>
-  autoplot()
-
-show_best(rf_tune_fit, metric = "rmse", n = 1)
-
-rf_final <- finalize_workflow(rf_wf, select_best(rf_tune_fit, metric = "rmse"))
-
-rf_final_fit <- rf_final |>
-  fit(data = dataset_train)
-
-vip(rf_final_fit)
-
-dataset_pred_rf <- predict(rf_final_fit, dataset_test)
-RMSE <- sqrt((1/nrow(dataset_pred_rf))*(sum(dataset_test$price - dataset_pred_rf$.pred))^2)
-RMSE
-```
-
-```{r, cache=TRUE}
-set.seed(445)
-
-rf_spec <- rand_forest(mtry = sqrt(.cols()), trees = 500) |>
+rf_spec <- rand_forest(mtry = sqrt(.cols()), trees = 150) |>
   set_engine("randomForest", importance = TRUE) |>
   set_mode("regression")
 
