@@ -113,6 +113,15 @@ dataset$has_photo[dataset$has_photo == "No Thumbnail"] <- "No"
 # Correct the special character in `source`
 dataset$source[dataset$source == "RENTCaf\xe9"] <- "RENTCafé"
 
+# Change 'bedrooms' and 'bathrooms' from string to int
+# and 'has_photo' from string to binary
+dataset <- dataset %>%
+  mutate(
+    bedrooms = as.numeric(bedrooms),
+    bathrooms = as.numeric(bathrooms),
+    has_photo = ifelse(has_photo == "Yes", 1, 0)
+  )
+
 ```
 
 # Spread amenities column
