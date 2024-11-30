@@ -6,12 +6,14 @@ editor_options:
   chunk_output_type: console
 ---
 
+
+## Basic R
+
 # Remove NA fields
 
 ```{r, include=FALSE}
 
-dataset <- read.csv("/data/accounts/fa24/amandabartels/DSCI445/group project/apartments_for_rent_classified_10K.csv", sep = ";")
-
+dataset <- read.csv("apartments_for_rent_classified_10K.csv", sep = ";")
 
 head(dataset)
 sapply(dataset, class)
