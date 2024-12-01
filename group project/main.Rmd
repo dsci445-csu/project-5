@@ -184,7 +184,6 @@ dataset_spread$bedrooms <- as.numeric(dataset_spread$bedrooms)
 ```{r}
 set.seed(445)
 
-# dataset_spread <- dataset_spread %>% select(-bedrooms, -state, -source)
 dataset_spread <- dataset_spread %>% select(-state, -source)
 
 

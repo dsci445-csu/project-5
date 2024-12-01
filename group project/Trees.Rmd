@@ -60,10 +60,90 @@ RMSE <- sqrt((1/nrow(dataset_pred_tree))*(sum(dataset_test$price - dataset_pred_
 RMSE
 ```
 
+```{r, cache=TRUE}
+set.seed(445)
+train_cv_5fold <- vfold_cv(dataset_train, v = 5)
+
+tree_spec <- decision_tree(tree_depth = tune("depth")) |>
+  set_engine("rpart") |>
+  set_mode("regression")
+
+tree_rec <- recipe(price ~ ., data = dataset_train)
+
+tree_wf <- workflow() |>
+  add_model(tree_spec) |>
+  add_recipe(tree_rec)
+
+tune_df <- data.frame(depth = seq(1:10))
+
+tree_tune_fit <- tree_wf |>
+  tune_grid(resamples = train_cv_5fold, grid = tune_df)
+
+tree_tune_fit |>
+  autoplot()
+
+show_best(tree_tune_fit, metric = "rmse", n = 1)
+
+tree_final <- finalize_workflow(tree_wf, select_best(tree_tune_fit, metric = "rmse"))
+
+tree_final_fit <- tree_final |>
+  fit(data = dataset_train)
+
+tree_final_fit |>
+  extract_fit_engine() |>
+  rpart.plot(roundint=FALSE)
+
+vip(tree_final_fit)
+
+dataset_pred_tree <- predict(tree_final_fit, dataset_test)
+RMSE <- sqrt((1/nrow(dataset_pred_tree))*(sum(dataset_test$price - dataset_pred_tree$.pred))^2)
+RMSE
+```
+
+```{r, cache=TRUE}
+set.seed(445)
+train_cv_5fold <- vfold_cv(dataset_train, v = 5)
+
+tree_spec <- decision_tree(tree_depth = 1, cost_complexity = tune("alpha")) |>
+  set_engine("rpart") |>
+  set_mode("regression")
+
+tree_rec <- recipe(price ~ ., data = dataset_train)
+
+tree_wf <- workflow() |>
+  add_model(tree_spec) |>
+  add_recipe(tree_rec)
+
+tune_df <- data.frame(alpha = 10^seq(-3, -1, length.out = 10))
+
+tree_tune_fit <- tree_wf |>
+  tune_grid(resamples = train_cv_5fold, grid = tune_df)
+
+tree_tune_fit |>
+  autoplot()
+
+show_best(tree_tune_fit, metric = "rmse", n = 1)
+
+tree_final <- finalize_workflow(tree_wf, select_best(tree_tune_fit, metric = "rmse"))
+
+tree_final_fit <- tree_final |>
+  fit(data = dataset_train)
+
+tree_final_fit |>
+  extract_fit_engine() |>
+  rpart.plot(roundint=FALSE)
+
+vip(tree_final_fit)
+
+dataset_pred_tree <- predict(tree_final_fit, dataset_test)
+RMSE <- sqrt((1/nrow(dataset_pred_tree))*(sum(dataset_test$price - dataset_pred_tree$.pred))^2)
+RMSE
+```
+
 ```{r}
 set.seed(445)
 
-tree_spec <- decision_tree(tree_depth = 5, cost_complexity = 0.004) |>
+tree_spec <- decision_tree(tree_depth = 3, cost_complexity = 0.004) |>
   set_engine("rpart") |>
   set_mode("regression")
 
@@ -95,7 +175,7 @@ RMSE
 ```{r, cache=TRUE}
 set.seed(445)
 
-rf_spec <- rand_forest(mtry = sqrt(.cols()), trees = 150) |>
+rf_spec <- rand_forest(mtry = sqrt(.cols()), trees = 100) |>
   set_engine("randomForest", importance = TRUE) |>
   set_mode("regression")
 
@@ -131,7 +211,7 @@ cl <- makePSOCKcluster(all_cores)
 registerDoParallel(cl)
 
 # Model setup
-boost_spec <- boost_tree(trees = 756, tree_depth = tune('depth'), learn_rate = 0.01) |>
+boost_spec <- boost_tree(trees = 5000, tree_depth = tune('depth'), learn_rate = 0.01) |>
   set_engine("xgboost") |>
   set_mode("regression")
 
@@ -184,7 +264,7 @@ all_cores <- parallel::detectCores(logical = FALSE)
 cl <- makePSOCKcluster(all_cores)
 registerDoParallel(cl)
 
-boost_spec <- boost_tree(trees = 756, tree_depth = 1, learn_rate = tune("lambda")) |>
+boost_spec <- boost_tree(trees = 5000, tree_depth = 3, learn_rate = tune("lambda")) |>
   set_engine("xgboost") |>
   set_mode("regression")
 
@@ -234,7 +314,7 @@ all_cores <- parallel::detectCores(logical = FALSE)
 cl <- makePSOCKcluster(all_cores)
 registerDoParallel(cl)
 
-boost_spec <- boost_tree(trees = tune("trees"), tree_depth = 2, learn_rate = 0.00774) |>
+boost_spec <- boost_tree(trees = tune("trees"), tree_depth = 3, learn_rate = 0.00278) |>
   set_engine("xgboost") |>
   set_mode("regression")
 
