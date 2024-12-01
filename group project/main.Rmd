@@ -36,7 +36,6 @@ table(dataset$has_photo)
 table(dataset$pets_allowed)
 table(dataset$price_type)
 table(dataset$source)
-
 ```
 
 # Remove columns that do not contain useful information:
@@ -147,23 +146,6 @@ dataset_train <- training(dataset_split)
 dataset_test <- testing(dataset_split)
 ```
 
-# Check if levels are the same between training and testing sets.
-```{r}
-result <- mapply(function(col1, col2) {
-  identical(sort(unique(col1)), sort(unique(col2)))
-}, dataset_train, dataset_test)
-
-result
-
-result[result==FALSE]
-```
-
-```{r}
-table(dataset_spread$bedrooms)
-table(dataset_spread$state)
-table(dataset_spread$source)
-```
-
 ```{r}
 dataset_copy <- dataset_spread
 ```
@@ -174,23 +156,37 @@ dataset_spread <- dataset_copy
 
 
 # Remove categorical columns with different levels between training and testing and recreate split
+
+```{r}
+# Threshold for minimum occurrences
+threshold <- 10
+
+# Identify rows to keep
+rows_to_keep <- seq(TRUE, nrow(dataset_spread))
+
+# Process each column
+for (col_name in colnames(dataset_spread)) {
+  if (is.character(dataset_spread[[col_name]]) || is.factor(dataset_spread[[col_name]])) {
+    col_table <- table(dataset_spread[[col_name]])
+    valid_categories <- names(col_table[col_table >= threshold])
+    rows_to_keep <- rows_to_keep & dataset_spread[[col_name]] %in% valid_categories
+  }
+}
+
+# Filter the dataframe
+dataset_spread <- dataset_spread[rows_to_keep, ]
+
+#Convert bathrooms and bedrooms to numeric
+dataset_spread$bathrooms <- as.numeric(dataset_spread$bathrooms)
+dataset_spread$bedrooms <- as.numeric(dataset_spread$bedrooms)
+```
+
 ```{r}
 set.seed(445)
 
 # dataset_spread <- dataset_spread %>% select(-bedrooms, -state, -source)
-dataset_spread <- dataset_spread %>% select(-bedrooms, -source, -state)
+dataset_spread <- dataset_spread %>% select(-state, -source)
 
-bedroom_counts <- table(dataset_spread$bedrooms)
-valid_bedrooms <- names(bedroom_counts[bedroom_counts >= 5])
-dataset_spread <- dataset_spread[dataset_spread$bedrooms %in% valid_bedrooms, ]
-
-state_counts <- table(dataset_spread$state)
-valid_states <- names(state_counts[state_counts >= 5])
-dataset_spread <- dataset_spread[dataset_spread$state %in% valid_states, ]
-
-source_counts <- table(dataset_spread$source)
-valid_sources <- names(source_counts[source_counts >= 5])
-dataset_spread <- dataset_spread[dataset_spread$source %in% valid_sources, ]
 
 dataset_split <- initial_split(dataset_spread, prop = 0.6)
 dataset_train <- training(dataset_split)

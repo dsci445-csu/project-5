@@ -14,7 +14,9 @@ library(knitr)
 library(rpart.plot)
 library(vip)
 library(doParallel)
+library(leaps)
 ```
+
 
 # Decision Tree
 
@@ -58,6 +60,36 @@ RMSE <- sqrt((1/nrow(dataset_pred_tree))*(sum(dataset_test$price - dataset_pred_
 RMSE
 ```
 
+```{r}
+set.seed(445)
+
+tree_spec <- decision_tree(tree_depth = 5, cost_complexity = 0.004) |>
+  set_engine("rpart") |>
+  set_mode("regression")
+
+tree_rec <- recipe(price ~ ., data = dataset_train)
+
+tree_wf <- workflow() |>
+  add_model(tree_spec) |>
+  add_recipe(tree_rec)
+
+
+tree_fit <- tree_wf |>
+  fit(data = dataset_train)
+
+
+tree_fit |>
+  extract_fit_engine() |>
+  rpart.plot(roundint=FALSE)
+
+vip(tree_fit)
+
+dataset_pred_tree <- predict(tree_fit, dataset_test)
+RMSE <- sqrt((1/nrow(dataset_pred_tree))*(sum(dataset_test$price - dataset_pred_tree$.pred))^2)
+RMSE
+```
+
+
 # Random Forest
 
 ```{r, cache=TRUE}
@@ -99,7 +131,7 @@ cl <- makePSOCKcluster(all_cores)
 registerDoParallel(cl)
 
 # Model setup
-boost_spec <- boost_tree(trees = 756, tree_depth = tune('depth'), learn_rate = 0.00774) |>
+boost_spec <- boost_tree(trees = 756, tree_depth = tune('depth'), learn_rate = 0.01) |>
   set_engine("xgboost") |>
   set_mode("regression")
 
@@ -347,7 +379,7 @@ RMSE
 ```{r}
 set.seed(445)
 
-boost_spec <- boost_tree(trees = 5000, tree_depth = 5, learn_rate = 0.01) |>
+boost_spec <- boost_tree(trees = 5000, tree_depth = 2, learn_rate = 0.01) |>
   set_engine("xgboost") |>
   set_mode("regression")
 
