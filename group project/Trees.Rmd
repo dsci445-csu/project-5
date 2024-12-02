@@ -17,6 +17,39 @@ library(doParallel)
 ```
 
 
+# Remove rare levels
+
+```{r}
+# Threshold for minimum occurrences
+threshold <- 10
+
+# Identify rows to keep
+rows_to_keep <- seq(TRUE, nrow(dataset_spread))
+
+# Process each column
+for (col_name in colnames(dataset_spread)) {
+  if (is.character(dataset_spread[[col_name]]) || is.factor(dataset_spread[[col_name]])) {
+    col_table <- table(dataset_spread[[col_name]])
+    valid_categories <- names(col_table[col_table >= threshold])
+    rows_to_keep <- rows_to_keep & dataset_spread[[col_name]] %in% valid_categories
+  }
+}
+
+# Filter the dataframe
+dataset_spread_trees <- dataset_spread[rows_to_keep, ]
+```
+
+```{r}
+set.seed(445)
+
+dataset_spread_trees <- dataset_spread_trees %>% select(-state, -source)
+
+
+dataset_trees_split <- initial_split(dataset_spread_trees, prop = 0.6)
+dataset_trees_train <- training(dataset_trees_split)
+dataset_trees_test <- testing(dataset_trees_split)
+```
+
 # Decision Tree
 
 # Tune depth and alpha
@@ -383,7 +416,7 @@ boost_final <- finalize_workflow(boost_wf, select_best(boost_tune_fit, metric = 
 boost_final_fit <- boost_final |>
   fit(data = dataset_trees_train)
 
-vip(boost_fit)
+vip(boost_final_fit)
 
 dataset_pred_boost <- predict(boost_final_fit, dataset_trees_test)
 RMSE <- sqrt((1/nrow(dataset_pred_boost))*(sum(dataset_trees_test$price - dataset_pred_boost$.pred))^2)
@@ -407,7 +440,7 @@ boost_wf <- workflow() |>
   add_model(boost_spec) |>
   add_recipe(boost_rec)
 
-tune_df <- data.frame(depth = seq(1, 5, length.out = 5), lambda = 10^seq(-3, 1, length.out = 5), trees = seq(100, 1000, length.out = 5))
+tune_df <- data.frame(depth = seq(1, 5, length.out = 5), lambda = 10^seq(-3, 1, length.out = 5), trees = seq(1000, 10000, length.out = 5))
 
 start.time <- Sys.time()
 
@@ -428,7 +461,7 @@ boost_final <- finalize_workflow(boost_wf, select_best(boost_tune_fit, metric = 
 boost_final_fit <- boost_final |>
   fit(data = dataset_trees_train)
 
-vip(boost_fit)
+vip(boost_final_fit)
 
 dataset_pred_boost <- predict(boost_final_fit, dataset_trees_test)
 RMSE <- sqrt((1/nrow(dataset_pred_boost))*(sum(dataset_trees_test$price - dataset_pred_boost$.pred))^2)

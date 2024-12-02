@@ -17,6 +17,7 @@ library(tidymodels)
 #library(smotefamily)
 library(rpart.plot)
 library(vip)
+library(doParallel)
 
 dataset <- read.csv("apartments_for_rent_classified_10K.csv", sep = ";")
 
@@ -151,35 +152,4 @@ dataset_spread <- dataset %>%
 
 
 
-# Remove rare levels
 
-```{r}
-# Threshold for minimum occurrences
-threshold <- 10
-
-# Identify rows to keep
-rows_to_keep <- seq(TRUE, nrow(dataset_spread))
-
-# Process each column
-for (col_name in colnames(dataset_spread)) {
-  if (is.character(dataset_spread[[col_name]]) || is.factor(dataset_spread[[col_name]])) {
-    col_table <- table(dataset_spread[[col_name]])
-    valid_categories <- names(col_table[col_table >= threshold])
-    rows_to_keep <- rows_to_keep & dataset_spread[[col_name]] %in% valid_categories
-  }
-}
-
-# Filter the dataframe
-dataset_spread_trees <- dataset_spread[rows_to_keep, ]
-```
-
-```{r}
-set.seed(445)
-
-dataset_spread_trees <- dataset_spread_trees %>% select(-state, -source)
-
-
-dataset_trees_split <- initial_split(dataset_spread, prop = 0.6)
-dataset_trees_train <- training(dataset_split)
-dataset_trees_test <- testing(dataset_split)
-```
