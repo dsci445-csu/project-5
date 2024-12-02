@@ -13,7 +13,7 @@ editor_options:
 
 ```{r, include=FALSE}
 
-dataset <- read.csv("apartments_for_rent_classified_10K.csv", sep = ";")
+dataset <- read.csv("group project/apartments_for_rent_classified_10K.csv", sep = ";")
 
 head(dataset)
 sapply(dataset, class)
@@ -129,11 +129,167 @@ dataset_spread <- dataset %>%
   select(-amenities, -id)
 ```
 
+<<<<<<< HEAD
+# Train test split, need to add 
+=======
 # Train test split
+>>>>>>> origin/main
 ```{r}
 library(tidymodels)
 
 set.seed(445)
+<<<<<<< HEAD
+library(tidymodels)
+dataset_spread$bathrooms <- as.numeric(dataset_spread$bathrooms)
+dataset_spread$bedrooms <- as.numeric(dataset_spread$bedrooms)
+mean(dataset_spread$price)
+dataset_spread$bi_price[dataset_spread$price >=1356.544] <- "1"
+dataset_spread$bi_price[dataset_spread$price < 1356.544] <- "0"
+dataset_spread$bi_price <- as.factor(dataset_spread$bi_price)
+dataset_split <- initial_split(dataset_spread, prop = 0.6)
+dataset_train <- training(dataset_split)
+dataset_test <- testing(dataset_split)
+dataset_train
+```
+
+##Map of Apartments
+```{r}
+##Create dataset for the states with longitude and latitude. map_data function is in ggplot2
+USmap <- map_data("state")
+USmap
+dataset_spread
+##Need to change abbreviations to full state name to match with USMap datatset 
+dataset_spread$state_full <- state.name[match(dataset_spread$state, state.abb)]
+##Lowercase letters for exact match
+dataset_spread$state_full <- tolower(dataset_spread$state_full)
+##Save the new name for state
+dataset_spread$state <- as.factor(dataset_spread$state_full)
+
+##Determine frequency for each state by the amount of records. *DC not mapped on map*
+state_counts <- dataset_spread %>%
+  group_by(state) %>%
+  summarise(frequency = n())
+
+##Join frequency for each state in the dataset
+USmap <- USmap %>%
+  left_join(state_counts, by = c("region" = "state"))
+USmap
+
+##Map out the United States using ggplot, and color by frequency used. 
+ggplot(USmap, aes(x = long, y = lat, group = group, fill = frequency)) +
+  geom_polygon(color = "black") +
+  scale_fill_gradient(low = "lightblue", high = "darkblue", na.value = "gray") +
+  theme_minimal() +
+  labs(title = "US Map with Highlighted States", fill = "Frequency")
+
+
+```
+
+Summary Statistics
+```{r}
+## Average income for each state 
+table <- dataset_spread %>%
+  group_by(state) %>%
+  summarize(
+    count =n(),
+    avg_price = mean(price, na.rm = TRUE))
+table
+
+```
+Linear Model
+```{r}
+set.seed(445)
+linear_model <- linear_reg() %>% 
+  set_engine("lm")
+glimpse(dataset_train)
+
+pricelm <- recipe(price ~ square_feet + bathrooms + bedrooms + has_photo + pets_allowed + state + source , data = dataset_train)
+
+workflow <- workflow() %>% 
+  add_model(linear_model) %>% 
+  add_recipe(pricelm)
+
+fitted_model <- workflow %>% 
+  fit(data = dataset_train)
+
+predictions <- fitted_model %>% 
+  predict(new_data = dataset_test) %>% 
+  bind_cols(dataset_test)
+
+metrics <- predictions %>% 
+  metrics(truth = price, estimate = .pred)
+
+print(metrics)
+```
+
+###Logisitic Regression
+Average price of house, above mean 1, below 0. See if we can get better predictions from binary logistic regression. In this model we get 19.45% error rate using a logistic model with the same predictors. 
+```{r}
+set.seed(445)
+logistic_model <- logistic_reg() %>%
+  set_engine("glm")
+
+pricelog <- recipe(bi_price ~ square_feet + bathrooms + bedrooms + has_photo + pets_allowed + state + source , data = dataset_train)
+
+workflow_log <- workflow() %>% 
+  add_model(logistic_model) %>% 
+  add_recipe(pricelog)
+
+fitted_model_log <- workflow_log %>% 
+  fit(data = dataset_train)
+
+predictions_log <- fitted_model_log %>%
+  predict(new_data = dataset_test, type = "prob") %>%
+  bind_cols(dataset_test)
+predictions_log
+
+class_predictions_log <- fitted_model_log %>%
+  predict(new_data = dataset_test) %>%
+  bind_cols(dataset_test)
+class_predictions_log
+
+metrics_log <- class_predictions_log %>%
+  metrics(truth = bi_price, estimate = .pred_class)
+
+matrix_log <-class_predictions_log %>%
+  conf_mat(truth = bi_price, estimate = .pred_class)
+
+print(matrix_log)
+
+(239+138)/(1104+239+138+457)
+
+print(metrics_log)
+
+```
+### Choosing the correct predictors:
+In our model, we have a significant amount of factor variables, where there is a lot of categorical data. When these categories are broke up there are 90+ variables that could be included in the model. For example: state includes all 47 states that is contained in the data set. Knowing which predictors are significant to the model is difficult to determine so we used forward and backward selection to weed out of all the variables which would be the best to make predictions on. 
+
+When talking about price of apartments, we know location can have an impact over the general price. For these models, we were more curious about separating out amenities, bedrooms, ad type, etc. 
+
+Based on forward selection and using the BIC and ADJR we see that the predictors of availability of a playground, hot tub, view, wood floors, washer dryer, patio/ deck, elevator, garbage disposal, refrigerator are all amenities that influence price in the model. Rent Lingo and ListedBuy are the only two sources of posting that tend to influence the predictability of price. Lastly, the square footage and bathrooms are significant to the price of the apartment. 
+
+The adjusted r square value indicates a slightly different model would be best but it only explains about 25.28% of the variability. That model includes all the above predictors and adds Tennis and Pool to the list of significant predictors. We know from our linear model that included every variable, specifically the state variable is going to explain a lot of our variability, and with all predictors in that model, naturally R^2 will be higher. 
+
+The backwards selection indicated the same model as the forward selection did for BIC and AdjR. This leads us to decrease our predictors on our models and disregard insignificant amenities that do not influence the price point of the apartment. 
+
+```{r}
+library(leaps)
+sub_for <- regsubsets(price ~ . -bi_price -state, data = dataset_spread, method = "forward", nvmax=20)
+summary(sub_for)
+summary(sub_for)$bic
+summary(sub_for)$adjr2
+
+sub_back <- regsubsets(price ~ . -bi_price -state, data = dataset_spread, method = "backward", nvmax = 20)
+summary(sub_back)
+summary(sub_back)$bic
+summary(sub_back)$adjr2
+```
+
+
+```{r}
+
+```
+=======
 
 dataset_split <- initial_split(dataset_spread, prop = 0.6)
 dataset_train <- training(dataset_split)
@@ -348,3 +504,4 @@ print(error_summary)
 ```
 
 Despite of utilizing cross-validation to select an optimal regularization parameter, the Ridge regression model shows signs of overfitting. There is a noticeable gap between training and test performance, with the model performing better on the training data, indicating it may have learned patterns specific to the training set that don't generalize well. While regularization has helped reduce overfitting to some extent, the results remain relatively unchanged when switching to Lasso, suggesting the issue isn't due to the type of regularization but rather the dataset's complexity. Given that cross-validation with ten folds is a rational choice, the next steps should focus on using more complex models like decision trees, random forests, or gradient boosting, which may better capture the underlying patterns of the data.
+>>>>>>> origin/main
