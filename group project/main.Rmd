@@ -170,16 +170,16 @@ for (col_name in colnames(dataset_spread)) {
 }
 
 # Filter the dataframe
-dataset_spread <- dataset_spread[rows_to_keep, ]
+dataset_spread_trees <- dataset_spread[rows_to_keep, ]
 ```
 
 ```{r}
 set.seed(445)
 
-dataset_spread <- dataset_spread %>% select(-state, -source)
+dataset_spread_trees <- dataset_spread_trees %>% select(-state, -source)
 
 
-dataset_split <- initial_split(dataset_spread, prop = 0.6)
-dataset_train <- training(dataset_split)
-dataset_test <- testing(dataset_split)
+dataset_trees_split <- initial_split(dataset_spread, prop = 0.6)
+dataset_trees_train <- training(dataset_split)
+dataset_trees_test <- testing(dataset_split)
 ```
