@@ -129,17 +129,10 @@ dataset_spread <- dataset %>%
   select(-amenities, -id)
 ```
 
-<<<<<<< HEAD
-# Train test split, need to add 
-=======
 # Train test split
->>>>>>> origin/main
 ```{r}
 library(tidymodels)
-
 set.seed(445)
-<<<<<<< HEAD
-library(tidymodels)
 dataset_spread$bathrooms <- as.numeric(dataset_spread$bathrooms)
 dataset_spread$bedrooms <- as.numeric(dataset_spread$bedrooms)
 mean(dataset_spread$price)
@@ -195,6 +188,29 @@ table <- dataset_spread %>%
     avg_price = mean(price, na.rm = TRUE))
 table
 
+## Average price for each listing source
+table2 <- dataset_spread %>%
+  group_by(source) %>%
+  summarize(
+    count =n(),
+    avg_price = mean(price, na.rm = TRUE))
+table2
+## Average price based on bathrooms
+table3 <- dataset_spread %>%
+  group_by(bathrooms) %>%
+  summarize(
+    count =n(),
+    avg_price = mean(price, na.rm = TRUE))
+table3
+##Average price based on bedrooms 
+table4 <- dataset_spread %>%
+  group_by(bedrooms) %>%
+  summarize(
+    count =n(),
+    avg_price = mean(price, na.rm = TRUE))
+table4
+
+
 ```
 Linear Model
 ```{r}
@@ -224,6 +240,7 @@ print(metrics)
 
 ###Logisitic Regression
 Average price of house, above mean 1, below 0. See if we can get better predictions from binary logistic regression. In this model we get 19.45% error rate using a logistic model with the same predictors. 
+
 ```{r}
 set.seed(445)
 logistic_model <- logistic_reg() %>%
@@ -284,17 +301,76 @@ summary(sub_back)
 summary(sub_back)$bic
 summary(sub_back)$adjr2
 ```
-
+Linear model with predictors
+Slight improvement in our R squared value where our model is explaining 58.9% 
 
 ```{r}
+set.seed(445)
+linear_model <- linear_reg() %>% 
+  set_engine("lm")
+glimpse(dataset_train)
+dataset_spread$`Garbage Disposal`
 
-```
-=======
+pricelm2 <- recipe(price ~ square_feet + bathrooms + Pool + View + Refrigerator+ `Patio/Deck` +Playground +`Hot Tub` + Elevator + `Wood Floors`+ `Garbage Disposal`+ state + source , data = dataset_train)
 
-dataset_split <- initial_split(dataset_spread, prop = 0.6)
-dataset_train <- training(dataset_split)
-dataset_test <- testing(dataset_split)
+workflow2 <- workflow() %>% 
+  add_model(linear_model) %>% 
+  add_recipe(pricelm2)
+
+fitted_model2 <- workflow2 %>% 
+  fit(data = dataset_train)
+
+predictions2 <- fitted_model2 %>% 
+  predict(new_data = dataset_test) %>% 
+  bind_cols(dataset_test)
+
+metrics2 <- predictions2 %>% 
+  metrics(truth = price, estimate = .pred)
+
+print(metrics2)
 ```
+###Logisitc Regression with Predictors
+
+Not much changed in our prediction error or accuracy, but the mean of all prices was selected as an arbitrary cut off point. Logistic regression tends to outperform the linear model in accuracy for predicting whether the prices will be lower or higher than average, but since we dont know if this cut off point of the average of the overall price is a good classification compared to the other models. It is not yet determined whether the logistic model utilizing classification of low and high is better predictor than examining the prices of the model as a continuous response variable in a linear model, or other options.
+
+```{r}
+set.seed(445)
+logistic_model <- logistic_reg() %>%
+  set_engine("glm")
+
+pricelog2 <- recipe(bi_price ~ square_feet + bathrooms + Pool + View + Refrigerator+ `Patio/Deck` +Playground +`Hot Tub` + Elevator + `Wood Floors`+ `Garbage Disposal`+ state + source, data = dataset_train)
+
+workflow_log2 <- workflow() %>% 
+  add_model(logistic_model) %>% 
+  add_recipe(pricelog2)
+
+fitted_model_log2 <- workflow_log2 %>% 
+  fit(data = dataset_train)
+
+predictions_log2 <- fitted_model_log2 %>%
+  predict(new_data = dataset_test, type = "prob") %>%
+  bind_cols(dataset_test)
+predictions_log2
+
+class_predictions_log2 <- fitted_model_log2 %>%
+  predict(new_data = dataset_test) %>%
+  bind_cols(dataset_test)
+class_predictions_log2
+
+metrics_log2 <- class_predictions_log2 %>%
+  metrics(truth = bi_price, estimate = .pred_class)
+
+matrix_log2 <-class_predictions_log2 %>%
+  conf_mat(truth = bi_price, estimate = .pred_class)
+
+print(matrix_log2)
+
+(235+138)/(1104+235+138+461)
+
+print(metrics_log2)
+
+``` 
+
 
 #"Lasso" and "Ridge" regressions are used to include regularization to the linear regression and prevent overfitting.
 ```{r}
