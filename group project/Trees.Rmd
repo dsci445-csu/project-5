@@ -17,16 +17,7 @@ library(vip)
 
 ```{r}
 # Remove unnescessary columns
-dataset_spread <- dataset_spread %>% select(-id, -category, -bedrooms, -cityname, -state, -source)
-```
-
-# Train test split
-```{r}
-set.seed(445)
-
-dataset_split <- initial_split(dataset_spread)
-dataset_train <- training(dataset_split)
-dataset_test <- testing(dataset_split)
+dataset_spread <- dataset_spread %>% select(-bedrooms, -state, -source)
 ```
 
 # Random Forest
@@ -50,4 +41,70 @@ MSE <- (1/length(dataset_pred_rf$price))*(sum(dataset_test$price - dataset_pred_
 MSE
 ```
 
+# Decision Tree
+
+```{r}
+set.seed(445)
+
+tree_spec <- decision_tree() |>
+  set_engine("rpart") |>
+  set_mode("regression")
+
+tree_fit <- tree_spec |>
+  fit(price ~ ., data = dataset_train)
+
+tree_fit
+
+# tree_fit |>
+#   augment(new_data = dataset_train) |>
+#   accuracy(truth = price, estimate = .pred_class)
+
+tree_fit |>
+  extract_fit_engine() |>
+  rpart.plot()
+```
+
+
+# Bagging
+
+```{r}
+bagging_spec <- rand_forest(mtry = .cols()) |>
+  set_engine("randomForest", importance = TRUE) |>
+  set_mode("regression")
+
+bagging_fit <- bagging_spec |>
+  fit(price ~ ., data = dataset_train)
+
+vip(bagging_fit)
+
+# bagging_fit |>
+#   extract_fit_engine() |>
+#   rpart.plot()
+
+# bagging_fit |>
+#   augment(new_data = dataset_test) |>
+#   accuracy(truth = price, estimate = .pred_class)
+```
+
+
+# Boosting
+
+```{r}
+boost_spec <- boost_tree(trees = 5000, tree_depth = 2, learn_rate = 0.01) |>
+  set_engine("xgboost") |>
+  set_mode("regression")
+
+boost_fit <- boost_spec |>
+  fit(price ~ ., data = dataset_train)
+
+vip(boost_fit)
+
+# boost_fit |>
+#   extract_fit_engine() |>
+#   rpart.plot()
+
+# boost_fit |>
+#   augment(new_data = dataset_test) |>
+#   accuracy(truth = price, estimate = .pred_class)
+```
 

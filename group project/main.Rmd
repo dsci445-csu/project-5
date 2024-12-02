@@ -41,17 +41,13 @@ Kept value 'has_photo' because it could correlate with listing quality and affec
 Removed 'price_display' column because it is a repeat of price column.
 Kept(?) 'source' column tracks the source of the listing (i.e. different websites). This is only useful for comparing listings across sources which we will/not be doing in this analysis.
 'title' and 'body' columns are removed because they contain text descriptions which are not going to be analyzed in this study.
-
+Removed 'address' because it's not useful and has a large ammount of NAs.
 Removed 'latitude', 'longitude', 'address', 'cityname', and 'time' columns because they are not interpretable in this study.
-Only 4 rows in the entire dataset have \textit{category} values other than 'apartment' so these rows and consequently the "category" column is deleted.
-Only 2 rows in the entire dataset have \textit{price_type} values other than 'Monthly' so these rows and consequently the "price_type" column is deleted.
-
-
-
+Only 4 rows in the entire dataset have \textit{category} values other than 'apartment', so these rows and consequently the "category" column are deleted.  
+Only 2 rows in the entire dataset have \textit{price\_type} values other than 'Monthly', so these rows and consequently the "price\_type" column are deleted.
 
 ```{r, include=FALSE}
-
-library(dplyr)
+library(tidyverse)
 
 # Remove rows
 dataset <- dataset[dataset$category=='housing/rent/apartment',]
@@ -96,11 +92,11 @@ dataset[] <- lapply(dataset, function(x) {
   return(x)
 })
 
-# Remove rows with any NA values
-dataset <- na.omit(dataset)
-
 # Get a summary of NA counts for each column in the dataset
 colSums(is.na(dataset))
+
+# Remove rows with any NA values
+dataset <- na.omit(dataset)
 
 # Check the structure and summary of the dataset to verify changes
 str(dataset)
@@ -121,16 +117,25 @@ dataset$source[dataset$source == "RENTCaf\xe9"] <- "RENTCafé"
 
 ```
 
+# Spread amenities column
+
 ```{r}
-library(stringr)
-library(tidyr)
-appart10_split <- dataset %>%
+dataset_spread <- dataset %>%
   # Split and widen amenities
   mutate(amenities_split = str_split(amenities, ",")) %>%
   unnest(amenities_split) %>%
   mutate(has_amenity = 1) %>%
   pivot_wider(names_from = amenities_split, values_from = has_amenity, values_fill = 0) %>%
-  # Split and widen categories
-  select(-amenities)
+  select(-amenities, -id)
 ```
 
+# Train test split
+```{r}
+library(tidymodels)
+
+set.seed(445)
+
+dataset_split <- initial_split(dataset_spread, prop = 0.6)
+dataset_train <- training(dataset_split)
+dataset_test <- testing(dataset_split)
+```
