@@ -20,6 +20,7 @@ library(leaps)
 
 # Decision Tree
 
+# Tune depth and alpha
 ```{r, cache=TRUE}
 set.seed(445)
 train_cv_5fold <- vfold_cv(dataset_train, v = 5)
@@ -60,6 +61,7 @@ RMSE <- sqrt((1/nrow(dataset_pred_tree))*(sum(dataset_test$price - dataset_pred_
 RMSE
 ```
 
+# Tune depth
 ```{r, cache=TRUE}
 set.seed(445)
 train_cv_5fold <- vfold_cv(dataset_train, v = 5)
@@ -100,6 +102,7 @@ RMSE <- sqrt((1/nrow(dataset_pred_tree))*(sum(dataset_test$price - dataset_pred_
 RMSE
 ```
 
+# Tune alpha
 ```{r, cache=TRUE}
 set.seed(445)
 train_cv_5fold <- vfold_cv(dataset_train, v = 5)
@@ -259,11 +262,6 @@ RMSE
 ```{r, cache=TRUE}
 set.seed(445)
 
-all_cores <- parallel::detectCores(logical = FALSE)
-
-cl <- makePSOCKcluster(all_cores)
-registerDoParallel(cl)
-
 boost_spec <- boost_tree(trees = 5000, tree_depth = 3, learn_rate = tune("lambda")) |>
   set_engine("xgboost") |>
   set_mode("regression")
@@ -308,11 +306,6 @@ RMSE
 
 ```{r, cache=TRUE}
 set.seed(445)
-
-all_cores <- parallel::detectCores(logical = FALSE)
-
-cl <- makePSOCKcluster(all_cores)
-registerDoParallel(cl)
 
 boost_spec <- boost_tree(trees = tune("trees"), tree_depth = 3, learn_rate = 0.00278) |>
   set_engine("xgboost") |>
@@ -359,11 +352,6 @@ RMSE
 ```{r, cache=TRUE}
 set.seed(445)
 
-all_cores <- parallel::detectCores(logical = FALSE)
-
-cl <- makePSOCKcluster(all_cores)
-registerDoParallel(cl)
-
 boost_spec <- boost_tree(trees = 5000, tree_depth = tune('depth'), learn_rate = tune("lambda")) |>
   set_engine("xgboost") |>
   set_mode("regression")
@@ -408,11 +396,6 @@ RMSE
 
 ```{r, cache=TRUE}
 set.seed(445)
-
-all_cores <- parallel::detectCores(logical = FALSE)
-
-cl <- makePSOCKcluster(all_cores)
-registerDoParallel(cl)
 
 boost_spec <- boost_tree(trees = tune("trees"), tree_depth = tune('depth'), learn_rate = tune("lambda")) |>
   set_engine("xgboost") |>
@@ -484,4 +467,47 @@ vip(boost_fit)
 dataset_pred_boost <- predict(boost_fit, dataset_test)
 RMSE <- sqrt((1/nrow(dataset_pred_boost))*(sum(dataset_test$price - dataset_pred_boost$.pred))^2)
 RMSE
+```
+
+```{r, include=FALSE}
+# 
+# # Example: Assuming dataset_spread is your dataset
+# # Select the columns that need balancing
+# columns_to_balance <- c("bathrooms", "bedrooms", "has_photo", "pets_allowed", "state", "source")
+# columns_to_balance2 <- c("bathrooms")
+# 
+# # Step 1: Convert factor columns to numeric and preserve levels
+# original_levels <- list()
+# dataset_spread_numeric <- dataset_spread %>%
+#   mutate(across(all_of(columns_to_balance), ~ {
+#     original_levels[[cur_column()]] <- levels(as.factor(.))
+#     as.numeric(as.factor(.))
+#   }))
+# #dataset_spread_numeric$price <- as.numeric(dataset_spread_numeric$price)
+# # Step 2: Apply SMOTE for each column in `columns_to_balance`
+# balanced_datasets <- list()
+# 
+# for (target_col in columns_to_balance2) {
+#   # Separate features and current target column
+#   data_features <- dataset_spread_numeric %>% select(-all_of(columns_to_balance))
+#   data_target <- dataset_spread_numeric[[target_col]]
+#   
+#   # Apply SMOTE to balance the current column
+#   smote_result <- SMOTE(X = data_features, target = data_target, K=3, dup_size = 2)
+#   
+#   # Combine the features and balanced target
+#   balanced_dataset <- cbind(smote_result$data, target_balanced = smote_result$class)
+#   
+#   # Rename and convert the numeric target back to its original factor levels
+#   balanced_dataset <- balanced_dataset %>%
+#     mutate(!!target_col := factor(as.integer(target_balanced), labels = original_levels[[target_col]])) %>%
+#     select(-target_balanced)  # Drop the intermediate numeric target column
+#   
+#   # Store the balanced dataset for the current target column
+#   balanced_datasets[[target_col]] <- balanced_dataset
+# }
+# 
+# # Step 3: Combine balanced datasets (optional, depending on your use case)
+# # Example: Combine the datasets for analysis
+# final_combined_dataset <- reduce(balanced_datasets, full_join, by = names(dataset_spread_numeric))
 ```

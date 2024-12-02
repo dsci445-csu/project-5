@@ -14,9 +14,11 @@ editor_options:
 ```{r, include=FALSE}
 library(tidyverse)
 library(tidymodels)
+#library(smotefamily)
+library(rpart.plot)
+library(vip)
 
 dataset <- read.csv("apartments_for_rent_classified_10K.csv", sep = ";")
-#dataset <- read.csv("apartments_for_rent_classified_100K.csv", sep = ";")
 
 # Remove duplicate rows
 dataset <- dataset %>% distinct(id, .keep_all = TRUE)
@@ -139,23 +141,17 @@ dataset_spread <- dataset %>%
 
 # Train test split
 ```{r}
-set.seed(445)
-
-dataset_split <- initial_split(dataset_spread, prop = 0.6)
-dataset_train <- training(dataset_split)
-dataset_test <- testing(dataset_split)
-```
-
-```{r}
-dataset_copy <- dataset_spread
-```
-
-```{r}
-dataset_spread <- dataset_copy
+# set.seed(445)
+# 
+# dataset_split <- initial_split(dataset_spread, prop = 0.6)
+# dataset_train <- training(dataset_split)
+# dataset_test <- testing(dataset_split)
 ```
 
 
-# Remove categorical columns with different levels between training and testing and recreate split
+
+
+# Remove rare levels
 
 ```{r}
 # Threshold for minimum occurrences
@@ -175,10 +171,6 @@ for (col_name in colnames(dataset_spread)) {
 
 # Filter the dataframe
 dataset_spread <- dataset_spread[rows_to_keep, ]
-
-#Convert bathrooms and bedrooms to numeric
-dataset_spread$bathrooms <- as.numeric(dataset_spread$bathrooms)
-dataset_spread$bedrooms <- as.numeric(dataset_spread$bedrooms)
 ```
 
 ```{r}
