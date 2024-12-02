@@ -139,3 +139,212 @@ dataset_split <- initial_split(dataset_spread, prop = 0.6)
 dataset_train <- training(dataset_split)
 dataset_test <- testing(dataset_split)
 ```
+
+#"Lasso" and "Ridge" regressions are used to include regularization to the linear regression and prevent overfitting.
+```{r}
+
+library(tidymodels)
+library(glmnet)
+library(ggplot2)
+
+set.seed(445)
+
+rec <- recipe(price ~ ., data = dataset_train) %>%
+  step_novel(all_nominal_predictors()) %>% # Handle unseen factor levels
+  step_dummy(all_nominal_predictors()) %>% # Convert categorical variables to dummy variables
+  step_zv(all_predictors()) %>%  # Remove zero-variance 
+  step_normalize(all_numeric_predictors()) # Normalize numeric predictors
+
+prepped_rec <- prep(rec, training = dataset_train)
+
+x_train <- bake(prepped_rec, new_data = dataset_train)
+x_test <- bake(prepped_rec, new_data = dataset_test)
+
+x_train <- as.matrix(select(x_train, -price))
+y_train <- dataset_train$price
+
+x_test <- as.matrix(select(x_test, -price))
+y_test <- dataset_test$price
+
+# Fit ridge regression model with cross-validation
+cv_ridge <- cv.glmnet(x_train, y_train, alpha = 0, nfolds = 10)
+
+# Get best lambda from cross-validation
+best_lambda <- cv_ridge$lambda.min
+
+# Fit final ridge regression model with best lambda
+ridge_model <- glmnet(x_train, y_train, alpha = 0, lambda = best_lambda)
+
+# Make predictions on test set
+predictions_test <- predict(ridge_model, s = best_lambda, newx = x_test)
+
+# Calculate Test MSE and RMSE
+test_mse <- mean((y_test - predictions_test)^2)
+test_rmse <- sqrt(test_mse)
+
+
+# Calculate Test R2
+r2_test <- 1 - sum((y_test - predictions_test)^2) / sum((y_test - mean(y_test))^2)
+
+# Make predictions on training set for training error calculation
+predictions_train <- predict(ridge_model, s = best_lambda, newx = x_train)
+
+# Calculate Training R2
+r2_train <- 1 - sum((y_train - predictions_train)^2) / sum((y_train - mean(y_train))^2)
+
+# Calculate Training MSE and RMSE
+train_mse <- mean((y_train - predictions_train)^2)
+train_rmse <- sqrt(train_mse)
+
+# Extract cross-validation results (RMSE for each lambda)
+cv_rmse <- sqrt(cv_ridge$cvm)  # cvm contains MSE for each lambda
+lambda_values <- cv_ridge$lambda
+
+# Plot RMSE vs Lambda (cross-validation results)
+cv_rmse_plot <- data.frame(lambda_values, cv_rmse) %>%
+  ggplot(aes(x = log(lambda_values), y = cv_rmse)) +
+  geom_line(color = "blue") +
+  geom_point(color = "red") +
+  geom_point(aes(x = log(best_lambda), y = min(cv_rmse)), 
+             shape = 1, size = 4, color = "green") +  # Add circle around best_lambda
+  labs(title = "CV RMSE vs. Log(Lambda)",
+       x = "Log(Lambda)",
+       y = "Cross-Validation RMSE") +
+  theme_minimal() +
+  annotate("text", x = log(best_lambda), y = min(cv_rmse) + 20, label = paste("Best Lambda: ", round(best_lambda, 2)), 
+           color = "green", angle = 0, vjust = 0, hjust = 1)  # Add annotation for best lambda
+
+# Print the plot
+print(cv_rmse_plot)
+
+comparison_plot <- data.frame(Actual = y_test, Predicted = as.vector(predictions_test)) %>%
+  ggplot(aes(x = Actual, y = Predicted)) +
+  geom_point(color = "blue", alpha = 0.6) +
+  geom_abline(intercept = 0, slope = 1, color = "red", linetype = "dashed") +  # Reference line y=x
+  labs(title = "Actual vs Predicted Values",
+       x = "Actual Values",
+       y = "Predicted Values") +
+  theme_minimal()
+print(comparison_plot)
+
+comparison_df <- data.frame(Index = 1:length(y_test),  # Index for x-axis
+                            Actual = y_test,           # Actual values
+                            Predicted = as.vector(predictions_test))  # Predicted values
+
+comparison_plot2 <- comparison_df %>%
+  ggplot(aes(x = Index)) +
+  geom_line(aes(y = Actual, color = "Actual"), size = 1) +   # Line for actual values
+  geom_line(aes(y = Predicted, color = "Predicted"), size = 1, linetype = "dashed",alpha = 0.8) +  # Line for predicted values
+  labs(title = "Actual vs Predicted Values Over Index",
+       x = "Index",
+       y = "Values") +
+  scale_color_manual(values = c("Actual" = "blue", "Predicted" = "red")) +  # Custom colors
+  theme_minimal()
+
+# Print the plot
+print(comparison_plot2)
+
+error_summary <- tibble(
+  Metric = c("Training MSE", "Training RMSE", "Training R2", "Test MSE", "Test RMSE", "Test R2"),
+  Value = c(train_mse, train_rmse, r2_train, test_mse, test_rmse, r2_test)
+)
+
+# Print the error summary tibble
+print(error_summary)
+```
+
+```{r}
+set.seed(445)
+
+# Fit Lasso regression model with cross-validation (alpha = 1 for Lasso)
+cv_lasso <- cv.glmnet(x_train, y_train, alpha = 1, nfolds = 10)
+
+# Get best lambda from cross-validation
+best_lambda <- cv_lasso$lambda.min
+
+# Fit final Lasso regression model with best lambda
+lasso_model <- glmnet(x_train, y_train, alpha = 1, lambda = best_lambda)
+
+# Make predictions on test set
+predictions_test <- predict(lasso_model, s = best_lambda, newx = x_test)
+
+# Calculate Test MSE and RMSE
+test_mse <- mean((y_test - predictions_test)^2)
+test_rmse <- sqrt(test_mse)
+
+# Calculate Test R2
+r2_test <- 1 - sum((y_test - predictions_test)^2) / sum((y_test - mean(y_test))^2)
+
+# Make predictions on training set for training error calculation
+predictions_train <- predict(lasso_model, s = best_lambda, newx = x_train)
+
+# Calculate Training R2
+r2_train <- 1 - sum((y_train - predictions_train)^2) / sum((y_train - mean(y_train))^2)
+
+# Calculate Training MSE and RMSE
+train_mse <- mean((y_train - predictions_train)^2)
+train_rmse <- sqrt(train_mse)
+
+# Extract cross-validation results (RMSE for each lambda)
+cv_rmse <- sqrt(cv_lasso$cvm)  # cvm contains MSE for each lambda
+lambda_values <- cv_lasso$lambda
+
+
+
+# Plot RMSE vs Lambda (cross-validation results)
+cv_rmse_plot <- data.frame(lambda_values, cv_rmse) %>%
+  ggplot(aes(x = log(lambda_values), y = cv_rmse)) +
+  geom_line(color = "blue") +
+  geom_point(color = "red") +
+  geom_point(aes(x = log(best_lambda), y = min(cv_rmse)), 
+             shape = 1, size = 4, color = "green") +  # Add circle around best_lambda
+  labs(title = "CV RMSE vs. Log(Lambda)",
+       x = "Log(Lambda)",
+       y = "Cross-Validation RMSE") +
+  theme_minimal() +
+  annotate("text", x = log(best_lambda), y = min(cv_rmse) + 20, label = paste("Best Lambda: ", round(best_lambda, 2)), 
+           color = "green", angle = 0, vjust = 0, hjust = 1)  # Add annotation for best lambda
+
+# Print the plot
+print(cv_rmse_plot)
+
+# Plot: Actual vs Predicted for Test Data
+comparison_plot <- data.frame(Actual = y_test, Predicted = as.vector(predictions_test)) %>%
+  ggplot(aes(x = Actual, y = Predicted)) +
+  geom_point(color = "blue", alpha = 0.6) +
+  geom_abline(intercept = 0, slope = 1, color = "red", linetype = "dashed") +  # Reference line y=x
+  labs(title = "Actual vs Predicted Values for Lasso",
+       x = "Actual Values",
+       y = "Predicted Values") +
+  theme_minimal()
+print(comparison_plot)
+
+
+
+comparison_df <- data.frame(Index = 1:length(y_test),  # Index for x-axis
+                            Actual = y_test,           # Actual values
+                            Predicted = as.vector(predictions_test))  # Predicted values
+
+comparison_plot2 <- comparison_df %>%
+  ggplot(aes(x = Index)) +
+  geom_line(aes(y = Actual, color = "Actual"), size = 1) +   # Line for actual values
+  geom_line(aes(y = Predicted, color = "Predicted",alpha = 0.8), size = 1, linetype = "dashed", alpha = 0.8) +  # Line for predicted values
+  labs(title = "Actual vs Predicted Values Over Index",
+       x = "Index",
+       y = "Values") +
+  scale_color_manual(values = c("Actual" = "blue", "Predicted" = "red")) +  # Custom colors
+  theme_minimal()
+
+# Print the plot
+print(comparison_plot2)
+
+error_summary <- tibble(
+  Metric = c("Training MSE", "Training RMSE", "Training R2", "Test MSE", "Test RMSE", "Test R2"),
+  Value = c(train_mse, train_rmse, r2_train, test_mse, test_rmse, r2_test)
+)
+
+# Print the error summary tibble
+print(error_summary)
+```
+
+Despite of utilizing cross-validation to select an optimal regularization parameter, the Ridge regression model shows signs of overfitting. There is a noticeable gap between training and test performance, with the model performing better on the training data, indicating it may have learned patterns specific to the training set that don't generalize well. While regularization has helped reduce overfitting to some extent, the results remain relatively unchanged when switching to Lasso, suggesting the issue isn't due to the type of regularization but rather the dataset's complexity. Given that cross-validation with ten folds is a rational choice, the next steps should focus on using more complex models like decision trees, random forests, or gradient boosting, which may better capture the underlying patterns of the data.
