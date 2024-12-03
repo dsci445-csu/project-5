@@ -13,7 +13,7 @@ editor_options:
 
 ```{r, include=FALSE}
 
-dataset <- read.csv("group project/apartments_for_rent_classified_10K.csv", sep = ";")
+dataset <- read.csv("apartments_for_rent_classified_10K.csv", sep = ";")
 
 head(dataset)
 sapply(dataset, class)
@@ -127,6 +127,8 @@ dataset_spread <- dataset %>%
   mutate(has_amenity = 1) %>%
   pivot_wider(names_from = amenities_split, values_from = has_amenity, values_fill = 0) %>%
   select(-amenities, -id)
+
+dataset_spread_copy <- dataset_spread
 ```
 
 # Train test split
@@ -581,3 +583,204 @@ print(error_summary)
 
 Despite of utilizing cross-validation to select an optimal regularization parameter, the Ridge regression model shows signs of overfitting. There is a noticeable gap between training and test performance, with the model performing better on the training data, indicating it may have learned patterns specific to the training set that don't generalize well. While regularization has helped reduce overfitting to some extent, the results remain relatively unchanged when switching to Lasso, suggesting the issue isn't due to the type of regularization but rather the dataset's complexity. Given that cross-validation with ten folds is a rational choice, the next steps should focus on using more complex models like decision trees, random forests, or gradient boosting, which may better capture the underlying patterns of the data.
 >>>>>>> origin/main
+
+#Tree Based Methods
+
+### Remove rare levels
+
+```{r}
+# Threshold for minimum occurrences
+threshold <- 10
+
+# Identify rows to keep
+rows_to_keep <- seq(TRUE, nrow(dataset_spread_copy))
+
+# Process each column
+for (col_name in colnames(dataset_spread_copy)) {
+  if (is.character(dataset_spread_copy[[col_name]]) || is.factor(dataset_spread_copy[[col_name]])) {
+    col_table <- table(dataset_spread_copy[[col_name]])
+    valid_categories <- names(col_table[col_table >= threshold])
+    rows_to_keep <- rows_to_keep & dataset_spread_copy[[col_name]] %in% valid_categories
+  }
+}
+
+# Filter the dataframe
+dataset_spread_trees <- dataset_spread_copy[rows_to_keep, ]
+```
+
+```{r}
+set.seed(445)
+
+dataset_spread_trees <- dataset_spread_trees %>% select(-state, -source)
+
+
+dataset_trees_split <- initial_split(dataset_spread_trees, prop = 0.6)
+dataset_trees_train <- training(dataset_trees_split)
+dataset_trees_test <- testing(dataset_trees_split)
+```
+
+###Decision Tree
+
+### Tune depth
+```{r, cache=TRUE}
+library(rpart.plot)
+library(vip)
+library(doParallel)
+
+set.seed(445)
+train_cv_5fold <- vfold_cv(dataset_trees_train, v = 5)
+
+tree_spec <- decision_tree(tree_depth = tune("depth")) |>
+  set_engine("rpart") |>
+  set_mode("regression")
+
+tree_rec <- recipe(price ~ ., data = dataset_trees_train)
+
+tree_wf <- workflow() |>
+  add_model(tree_spec) |>
+  add_recipe(tree_rec)
+
+tune_df <- data.frame(depth = seq(1:10))
+
+tree_tune_fit <- tree_wf |>
+  tune_grid(resamples = train_cv_5fold, grid = tune_df)
+
+tree_tune_fit |>
+  autoplot()
+
+show_best(tree_tune_fit, metric = "rmse", n = 1)
+
+tree_final <- finalize_workflow(tree_wf, select_best(tree_tune_fit, metric = "rmse"))
+
+tree_final_fit <- tree_final |>
+  fit(data = dataset_trees_train)
+
+tree_final_fit |>
+  extract_fit_engine() |>
+  rpart.plot(roundint=FALSE)
+
+vip(tree_final_fit)
+
+dataset_pred_tree <- predict(tree_final_fit, dataset_trees_test)
+RMSE <- sqrt((1/nrow(dataset_pred_tree))*(sum(dataset_trees_test$price - dataset_pred_tree$.pred))^2)
+RMSE
+```
+
+### Tune alpha
+```{r, cache=TRUE}
+set.seed(445)
+train_cv_5fold <- vfold_cv(dataset_trees_train, v = 5)
+
+tree_spec <- decision_tree(tree_depth = 1, cost_complexity = tune("alpha")) |>
+  set_engine("rpart") |>
+  set_mode("regression")
+
+tree_rec <- recipe(price ~ ., data = dataset_trees_train)
+
+tree_wf <- workflow() |>
+  add_model(tree_spec) |>
+  add_recipe(tree_rec)
+
+tune_df <- data.frame(alpha = 10^seq(-3, -1, length.out = 10))
+
+tree_tune_fit <- tree_wf |>
+  tune_grid(resamples = train_cv_5fold, grid = tune_df)
+
+tree_tune_fit |>
+  autoplot()
+
+show_best(tree_tune_fit, metric = "rmse", n = 1)
+
+tree_final <- finalize_workflow(tree_wf, select_best(tree_tune_fit, metric = "rmse"))
+
+tree_final_fit <- tree_final |>
+  fit(data = dataset_trees_train)
+
+tree_final_fit |>
+  extract_fit_engine() |>
+  rpart.plot(roundint=FALSE)
+
+vip(tree_final_fit)
+
+dataset_pred_tree <- predict(tree_final_fit, dataset_trees_test)
+RMSE <- sqrt((1/nrow(dataset_pred_tree))*(sum(dataset_trees_test$price - dataset_pred_tree$.pred))^2)
+RMSE
+```
+
+### Random Forest
+
+```{r, cache=TRUE}
+set.seed(445)
+
+rf_spec <- rand_forest(mtry = sqrt(.cols()), trees = 100) |>
+  set_engine("randomForest", importance = TRUE) |>
+  set_mode("regression")
+
+rf_rec <- recipe(price ~ ., data = dataset_trees_train)
+
+rf_wf <- workflow() |>
+  add_model(rf_spec) |>
+  add_recipe(rf_rec)
+
+rf_fit <- rf_wf |>
+  fit(dataset_trees_train)
+
+vip(rf_fit)
+
+dataset_pred_rf <- predict(rf_fit, dataset_trees_test)
+RMSE <- sqrt((1/nrow(dataset_pred_rf))*(sum(dataset_trees_test$price - dataset_pred_rf$.pred))^2)
+RMSE
+```
+
+### Tune lambda and depth
+
+```{r, cache=TRUE}
+#Setup parallel processing
+all_cores <- parallel::detectCores(logical = FALSE)
+if(all_cores >= 16){
+  all_cores <- 32
+}
+cl <- makePSOCKcluster(all_cores)
+registerDoParallel(cl)
+
+set.seed(445)
+
+boost_spec <- boost_tree(trees = 5000, tree_depth = tune('depth'), learn_rate = tune("lambda")) |>
+  set_engine("xgboost") |>
+  set_mode("regression")
+
+boost_rec <- recipe(price ~ ., data = dataset_trees_train) |>
+  step_dummy(all_nominal_predictors())
+
+boost_wf <- workflow() |>
+  add_model(boost_spec) |>
+  add_recipe(boost_rec)
+
+tune_df <- data.frame(depth = seq(1, 5, length.out = 5), lambda = 10^seq(-3, 1, length.out = 5))
+
+start.time <- Sys.time()
+
+boost_tune_fit <- boost_wf |>
+  tune_grid(resamples = train_cv_5fold, grid = tune_df)
+
+end.time <- Sys.time()
+time.taken <- end.time - start.time
+print(paste("Time elapsed tuning:", time.taken))
+
+boost_tune_fit |>
+  autoplot()
+
+show_best(boost_tune_fit, metric = "rmse", n = 1)
+
+boost_final <- finalize_workflow(boost_wf, select_best(boost_tune_fit, metric = "rmse"))
+
+boost_final_fit <- boost_final |>
+  fit(data = dataset_trees_train)
+
+vip(boost_final_fit)
+
+dataset_pred_boost <- predict(boost_final_fit, dataset_trees_test)
+RMSE <- sqrt((1/nrow(dataset_pred_boost))*(sum(dataset_trees_test$price - dataset_pred_boost$.pred))^2)
+RMSE
+
+```

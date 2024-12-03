@@ -13,98 +13,532 @@ library(tidymodels)
 library(knitr)
 library(rpart.plot)
 library(vip)
+library(doParallel)
 ```
+
+
+# Remove rare levels
 
 ```{r}
-# Remove unnescessary columns
-dataset_spread <- dataset_spread %>% select(-bedrooms, -state, -source)
-```
+# Threshold for minimum occurrences
+threshold <- 10
 
-# Random Forest
+# Identify rows to keep
+rows_to_keep <- seq(TRUE, nrow(dataset_spread))
+
+# Process each column
+for (col_name in colnames(dataset_spread)) {
+  if (is.character(dataset_spread[[col_name]]) || is.factor(dataset_spread[[col_name]])) {
+    col_table <- table(dataset_spread[[col_name]])
+    valid_categories <- names(col_table[col_table >= threshold])
+    rows_to_keep <- rows_to_keep & dataset_spread[[col_name]] %in% valid_categories
+  }
+}
+
+# Filter the dataframe
+dataset_spread_trees <- dataset_spread[rows_to_keep, ]
+```
 
 ```{r}
 set.seed(445)
 
-rf_spec <- rand_forest(mtry = sqrt(.cols())) |>
-  set_engine("randomForest", importance = TRUE) |>
-  set_mode("regression")
+dataset_spread_trees <- dataset_spread_trees %>% select(-state, -source)
 
-rf_fit <- rf_spec |>
-  fit(price ~ ., data = dataset_train)
 
-bind_cols(
-  augment(rf_fit, new_data = dataset_test),
-  predict(rf_fit, new_data = dataset_test)
-) -> dataset_pred_rf
-
-MSE <- (1/length(dataset_pred_rf$price))*(sum(dataset_test$price - dataset_pred_rf$.pred...21))^2
-MSE
+dataset_trees_split <- initial_split(dataset_spread_trees, prop = 0.6)
+dataset_trees_train <- training(dataset_trees_split)
+dataset_trees_test <- testing(dataset_trees_split)
 ```
 
 # Decision Tree
 
-```{r}
+# Tune depth and alpha
+```{r, cache=TRUE}
 set.seed(445)
+train_cv_5fold <- vfold_cv(dataset_trees_train, v = 5)
 
-tree_spec <- decision_tree() |>
+tree_spec <- decision_tree(tree_depth = tune("depth"), cost_complexity = tune("alpha")) |>
   set_engine("rpart") |>
   set_mode("regression")
 
-tree_fit <- tree_spec |>
-  fit(price ~ ., data = dataset_train)
+tree_rec <- recipe(price ~ ., data = dataset_trees_train)
 
-tree_fit
+tree_wf <- workflow() |>
+  add_model(tree_spec) |>
+  add_recipe(tree_rec)
 
-# tree_fit |>
-#   augment(new_data = dataset_train) |>
-#   accuracy(truth = price, estimate = .pred_class)
+tune_df <- data.frame(depth = seq(1:10), alpha = 10^seq(-3, -1, length.out = 10))
+
+tree_tune_fit <- tree_wf |>
+  tune_grid(resamples = train_cv_5fold, grid = tune_df)
+
+tree_tune_fit |>
+  autoplot()
+
+show_best(tree_tune_fit, metric = "rmse", n = 1)
+
+tree_final <- finalize_workflow(tree_wf, select_best(tree_tune_fit, metric = "rmse"))
+
+tree_final_fit <- tree_final |>
+  fit(data = dataset_trees_train)
+
+tree_final_fit |>
+  extract_fit_engine() |>
+  rpart.plot(roundint=FALSE)
+
+vip(tree_final_fit)
+
+dataset_pred_tree <- predict(tree_final_fit, dataset_trees_test)
+RMSE <- sqrt((1/nrow(dataset_pred_tree))*(sum(dataset_trees_test$price - dataset_pred_tree$.pred))^2)
+RMSE
+```
+
+# Tune depth
+```{r, cache=TRUE}
+set.seed(445)
+train_cv_5fold <- vfold_cv(dataset_trees_train, v = 5)
+
+tree_spec <- decision_tree(tree_depth = tune("depth")) |>
+  set_engine("rpart") |>
+  set_mode("regression")
+
+tree_rec <- recipe(price ~ ., data = dataset_trees_train)
+
+tree_wf <- workflow() |>
+  add_model(tree_spec) |>
+  add_recipe(tree_rec)
+
+tune_df <- data.frame(depth = seq(1:10))
+
+tree_tune_fit <- tree_wf |>
+  tune_grid(resamples = train_cv_5fold, grid = tune_df)
+
+tree_tune_fit |>
+  autoplot()
+
+show_best(tree_tune_fit, metric = "rmse", n = 1)
+
+tree_final <- finalize_workflow(tree_wf, select_best(tree_tune_fit, metric = "rmse"))
+
+tree_final_fit <- tree_final |>
+  fit(data = dataset_trees_train)
+
+tree_final_fit |>
+  extract_fit_engine() |>
+  rpart.plot(roundint=FALSE)
+
+vip(tree_final_fit)
+
+dataset_pred_tree <- predict(tree_final_fit, dataset_trees_test)
+RMSE <- sqrt((1/nrow(dataset_pred_tree))*(sum(dataset_trees_test$price - dataset_pred_tree$.pred))^2)
+RMSE
+```
+
+# Tune alpha
+```{r, cache=TRUE}
+set.seed(445)
+train_cv_5fold <- vfold_cv(dataset_trees_train, v = 5)
+
+tree_spec <- decision_tree(tree_depth = 1, cost_complexity = tune("alpha")) |>
+  set_engine("rpart") |>
+  set_mode("regression")
+
+tree_rec <- recipe(price ~ ., data = dataset_trees_train)
+
+tree_wf <- workflow() |>
+  add_model(tree_spec) |>
+  add_recipe(tree_rec)
+
+tune_df <- data.frame(alpha = 10^seq(-3, -1, length.out = 10))
+
+tree_tune_fit <- tree_wf |>
+  tune_grid(resamples = train_cv_5fold, grid = tune_df)
+
+tree_tune_fit |>
+  autoplot()
+
+show_best(tree_tune_fit, metric = "rmse", n = 1)
+
+tree_final <- finalize_workflow(tree_wf, select_best(tree_tune_fit, metric = "rmse"))
+
+tree_final_fit <- tree_final |>
+  fit(data = dataset_trees_train)
+
+tree_final_fit |>
+  extract_fit_engine() |>
+  rpart.plot(roundint=FALSE)
+
+vip(tree_final_fit)
+
+dataset_pred_tree <- predict(tree_final_fit, dataset_trees_test)
+RMSE <- sqrt((1/nrow(dataset_pred_tree))*(sum(dataset_trees_test$price - dataset_pred_tree$.pred))^2)
+RMSE
+```
+
+```{r}
+set.seed(445)
+
+tree_spec <- decision_tree(tree_depth = 3, cost_complexity = 0.004) |>
+  set_engine("rpart") |>
+  set_mode("regression")
+
+tree_rec <- recipe(price ~ ., data = dataset_trees_train)
+
+tree_wf <- workflow() |>
+  add_model(tree_spec) |>
+  add_recipe(tree_rec)
+
+
+tree_fit <- tree_wf |>
+  fit(data = dataset_trees_train)
+
 
 tree_fit |>
   extract_fit_engine() |>
-  rpart.plot()
+  rpart.plot(roundint=FALSE)
+
+vip(tree_fit)
+
+dataset_pred_tree <- predict(tree_fit, dataset_trees_test)
+RMSE <- sqrt((1/nrow(dataset_pred_tree))*(sum(dataset_trees_test$price - dataset_pred_tree$.pred))^2)
+RMSE
 ```
 
 
-# Bagging
+# Random Forest
 
-```{r}
-bagging_spec <- rand_forest(mtry = .cols()) |>
+```{r, cache=TRUE}
+set.seed(445)
+
+rf_spec <- rand_forest(mtry = sqrt(.cols()), trees = 100) |>
   set_engine("randomForest", importance = TRUE) |>
   set_mode("regression")
 
-bagging_fit <- bagging_spec |>
-  fit(price ~ ., data = dataset_train)
+rf_rec <- recipe(price ~ ., data = dataset_trees_train)
 
-vip(bagging_fit)
+rf_wf <- workflow() |>
+  add_model(rf_spec) |>
+  add_recipe(rf_rec)
 
-# bagging_fit |>
-#   extract_fit_engine() |>
-#   rpart.plot()
+rf_fit <- rf_wf |>
+  fit(dataset_trees_train)
 
-# bagging_fit |>
-#   augment(new_data = dataset_test) |>
-#   accuracy(truth = price, estimate = .pred_class)
+vip(rf_fit)
+
+dataset_pred_rf <- predict(rf_fit, dataset_trees_test)
+RMSE <- sqrt((1/nrow(dataset_pred_rf))*(sum(dataset_trees_test$price - dataset_pred_rf$.pred))^2)
+RMSE
 ```
 
 
 # Boosting
 
+### Tune depth
+
+```{r, cache=TRUE}
+set.seed(445)
+
+train_cv_5fold <- vfold_cv(dataset_trees_train, v = 5)
+
+# Setup parallel processing
+all_cores <- parallel::detectCores(logical = FALSE)
+cl <- makePSOCKcluster(all_cores)
+registerDoParallel(cl)
+
+# Model setup
+boost_spec <- boost_tree(trees = 5000, tree_depth = tune('depth'), learn_rate = 0.01) |>
+  set_engine("xgboost") |>
+  set_mode("regression")
+
+boost_rec <- recipe(price ~ ., data = dataset_trees_train) |>
+  step_dummy(all_nominal_predictors())
+
+boost_wf <- workflow() |>
+  add_model(boost_spec) |>
+  add_recipe(boost_rec)
+
+# Tuning
+tune_df <- data.frame(depth = seq(1, 5))
+
+start.time <- Sys.time()
+
+boost_tune_fit <- boost_wf |>
+  tune_grid(resamples = train_cv_5fold, grid = tune_df)
+
+end.time <- Sys.time()
+time.taken <- end.time - start.time
+print(paste("Time elapsed tuning:", time.taken))
+
+# Metrics
+boost_tune_fit |>
+  autoplot()
+
+show_best(boost_tune_fit, metric = "rmse", n = 1)
+
+# Final fitting and testing
+boost_final <- finalize_workflow(boost_wf, select_best(boost_tune_fit, metric = "rmse"))
+
+boost_final_fit <- boost_final |>
+  fit(data = dataset_trees_train)
+
+vip(boost_final_fit)
+
+dataset_pred_boost <- predict(boost_final_fit, dataset_trees_test)
+RMSE <- sqrt((1/nrow(dataset_pred_boost))*(sum(dataset_trees_test$price - dataset_pred_boost$.pred))^2)
+RMSE
+
+```
+
+### Tune lambda
+
+```{r, cache=TRUE}
+set.seed(445)
+
+boost_spec <- boost_tree(trees = 5000, tree_depth = 3, learn_rate = tune("lambda")) |>
+  set_engine("xgboost") |>
+  set_mode("regression")
+
+boost_rec <- recipe(price ~ ., data = dataset_trees_train) |>
+  step_dummy(all_nominal_predictors())
+
+boost_wf <- workflow() |>
+  add_model(boost_spec) |>
+  add_recipe(boost_rec)
+
+tune_df <- data.frame(lambda = 10^seq(-3, 1, length.out = 10))
+
+start.time <- Sys.time()
+
+boost_tune_fit <- boost_wf |>
+  tune_grid(resamples = train_cv_5fold, grid = tune_df)
+
+end.time <- Sys.time()
+time.taken <- end.time - start.time
+print(paste("Time elapsed tuning:", time.taken))
+
+boost_tune_fit |>
+  autoplot()
+
+show_best(boost_tune_fit, metric = "rmse", n = 1)
+
+boost_final <- finalize_workflow(boost_wf, select_best(boost_tune_fit, metric = "rmse"))
+
+boost_final_fit <- boost_final |>
+  fit(data = dataset_trees_train)
+
+vip(boost_final_fit)
+
+dataset_pred_boost <- predict(boost_final_fit, dataset_trees_test)
+RMSE <- sqrt((1/nrow(dataset_pred_boost))*(sum(dataset_trees_test$price - dataset_pred_boost$.pred))^2)
+RMSE
+
+```
+
+### Tune trees
+
+```{r, cache=TRUE}
+set.seed(445)
+
+boost_spec <- boost_tree(trees = tune("trees"), tree_depth = 3, learn_rate = 0.00278) |>
+  set_engine("xgboost") |>
+  set_mode("regression")
+
+boost_rec <- recipe(price ~ ., data = dataset_trees_train) |>
+  step_dummy(all_nominal_predictors())
+
+boost_wf <- workflow() |>
+  add_model(boost_spec) |>
+  add_recipe(boost_rec)
+
+tune_df <- data.frame(trees = seq(100, 6000, length.out = 10))
+
+start.time <- Sys.time()
+
+boost_tune_fit <- boost_wf |>
+  tune_grid(resamples = train_cv_5fold, grid = tune_df)
+
+end.time <- Sys.time()
+time.taken <- end.time - start.time
+print(paste("Time elapsed tuning:", time.taken))
+
+boost_tune_fit |>
+  autoplot()
+
+show_best(boost_tune_fit, metric = "rmse", n = 1)
+
+boost_final <- finalize_workflow(boost_wf, select_best(boost_tune_fit, metric = "rmse"))
+
+boost_final_fit <- boost_final |>
+  fit(data = dataset_trees_train)
+
+vip(boost_final_fit)
+
+dataset_pred_boost <- predict(boost_final_fit, dataset_trees_test)
+RMSE <- sqrt((1/nrow(dataset_pred_boost))*(sum(dataset_trees_test$price - dataset_pred_boost$.pred))^2)
+RMSE
+
+```
+
+### Tune lambda and depth
+
+```{r, cache=TRUE}
+set.seed(445)
+
+boost_spec <- boost_tree(trees = 5000, tree_depth = tune('depth'), learn_rate = tune("lambda")) |>
+  set_engine("xgboost") |>
+  set_mode("regression")
+
+boost_rec <- recipe(price ~ ., data = dataset_trees_train) |>
+  step_dummy(all_nominal_predictors())
+
+boost_wf <- workflow() |>
+  add_model(boost_spec) |>
+  add_recipe(boost_rec)
+
+tune_df <- data.frame(depth = seq(1, 5, length.out = 5), lambda = 10^seq(-3, 1, length.out = 5))
+
+start.time <- Sys.time()
+
+boost_tune_fit <- boost_wf |>
+  tune_grid(resamples = train_cv_5fold, grid = tune_df)
+
+end.time <- Sys.time()
+time.taken <- end.time - start.time
+print(paste("Time elapsed tuning:", time.taken))
+
+boost_tune_fit |>
+  autoplot()
+
+show_best(boost_tune_fit, metric = "rmse", n = 1)
+
+boost_final <- finalize_workflow(boost_wf, select_best(boost_tune_fit, metric = "rmse"))
+
+boost_final_fit <- boost_final |>
+  fit(data = dataset_trees_train)
+
+vip(boost_final_fit)
+
+dataset_pred_boost <- predict(boost_final_fit, dataset_trees_test)
+RMSE <- sqrt((1/nrow(dataset_pred_boost))*(sum(dataset_trees_test$price - dataset_pred_boost$.pred))^2)
+RMSE
+
+```
+
+### Tune lambda trees and depth
+
+```{r, cache=TRUE}
+set.seed(445)
+
+boost_spec <- boost_tree(trees = tune("trees"), tree_depth = tune('depth'), learn_rate = tune("lambda")) |>
+  set_engine("xgboost") |>
+  set_mode("regression")
+
+boost_rec <- recipe(price ~ ., data = dataset_trees_train) |>
+  step_dummy(all_nominal_predictors())
+
+boost_wf <- workflow() |>
+  add_model(boost_spec) |>
+  add_recipe(boost_rec)
+
+tune_df <- data.frame(depth = seq(1, 5, length.out = 5), lambda = 10^seq(-3, 1, length.out = 5), trees = seq(1000, 10000, length.out = 5))
+
+start.time <- Sys.time()
+
+boost_tune_fit <- boost_wf |>
+  tune_grid(resamples = train_cv_5fold, grid = tune_df)
+
+end.time <- Sys.time()
+time.taken <- end.time - start.time
+print(paste("Time elapsed tuning:", time.taken))
+
+boost_tune_fit |>
+  autoplot()
+
+show_best(boost_tune_fit, metric = "rmse", n = 1)
+
+boost_final <- finalize_workflow(boost_wf, select_best(boost_tune_fit, metric = "rmse"))
+
+boost_final_fit <- boost_final |>
+  fit(data = dataset_trees_train)
+
+vip(boost_final_fit)
+
+dataset_pred_boost <- predict(boost_final_fit, dataset_trees_test)
+RMSE <- sqrt((1/nrow(dataset_pred_boost))*(sum(dataset_trees_test$price - dataset_pred_boost$.pred))^2)
+RMSE
+
+```
+
+### Manual
+
 ```{r}
+set.seed(445)
+
 boost_spec <- boost_tree(trees = 5000, tree_depth = 2, learn_rate = 0.01) |>
   set_engine("xgboost") |>
   set_mode("regression")
 
-boost_fit <- boost_spec |>
-  fit(price ~ ., data = dataset_train)
+boost_rec <- recipe(price ~ ., data = dataset_trees_train) |>
+  step_dummy(all_nominal_predictors())
+
+boost_wf <- workflow() |>
+  add_model(boost_spec) |>
+  add_recipe(boost_rec)
+
+start.time <- Sys.time()
+
+boost_fit <- boost_wf |>
+  fit(dataset_trees_train)
+
+end.time <- Sys.time()
+time.taken <- end.time - start.time
+print(paste("Time elapsed fitting:", time.taken))
 
 vip(boost_fit)
 
-# boost_fit |>
-#   extract_fit_engine() |>
-#   rpart.plot()
-
-# boost_fit |>
-#   augment(new_data = dataset_test) |>
-#   accuracy(truth = price, estimate = .pred_class)
+dataset_pred_boost <- predict(boost_fit, dataset_trees_test)
+RMSE <- sqrt((1/nrow(dataset_pred_boost))*(sum(dataset_trees_test$price - dataset_pred_boost$.pred))^2)
+RMSE
 ```
 
+```{r, include=FALSE}
+# 
+# # Select the columns that need balancing
+# columns_to_balance <- c("bathrooms", "bedrooms", "has_photo", "pets_allowed", "state", "source")
+# columns_to_balance2 <- c("bathrooms")
+# 
+# # Step 1: Convert factor columns to numeric and preserve levels
+# original_levels <- list()
+# dataset_spread_trees_numeric <- dataset_spread_trees %>%
+#   mutate(across(all_of(columns_to_balance), ~ {
+#     original_levels[[cur_column()]] <- levels(as.factor(.))
+#     as.numeric(as.factor(.))
+#   }))
+# #dataset_spread_trees_numeric$price <- as.numeric(dataset_spread_trees_numeric$price)
+# # Step 2: Apply SMOTE for each column in `columns_to_balance`
+# balanced_datasets <- list()
+# 
+# for (target_col in columns_to_balance2) {
+#   # Separate features and current target column
+#   data_features <- dataset_spread_trees_numeric %>% select(-all_of(columns_to_balance))
+#   data_target <- dataset_spread_trees_numeric[[target_col]]
+#   
+#   # Apply SMOTE to balance the current column
+#   smote_result <- SMOTE(X = data_features, target = data_target, K=3, dup_size = 2)
+#   
+#   # Combine the features and balanced target
+#   balanced_dataset <- cbind(smote_result$data, target_balanced = smote_result$class)
+#   
+#   # Rename and convert the numeric target back to its original factor levels
+#   balanced_dataset <- balanced_dataset %>%
+#     mutate(!!target_col := factor(as.integer(target_balanced), labels = original_levels[[target_col]])) %>%
+#     select(-target_balanced)  # Drop the intermediate numeric target column
+#   
+#   # Store the balanced dataset for the current target column
+#   balanced_datasets[[target_col]] <- balanced_dataset
+# }
+# 
+# # Step 3: Combine balanced datasets (optional, depending on your use case)
+# # Example: Combine the datasets for analysis
+# final_combined_dataset <- reduce(balanced_datasets, full_join, by = names(dataset_spread_trees_numeric))
+```
