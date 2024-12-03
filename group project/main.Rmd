@@ -666,6 +666,8 @@ RMSE <- sqrt((1/nrow(dataset_pred_tree))*(sum(dataset_trees_test$price - dataset
 RMSE
 ```
 
+Tuning depth gives an RMSE of 35.64 and depth equal to just one layer.
+
 ### Tune alpha
 ```{r, cache=TRUE}
 set.seed(445)
@@ -707,6 +709,8 @@ RMSE <- sqrt((1/nrow(dataset_pred_tree))*(sum(dataset_trees_test$price - dataset
 RMSE
 ```
 
+Tuning alpha gives a value of 0.001 and an RMSE score of 35.64, which is the same as with just the depth.
+
 ### Random Forest
 
 ```{r, cache=TRUE}
@@ -732,15 +736,17 @@ RMSE <- sqrt((1/nrow(dataset_pred_rf))*(sum(dataset_trees_test$price - dataset_p
 RMSE
 ```
 
+A random forest with trees set to 100 gives an RMSE of 135.63, which is worse than the decision tree.
+
 ### Tune lambda and depth
 
 ```{r, cache=TRUE}
 #Setup parallel processing
-all_cores <- parallel::detectCores(logical = FALSE)
-if(all_cores >= 16){
-  all_cores <- 32
+cores <- parallel::detectCores(logical = FALSE)
+if(cores >= 16){
+  cores <- 32
 }
-cl <- makePSOCKcluster(all_cores)
+cl <- makePSOCKcluster(cores)
 registerDoParallel(cl)
 
 set.seed(445)
@@ -782,5 +788,6 @@ vip(boost_final_fit)
 dataset_pred_boost <- predict(boost_final_fit, dataset_trees_test)
 RMSE <- sqrt((1/nrow(dataset_pred_boost))*(sum(dataset_trees_test$price - dataset_pred_boost$.pred))^2)
 RMSE
-
 ```
+
+Tuning depth and lambda simultaneously gives a depth of 2 and lambda equal to 0.01. The RMSE is 173.16, making it the worst of the tree based methods.
