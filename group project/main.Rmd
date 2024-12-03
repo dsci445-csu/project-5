@@ -6,9 +6,6 @@ editor_options:
   chunk_output_type: console
 ---
 
-
-## Basic R
-
 # Remove NA fields
 
 ```{r, include=FALSE}
@@ -68,18 +65,12 @@ dataset <- dataset %>%
     -category,
     -longitude,
     -latitude
-    
-    
-    # Uncomment the line below to remove 'source' (website listing was posted on)
-    # -source
   )
 
 # View cleaned dataset
 str(dataset)
 
-
 ```
-
 
 # Remove null values.
 
@@ -103,7 +94,6 @@ str(dataset)
 summary(dataset)
 
 ```
-
 
 # Standardizes categorical values for consistency.
 
@@ -146,6 +136,86 @@ dataset_train <- training(dataset_split)
 dataset_test <- testing(dataset_split)
 dataset_train
 ```
+
+### Principal Component Analysis
+
+For this project, we decided to use Principal Component Analysis (PCA) to simplify the data and better understand the relationships between key factors that influence apartment prices, like square footage, bathrooms, and bedrooms. Since these variables are often closely related, PCA helps by combining them into fewer, uncorrelated components that still capture most of the variation in the data. Then, we used Principal Component Regression (PCR) to predict apartment prices based on these components. This approach felt like a good balance between reducing complexity and keeping the model useful for making predictions.
+
+```{r}
+library(tidymodels)
+library(ggplot2)
+
+dataset <- dataset %>%
+  mutate(
+    price = as.numeric(price),
+    square_feet = as.numeric(square_feet),
+    bedrooms = as.numeric(bedrooms),
+    bathrooms = as.numeric(bathrooms)
+  )
+
+# Scale numeric columns
+numeric_cols <- dataset %>%
+  select(price, square_feet, bedrooms, bathrooms) %>%
+  scale()
+
+numeric_cols <- dataset %>%
+  select(price, square_feet, bedrooms, bathrooms) %>%
+  scale()
+
+pca <- prcomp(numeric_cols, center = TRUE, scale. = TRUE)
+
+summary(pca)
+
+explained_variance <- data.frame(
+  PC = paste0("PC", 1:length(pca$sdev)),
+  Variance = (pca$sdev^2) / sum(pca$sdev^2)
+)
+
+ggplot(explained_variance, aes(x = PC, y = Variance)) +
+  geom_bar(stat = "identity", fill = "blue", alpha = 0.7) +
+  labs(
+    title = "Scree Plot",
+    x = "Principal Component",
+    y = "Proportion of Variance Explained"
+  ) +
+  theme_minimal()
+
+pca_scores <- as.data.frame(pca$x)
+pca_scores$state <- dataset$state
+
+ggplot(pca_scores, aes(x = PC1, y = PC2, color = state)) +
+  geom_point(alpha = 0.6) +
+  labs(
+    title = "PCA: First Two Principal Components",
+    x = "PC1",
+    y = "PC2"
+  ) +
+  theme_minimal()
+
+set.seed(445)
+pcr_recipe <- recipe(price ~ square_feet + bathrooms + bedrooms, data = dataset) %>%
+  step_normalize(all_numeric_predictors()) %>%
+  step_pca(all_numeric_predictors(), num_comp = 2)
+
+pcr_spec <- linear_reg() %>%
+  set_engine("lm")
+
+pcr_wf <- workflow() %>%
+  add_recipe(pcr_recipe) %>%
+  add_model(pcr_spec)
+
+pcr_fit <- pcr_wf %>%
+  fit(data = dataset)
+
+pcr_predictions <- predict(pcr_fit, dataset)
+pcr_metrics <- bind_cols(dataset, pcr_predictions) %>%
+  metrics(truth = price, estimate = .pred)
+
+print(pcr_metrics)
+
+```
+
+From the PCA, we found that just the first two components explained about 86% of the variation in the data, which is a considerable reduction in complexity. Using these components, the PCR model gave us an RMSE of 0.0374 and an R² of 0.187. While the results show that the model captures some of the price variation, the R² suggests there’s still a lot of room for improvement. Maybe adding more variables or trying out other regression methods could help boost performance. Overall, this was a good way to practice simplifying data and testing out predictive models, and it gave us a solid starting point for deeper analysis.
 
 ##Map of Apartments
 ```{r}
