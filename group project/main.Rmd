@@ -12,17 +12,8 @@ editor_options:
 # Remove NA fields
 
 ```{r, include=FALSE}
-library(tidyverse)
-library(tidymodels)
-#library(smotefamily)
-library(rpart.plot)
-library(vip)
-library(doParallel)
 
 dataset <- read.csv("apartments_for_rent_classified_10K.csv", sep = ";")
-
-# Remove duplicate rows
-dataset <- dataset %>% distinct(id, .keep_all = TRUE)
 
 head(dataset)
 sapply(dataset, class)
@@ -39,6 +30,7 @@ table(dataset$has_photo)
 table(dataset$pets_allowed)
 table(dataset$price_type)
 table(dataset$source)
+
 ```
 
 # Remove columns that do not contain useful information:
@@ -51,13 +43,11 @@ Kept(?) 'source' column tracks the source of the listing (i.e. different website
 'title' and 'body' columns are removed because they contain text descriptions which are not going to be analyzed in this study.
 Removed 'address' because it's not useful and has a large ammount of NAs.
 Removed 'latitude', 'longitude', 'address', 'cityname', and 'time' columns because they are not interpretable in this study.
-Only 4 rows in the entire dataset have \textit{category} values other than 'apartment' so these rows and consequently the "category" column is deleted.
-Only 2 rows in the entire dataset have \textit{price_type} values other than 'Monthly' so these rows and consequently the "price_type" column is deleted.
-
-
-
+Only 4 rows in the entire dataset have \textit{category} values other than 'apartment', so these rows and consequently the "category" column are deleted.  
+Only 2 rows in the entire dataset have \textit{price\_type} values other than 'Monthly', so these rows and consequently the "price\_type" column are deleted.
 
 ```{r, include=FALSE}
+library(tidyverse)
 
 # Remove rows
 dataset <- dataset[dataset$category=='housing/rent/apartment',]
@@ -129,7 +119,6 @@ dataset$source[dataset$source == "RENTCaf\xe9"] <- "RENTCafé"
 
 # Spread amenities column
 
-
 ```{r}
 dataset_spread <- dataset %>%
   # Split and widen amenities
@@ -137,19 +126,661 @@ dataset_spread <- dataset %>%
   unnest(amenities_split) %>%
   mutate(has_amenity = 1) %>%
   pivot_wider(names_from = amenities_split, values_from = has_amenity, values_fill = 0) %>%
-  select(-id, -amenities)
+  select(-amenities, -id)
+
+dataset_spread_copy <- dataset_spread
 ```
 
 # Train test split
 ```{r}
-# set.seed(445)
-# 
-# dataset_split <- initial_split(dataset_spread, prop = 0.6)
-# dataset_train <- training(dataset_split)
-# dataset_test <- testing(dataset_split)
+library(tidymodels)
+set.seed(445)
+dataset_spread$bathrooms <- as.numeric(dataset_spread$bathrooms)
+dataset_spread$bedrooms <- as.numeric(dataset_spread$bedrooms)
+mean(dataset_spread$price)
+dataset_spread$bi_price[dataset_spread$price >=1356.544] <- "1"
+dataset_spread$bi_price[dataset_spread$price < 1356.544] <- "0"
+dataset_spread$bi_price <- as.factor(dataset_spread$bi_price)
+dataset_split <- initial_split(dataset_spread, prop = 0.6)
+dataset_train <- training(dataset_split)
+dataset_test <- testing(dataset_split)
+dataset_train
 ```
 
+##Map of Apartments
+```{r}
+##Create dataset for the states with longitude and latitude. map_data function is in ggplot2
+USmap <- map_data("state")
+USmap
+dataset_spread
+##Need to change abbreviations to full state name to match with USMap datatset 
+dataset_spread$state_full <- state.name[match(dataset_spread$state, state.abb)]
+##Lowercase letters for exact match
+dataset_spread$state_full <- tolower(dataset_spread$state_full)
+##Save the new name for state
+dataset_spread$state <- as.factor(dataset_spread$state_full)
+
+##Determine frequency for each state by the amount of records. *DC not mapped on map*
+state_counts <- dataset_spread %>%
+  group_by(state) %>%
+  summarise(frequency = n())
+
+##Join frequency for each state in the dataset
+USmap <- USmap %>%
+  left_join(state_counts, by = c("region" = "state"))
+USmap
+
+##Map out the United States using ggplot, and color by frequency used. 
+ggplot(USmap, aes(x = long, y = lat, group = group, fill = frequency)) +
+  geom_polygon(color = "black") +
+  scale_fill_gradient(low = "lightblue", high = "darkblue", na.value = "gray") +
+  theme_minimal() +
+  labs(title = "US Map with Highlighted States", fill = "Frequency")
+
+
+```
+
+Summary Statistics
+```{r}
+## Average income for each state 
+table <- dataset_spread %>%
+  group_by(state) %>%
+  summarize(
+    count =n(),
+    avg_price = mean(price, na.rm = TRUE))
+table
+
+## Average price for each listing source
+table2 <- dataset_spread %>%
+  group_by(source) %>%
+  summarize(
+    count =n(),
+    avg_price = mean(price, na.rm = TRUE))
+table2
+## Average price based on bathrooms
+table3 <- dataset_spread %>%
+  group_by(bathrooms) %>%
+  summarize(
+    count =n(),
+    avg_price = mean(price, na.rm = TRUE))
+table3
+##Average price based on bedrooms 
+table4 <- dataset_spread %>%
+  group_by(bedrooms) %>%
+  summarize(
+    count =n(),
+    avg_price = mean(price, na.rm = TRUE))
+table4
+
+
+```
+Linear Model
+```{r}
+set.seed(445)
+linear_model <- linear_reg() %>% 
+  set_engine("lm")
+glimpse(dataset_train)
+
+pricelm <- recipe(price ~ square_feet + bathrooms + bedrooms + has_photo + pets_allowed + state + source , data = dataset_train)
+
+workflow <- workflow() %>% 
+  add_model(linear_model) %>% 
+  add_recipe(pricelm)
+
+fitted_model <- workflow %>% 
+  fit(data = dataset_train)
+
+predictions <- fitted_model %>% 
+  predict(new_data = dataset_test) %>% 
+  bind_cols(dataset_test)
+
+metrics <- predictions %>% 
+  metrics(truth = price, estimate = .pred)
+
+print(metrics)
+```
+
+###Logisitic Regression
+Average price of house, above mean 1, below 0. See if we can get better predictions from binary logistic regression. In this model we get 19.45% error rate using a logistic model with the same predictors. 
+
+```{r}
+set.seed(445)
+logistic_model <- logistic_reg() %>%
+  set_engine("glm")
+
+pricelog <- recipe(bi_price ~ square_feet + bathrooms + bedrooms + has_photo + pets_allowed + state + source , data = dataset_train)
+
+workflow_log <- workflow() %>% 
+  add_model(logistic_model) %>% 
+  add_recipe(pricelog)
+
+fitted_model_log <- workflow_log %>% 
+  fit(data = dataset_train)
+
+predictions_log <- fitted_model_log %>%
+  predict(new_data = dataset_test, type = "prob") %>%
+  bind_cols(dataset_test)
+predictions_log
+
+class_predictions_log <- fitted_model_log %>%
+  predict(new_data = dataset_test) %>%
+  bind_cols(dataset_test)
+class_predictions_log
+
+metrics_log <- class_predictions_log %>%
+  metrics(truth = bi_price, estimate = .pred_class)
+
+matrix_log <-class_predictions_log %>%
+  conf_mat(truth = bi_price, estimate = .pred_class)
+
+print(matrix_log)
+
+(239+138)/(1104+239+138+457)
+
+print(metrics_log)
+
+```
+### Choosing the correct predictors:
+In our model, we have a significant amount of factor variables, where there is a lot of categorical data. When these categories are broke up there are 90+ variables that could be included in the model. For example: state includes all 47 states that is contained in the data set. Knowing which predictors are significant to the model is difficult to determine so we used forward and backward selection to weed out of all the variables which would be the best to make predictions on. 
+
+When talking about price of apartments, we know location can have an impact over the general price. For these models, we were more curious about separating out amenities, bedrooms, ad type, etc. 
+
+Based on forward selection and using the BIC and ADJR we see that the predictors of availability of a playground, hot tub, view, wood floors, washer dryer, patio/ deck, elevator, garbage disposal, refrigerator are all amenities that influence price in the model. Rent Lingo and ListedBuy are the only two sources of posting that tend to influence the predictability of price. Lastly, the square footage and bathrooms are significant to the price of the apartment. 
+
+The adjusted r square value indicates a slightly different model would be best but it only explains about 25.28% of the variability. That model includes all the above predictors and adds Tennis and Pool to the list of significant predictors. We know from our linear model that included every variable, specifically the state variable is going to explain a lot of our variability, and with all predictors in that model, naturally R^2 will be higher. 
+
+The backwards selection indicated the same model as the forward selection did for BIC and AdjR. This leads us to decrease our predictors on our models and disregard insignificant amenities that do not influence the price point of the apartment. 
+
+```{r}
+library(leaps)
+sub_for <- regsubsets(price ~ . -bi_price -state, data = dataset_spread, method = "forward", nvmax=20)
+summary(sub_for)
+summary(sub_for)$bic
+summary(sub_for)$adjr2
+
+sub_back <- regsubsets(price ~ . -bi_price -state, data = dataset_spread, method = "backward", nvmax = 20)
+summary(sub_back)
+summary(sub_back)$bic
+summary(sub_back)$adjr2
+```
+Linear model with predictors
+Slight improvement in our R squared value where our model is explaining 58.9% 
+
+```{r}
+set.seed(445)
+linear_model <- linear_reg() %>% 
+  set_engine("lm")
+glimpse(dataset_train)
+dataset_spread$`Garbage Disposal`
+
+pricelm2 <- recipe(price ~ square_feet + bathrooms + Pool + View + Refrigerator+ `Patio/Deck` +Playground +`Hot Tub` + Elevator + `Wood Floors`+ `Garbage Disposal`+ state + source , data = dataset_train)
+
+workflow2 <- workflow() %>% 
+  add_model(linear_model) %>% 
+  add_recipe(pricelm2)
+
+fitted_model2 <- workflow2 %>% 
+  fit(data = dataset_train)
+
+predictions2 <- fitted_model2 %>% 
+  predict(new_data = dataset_test) %>% 
+  bind_cols(dataset_test)
+
+metrics2 <- predictions2 %>% 
+  metrics(truth = price, estimate = .pred)
+
+print(metrics2)
+```
+###Logisitc Regression with Predictors
+
+Not much changed in our prediction error or accuracy, but the mean of all prices was selected as an arbitrary cut off point. Logistic regression tends to outperform the linear model in accuracy for predicting whether the prices will be lower or higher than average, but since we dont know if this cut off point of the average of the overall price is a good classification compared to the other models. It is not yet determined whether the logistic model utilizing classification of low and high is better predictor than examining the prices of the model as a continuous response variable in a linear model, or other options.
+
+```{r}
+set.seed(445)
+logistic_model <- logistic_reg() %>%
+  set_engine("glm")
+
+pricelog2 <- recipe(bi_price ~ square_feet + bathrooms + Pool + View + Refrigerator+ `Patio/Deck` +Playground +`Hot Tub` + Elevator + `Wood Floors`+ `Garbage Disposal`+ state + source, data = dataset_train)
+
+workflow_log2 <- workflow() %>% 
+  add_model(logistic_model) %>% 
+  add_recipe(pricelog2)
+
+fitted_model_log2 <- workflow_log2 %>% 
+  fit(data = dataset_train)
+
+predictions_log2 <- fitted_model_log2 %>%
+  predict(new_data = dataset_test, type = "prob") %>%
+  bind_cols(dataset_test)
+predictions_log2
+
+class_predictions_log2 <- fitted_model_log2 %>%
+  predict(new_data = dataset_test) %>%
+  bind_cols(dataset_test)
+class_predictions_log2
+
+metrics_log2 <- class_predictions_log2 %>%
+  metrics(truth = bi_price, estimate = .pred_class)
+
+matrix_log2 <-class_predictions_log2 %>%
+  conf_mat(truth = bi_price, estimate = .pred_class)
+
+print(matrix_log2)
+
+(235+138)/(1104+235+138+461)
+
+print(metrics_log2)
+
+``` 
+
+
+#"Lasso" and "Ridge" regressions are used to include regularization to the linear regression and prevent overfitting.
+```{r}
+
+library(tidymodels)
+library(glmnet)
+library(ggplot2)
+
+set.seed(445)
+
+rec <- recipe(price ~ ., data = dataset_train) %>%
+  step_novel(all_nominal_predictors()) %>% # Handle unseen factor levels
+  step_dummy(all_nominal_predictors()) %>% # Convert categorical variables to dummy variables
+  step_zv(all_predictors()) %>%  # Remove zero-variance 
+  step_normalize(all_numeric_predictors()) # Normalize numeric predictors
+
+prepped_rec <- prep(rec, training = dataset_train)
+
+x_train <- bake(prepped_rec, new_data = dataset_train)
+x_test <- bake(prepped_rec, new_data = dataset_test)
+
+x_train <- as.matrix(select(x_train, -price))
+y_train <- dataset_train$price
+
+x_test <- as.matrix(select(x_test, -price))
+y_test <- dataset_test$price
+
+# Fit ridge regression model with cross-validation
+cv_ridge <- cv.glmnet(x_train, y_train, alpha = 0, nfolds = 10)
+
+# Get best lambda from cross-validation
+best_lambda <- cv_ridge$lambda.min
+
+# Fit final ridge regression model with best lambda
+ridge_model <- glmnet(x_train, y_train, alpha = 0, lambda = best_lambda)
+
+# Make predictions on test set
+predictions_test <- predict(ridge_model, s = best_lambda, newx = x_test)
+
+# Calculate Test MSE and RMSE
+test_mse <- mean((y_test - predictions_test)^2)
+test_rmse <- sqrt(test_mse)
+
+
+# Calculate Test R2
+r2_test <- 1 - sum((y_test - predictions_test)^2) / sum((y_test - mean(y_test))^2)
+
+# Make predictions on training set for training error calculation
+predictions_train <- predict(ridge_model, s = best_lambda, newx = x_train)
+
+# Calculate Training R2
+r2_train <- 1 - sum((y_train - predictions_train)^2) / sum((y_train - mean(y_train))^2)
+
+# Calculate Training MSE and RMSE
+train_mse <- mean((y_train - predictions_train)^2)
+train_rmse <- sqrt(train_mse)
+
+# Extract cross-validation results (RMSE for each lambda)
+cv_rmse <- sqrt(cv_ridge$cvm)  # cvm contains MSE for each lambda
+lambda_values <- cv_ridge$lambda
+
+# Plot RMSE vs Lambda (cross-validation results)
+cv_rmse_plot <- data.frame(lambda_values, cv_rmse) %>%
+  ggplot(aes(x = log(lambda_values), y = cv_rmse)) +
+  geom_line(color = "blue") +
+  geom_point(color = "red") +
+  geom_point(aes(x = log(best_lambda), y = min(cv_rmse)), 
+             shape = 1, size = 4, color = "green") +  # Add circle around best_lambda
+  labs(title = "CV RMSE vs. Log(Lambda)",
+       x = "Log(Lambda)",
+       y = "Cross-Validation RMSE") +
+  theme_minimal() +
+  annotate("text", x = log(best_lambda), y = min(cv_rmse) + 20, label = paste("Best Lambda: ", round(best_lambda, 2)), 
+           color = "green", angle = 0, vjust = 0, hjust = 1)  # Add annotation for best lambda
+
+# Print the plot
+print(cv_rmse_plot)
+
+comparison_plot <- data.frame(Actual = y_test, Predicted = as.vector(predictions_test)) %>%
+  ggplot(aes(x = Actual, y = Predicted)) +
+  geom_point(color = "blue", alpha = 0.6) +
+  geom_abline(intercept = 0, slope = 1, color = "red", linetype = "dashed") +  # Reference line y=x
+  labs(title = "Actual vs Predicted Values",
+       x = "Actual Values",
+       y = "Predicted Values") +
+  theme_minimal()
+print(comparison_plot)
+
+comparison_df <- data.frame(Index = 1:length(y_test),  # Index for x-axis
+                            Actual = y_test,           # Actual values
+                            Predicted = as.vector(predictions_test))  # Predicted values
+
+comparison_plot2 <- comparison_df %>%
+  ggplot(aes(x = Index)) +
+  geom_line(aes(y = Actual, color = "Actual"), size = 1) +   # Line for actual values
+  geom_line(aes(y = Predicted, color = "Predicted"), size = 1, linetype = "dashed",alpha = 0.8) +  # Line for predicted values
+  labs(title = "Actual vs Predicted Values Over Index",
+       x = "Index",
+       y = "Values") +
+  scale_color_manual(values = c("Actual" = "blue", "Predicted" = "red")) +  # Custom colors
+  theme_minimal()
+
+# Print the plot
+print(comparison_plot2)
+
+error_summary <- tibble(
+  Metric = c("Training MSE", "Training RMSE", "Training R2", "Test MSE", "Test RMSE", "Test R2"),
+  Value = c(train_mse, train_rmse, r2_train, test_mse, test_rmse, r2_test)
+)
+
+# Print the error summary tibble
+print(error_summary)
+```
+
+```{r}
+set.seed(445)
+
+# Fit Lasso regression model with cross-validation (alpha = 1 for Lasso)
+cv_lasso <- cv.glmnet(x_train, y_train, alpha = 1, nfolds = 10)
+
+# Get best lambda from cross-validation
+best_lambda <- cv_lasso$lambda.min
+
+# Fit final Lasso regression model with best lambda
+lasso_model <- glmnet(x_train, y_train, alpha = 1, lambda = best_lambda)
+
+# Make predictions on test set
+predictions_test <- predict(lasso_model, s = best_lambda, newx = x_test)
+
+# Calculate Test MSE and RMSE
+test_mse <- mean((y_test - predictions_test)^2)
+test_rmse <- sqrt(test_mse)
+
+# Calculate Test R2
+r2_test <- 1 - sum((y_test - predictions_test)^2) / sum((y_test - mean(y_test))^2)
+
+# Make predictions on training set for training error calculation
+predictions_train <- predict(lasso_model, s = best_lambda, newx = x_train)
+
+# Calculate Training R2
+r2_train <- 1 - sum((y_train - predictions_train)^2) / sum((y_train - mean(y_train))^2)
+
+# Calculate Training MSE and RMSE
+train_mse <- mean((y_train - predictions_train)^2)
+train_rmse <- sqrt(train_mse)
+
+# Extract cross-validation results (RMSE for each lambda)
+cv_rmse <- sqrt(cv_lasso$cvm)  # cvm contains MSE for each lambda
+lambda_values <- cv_lasso$lambda
 
 
 
+# Plot RMSE vs Lambda (cross-validation results)
+cv_rmse_plot <- data.frame(lambda_values, cv_rmse) %>%
+  ggplot(aes(x = log(lambda_values), y = cv_rmse)) +
+  geom_line(color = "blue") +
+  geom_point(color = "red") +
+  geom_point(aes(x = log(best_lambda), y = min(cv_rmse)), 
+             shape = 1, size = 4, color = "green") +  # Add circle around best_lambda
+  labs(title = "CV RMSE vs. Log(Lambda)",
+       x = "Log(Lambda)",
+       y = "Cross-Validation RMSE") +
+  theme_minimal() +
+  annotate("text", x = log(best_lambda), y = min(cv_rmse) + 20, label = paste("Best Lambda: ", round(best_lambda, 2)), 
+           color = "green", angle = 0, vjust = 0, hjust = 1)  # Add annotation for best lambda
 
+# Print the plot
+print(cv_rmse_plot)
+
+# Plot: Actual vs Predicted for Test Data
+comparison_plot <- data.frame(Actual = y_test, Predicted = as.vector(predictions_test)) %>%
+  ggplot(aes(x = Actual, y = Predicted)) +
+  geom_point(color = "blue", alpha = 0.6) +
+  geom_abline(intercept = 0, slope = 1, color = "red", linetype = "dashed") +  # Reference line y=x
+  labs(title = "Actual vs Predicted Values for Lasso",
+       x = "Actual Values",
+       y = "Predicted Values") +
+  theme_minimal()
+print(comparison_plot)
+
+
+
+comparison_df <- data.frame(Index = 1:length(y_test),  # Index for x-axis
+                            Actual = y_test,           # Actual values
+                            Predicted = as.vector(predictions_test))  # Predicted values
+
+comparison_plot2 <- comparison_df %>%
+  ggplot(aes(x = Index)) +
+  geom_line(aes(y = Actual, color = "Actual"), size = 1) +   # Line for actual values
+  geom_line(aes(y = Predicted, color = "Predicted",alpha = 0.8), size = 1, linetype = "dashed", alpha = 0.8) +  # Line for predicted values
+  labs(title = "Actual vs Predicted Values Over Index",
+       x = "Index",
+       y = "Values") +
+  scale_color_manual(values = c("Actual" = "blue", "Predicted" = "red")) +  # Custom colors
+  theme_minimal()
+
+# Print the plot
+print(comparison_plot2)
+
+error_summary <- tibble(
+  Metric = c("Training MSE", "Training RMSE", "Training R2", "Test MSE", "Test RMSE", "Test R2"),
+  Value = c(train_mse, train_rmse, r2_train, test_mse, test_rmse, r2_test)
+)
+
+# Print the error summary tibble
+print(error_summary)
+```
+
+Despite of utilizing cross-validation to select an optimal regularization parameter, the Ridge regression model shows signs of overfitting. There is a noticeable gap between training and test performance, with the model performing better on the training data, indicating it may have learned patterns specific to the training set that don't generalize well. While regularization has helped reduce overfitting to some extent, the results remain relatively unchanged when switching to Lasso, suggesting the issue isn't due to the type of regularization but rather the dataset's complexity. Given that cross-validation with ten folds is a rational choice, the next steps should focus on using more complex models like decision trees, random forests, or gradient boosting, which may better capture the underlying patterns of the data.
+>>>>>>> origin/main
+
+#Tree Based Methods
+
+### Remove rare levels
+
+```{r}
+# Threshold for minimum occurrences
+threshold <- 10
+
+# Identify rows to keep
+rows_to_keep <- seq(TRUE, nrow(dataset_spread_copy))
+
+# Process each column
+for (col_name in colnames(dataset_spread_copy)) {
+  if (is.character(dataset_spread_copy[[col_name]]) || is.factor(dataset_spread_copy[[col_name]])) {
+    col_table <- table(dataset_spread_copy[[col_name]])
+    valid_categories <- names(col_table[col_table >= threshold])
+    rows_to_keep <- rows_to_keep & dataset_spread_copy[[col_name]] %in% valid_categories
+  }
+}
+
+# Filter the dataframe
+dataset_spread_trees <- dataset_spread_copy[rows_to_keep, ]
+```
+
+```{r}
+set.seed(445)
+
+dataset_spread_trees <- dataset_spread_trees %>% select(-state, -source)
+
+
+dataset_trees_split <- initial_split(dataset_spread_trees, prop = 0.6)
+dataset_trees_train <- training(dataset_trees_split)
+dataset_trees_test <- testing(dataset_trees_split)
+```
+
+###Decision Tree
+
+### Tune depth
+```{r, cache=TRUE}
+library(rpart.plot)
+library(vip)
+library(doParallel)
+
+set.seed(445)
+train_cv_5fold <- vfold_cv(dataset_trees_train, v = 5)
+
+tree_spec <- decision_tree(tree_depth = tune("depth")) |>
+  set_engine("rpart") |>
+  set_mode("regression")
+
+tree_rec <- recipe(price ~ ., data = dataset_trees_train)
+
+tree_wf <- workflow() |>
+  add_model(tree_spec) |>
+  add_recipe(tree_rec)
+
+tune_df <- data.frame(depth = seq(1:10))
+
+tree_tune_fit <- tree_wf |>
+  tune_grid(resamples = train_cv_5fold, grid = tune_df)
+
+tree_tune_fit |>
+  autoplot()
+
+show_best(tree_tune_fit, metric = "rmse", n = 1)
+
+tree_final <- finalize_workflow(tree_wf, select_best(tree_tune_fit, metric = "rmse"))
+
+tree_final_fit <- tree_final |>
+  fit(data = dataset_trees_train)
+
+tree_final_fit |>
+  extract_fit_engine() |>
+  rpart.plot(roundint=FALSE)
+
+vip(tree_final_fit)
+
+dataset_pred_tree <- predict(tree_final_fit, dataset_trees_test)
+RMSE <- sqrt((1/nrow(dataset_pred_tree))*(sum(dataset_trees_test$price - dataset_pred_tree$.pred))^2)
+RMSE
+```
+
+### Tune alpha
+```{r, cache=TRUE}
+set.seed(445)
+train_cv_5fold <- vfold_cv(dataset_trees_train, v = 5)
+
+tree_spec <- decision_tree(tree_depth = 1, cost_complexity = tune("alpha")) |>
+  set_engine("rpart") |>
+  set_mode("regression")
+
+tree_rec <- recipe(price ~ ., data = dataset_trees_train)
+
+tree_wf <- workflow() |>
+  add_model(tree_spec) |>
+  add_recipe(tree_rec)
+
+tune_df <- data.frame(alpha = 10^seq(-3, -1, length.out = 10))
+
+tree_tune_fit <- tree_wf |>
+  tune_grid(resamples = train_cv_5fold, grid = tune_df)
+
+tree_tune_fit |>
+  autoplot()
+
+show_best(tree_tune_fit, metric = "rmse", n = 1)
+
+tree_final <- finalize_workflow(tree_wf, select_best(tree_tune_fit, metric = "rmse"))
+
+tree_final_fit <- tree_final |>
+  fit(data = dataset_trees_train)
+
+tree_final_fit |>
+  extract_fit_engine() |>
+  rpart.plot(roundint=FALSE)
+
+vip(tree_final_fit)
+
+dataset_pred_tree <- predict(tree_final_fit, dataset_trees_test)
+RMSE <- sqrt((1/nrow(dataset_pred_tree))*(sum(dataset_trees_test$price - dataset_pred_tree$.pred))^2)
+RMSE
+```
+
+### Random Forest
+
+```{r, cache=TRUE}
+set.seed(445)
+
+rf_spec <- rand_forest(mtry = sqrt(.cols()), trees = 100) |>
+  set_engine("randomForest", importance = TRUE) |>
+  set_mode("regression")
+
+rf_rec <- recipe(price ~ ., data = dataset_trees_train)
+
+rf_wf <- workflow() |>
+  add_model(rf_spec) |>
+  add_recipe(rf_rec)
+
+rf_fit <- rf_wf |>
+  fit(dataset_trees_train)
+
+vip(rf_fit)
+
+dataset_pred_rf <- predict(rf_fit, dataset_trees_test)
+RMSE <- sqrt((1/nrow(dataset_pred_rf))*(sum(dataset_trees_test$price - dataset_pred_rf$.pred))^2)
+RMSE
+```
+
+### Tune lambda and depth
+
+```{r, cache=TRUE}
+#Setup parallel processing
+all_cores <- parallel::detectCores(logical = FALSE)
+if(all_cores >= 16){
+  all_cores <- 32
+}
+cl <- makePSOCKcluster(all_cores)
+registerDoParallel(cl)
+
+set.seed(445)
+
+boost_spec <- boost_tree(trees = 5000, tree_depth = tune('depth'), learn_rate = tune("lambda")) |>
+  set_engine("xgboost") |>
+  set_mode("regression")
+
+boost_rec <- recipe(price ~ ., data = dataset_trees_train) |>
+  step_dummy(all_nominal_predictors())
+
+boost_wf <- workflow() |>
+  add_model(boost_spec) |>
+  add_recipe(boost_rec)
+
+tune_df <- data.frame(depth = seq(1, 5, length.out = 5), lambda = 10^seq(-3, 1, length.out = 5))
+
+start.time <- Sys.time()
+
+boost_tune_fit <- boost_wf |>
+  tune_grid(resamples = train_cv_5fold, grid = tune_df)
+
+end.time <- Sys.time()
+time.taken <- end.time - start.time
+print(paste("Time elapsed tuning:", time.taken))
+
+boost_tune_fit |>
+  autoplot()
+
+show_best(boost_tune_fit, metric = "rmse", n = 1)
+
+boost_final <- finalize_workflow(boost_wf, select_best(boost_tune_fit, metric = "rmse"))
+
+boost_final_fit <- boost_final |>
+  fit(data = dataset_trees_train)
+
+vip(boost_final_fit)
+
+dataset_pred_boost <- predict(boost_final_fit, dataset_trees_test)
+RMSE <- sqrt((1/nrow(dataset_pred_boost))*(sum(dataset_trees_test$price - dataset_pred_boost$.pred))^2)
+RMSE
+
+```
