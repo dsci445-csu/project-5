@@ -1,17 +1,34 @@
 ---
-title: "DSCI445 - Group Project"
+title: "Apartment Rental Rates Across the United States"
 author: "Amanda Bartels, Mohamad Habibniaykoochesfahani, Isabella Kukor, Casey Martin"
 output: pdf_document
-editor_options: 
-  chunk_output_type: console
+date: "2024-12-02"
+geometry: "landscape"
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
 
 # Dataset introduction
 
+- Each variable in the dataset was examined for NA values 
+
+- Categorical data counts explored potential levels with 1 count. i.e. only 1 apartment was pay type “Weekly”, 1 apartment was both “Monthly and Weekly” while 9998 apartments were “Monthly” 
+
+- This led to removing unnecessary variables in the dataset such as address and time. 
+
+- All NA data points were removed.  
+
+- Several amenities were included in the data set. Pivoted these wider and attached dummy variables to extract information on specific amenities. 
+
+- Data set was split for training and testing data to be the same for each portion of the project 
+
+\newpage
+
 ```{r}
-dataset <- read.csv("group project/apartments_for_rent_classified_10K.csv", sep = ";")
-#dataset <- read.csv("apartments_for_rent_classified_10K.csv", sep = ";")
+
+dataset <- read.csv("apartments_for_rent_classified_10K.csv", sep = ";")
 
 head(dataset)
 sapply(dataset, class)
@@ -30,7 +47,7 @@ table(dataset$price_type)
 table(dataset$source)
 
 ```
-
+\newpage
 # Removing Useless Columns
 
 - Removed 'currency' column because all values in it are "USD".
@@ -103,7 +120,6 @@ summary(dataset)
 ```
 
 
-# Standardizing Categorical Values for Consistency.
 
 ```{r}
 
@@ -114,11 +130,13 @@ dataset$has_photo[dataset$has_photo == "No Thumbnail"] <- "No"
 dataset$source[dataset$source == "RENTCaf\xe9"] <- "RENTCafe"
 
 ```
+\newpage
 
 # Spread Amenities Column
 
-```{r}
+```{r, echo=TRUE}
 dataset_spread <- dataset %>%
+  # Split and widen amenities
   mutate(amenities_split = str_split(amenities, ",")) %>%
   unnest(amenities_split) %>%
   mutate(has_amenity = 1) %>%
@@ -144,6 +162,7 @@ dataset_train <- training(dataset_split)
 dataset_test <- testing(dataset_split)
 dataset_train
 ```
+\newpage
 
 # Distribution Map of the Apartments
 ```{r}
@@ -175,6 +194,7 @@ ggplot(USmap, aes(x = long, y = lat, group = group, fill = frequency)) +
 
 
 ```
+\newpage
 
 # Summary of the Statistics
 ```{r}
@@ -210,14 +230,21 @@ table4
 
 
 ```
+\newpage
+
 # Linear Model
+
+A linear regression model with all remaining predictors was used to predict the price of apartments. Price is a continuous variable, so it makes it an easy candidate for a linear model. It is easily interpretable as any predictor would essentially showcase a dollar amount associated with the addition of square footage, amenities, bathrooms etc. We were interested more so in how accurate our model would be and whether other models we learned in class would outperform simpler models.   
+
+ 
 ```{r}
 set.seed(445)
 linear_model <- linear_reg() %>% 
   set_engine("lm")
 #glimpse(dataset_train)
 
-pricelm <- recipe(price ~ square_feet + bathrooms + bedrooms + has_photo + pets_allowed + state + source , data = dataset_train)
+pricelm <- recipe(price ~ square_feet + bathrooms + bedrooms + has_photo + pets_allowed +
+                    state + source , data = dataset_train)
 
 workflow <- workflow() %>% 
   add_model(linear_model) %>% 
@@ -235,6 +262,7 @@ metrics <- predictions %>%
 
 print(metrics)
 ```
+\newpage
 
 # Logistic Regression
 Average price of house, above mean 1, below 0. See if we can get better predictions from binary logistic regression. In this model we get 19.45% error rate using a logistic model with the same predictors. 
@@ -276,7 +304,7 @@ print(matrix_log)
 print(metrics_log)
 
 ```
-# Choosing the correct predictors:
+## Choosing the correct predictors:
 In our model, we have a significant amount of factor variables, where there is a lot of categorical data. When these categories are broke up there are 90+ variables that could be included in the model. For example: state includes all 47 states that is contained in the data set. Knowing which predictors are significant to the model is difficult to determine so we used forward and backward selection to weed out of all the variables which would be the best to make predictions on. 
 
 When talking about price of apartments, we know location can have an impact over the general price. For these models, we were more curious about separating out amenities, bedrooms, ad type, etc. 
@@ -287,7 +315,7 @@ The adjusted r square value indicates a slightly different model would be best b
 
 The backwards selection indicated the same model as the forward selection did for BIC and AdjR. This leads us to decrease our predictors on our models and disregard insignificant amenities that do not influence the price point of the apartment. 
 
-```{r,include=FALSE}
+```{r, include=FALSE}
 library(leaps)
 sub_for <- regsubsets(price ~ . -bi_price -state, data = dataset_spread, method = "forward", nvmax=20)
 summary(sub_for)
@@ -308,10 +336,7 @@ linear_model <- linear_reg() %>%
 #glimpse(dataset_train)
 #dataset_spread$`Garbage Disposal`
 
-pricelm2 <- recipe(price ~ square_feet + bathrooms + Pool + View + Refrigerator+
-                     `Patio/Deck` +Playground +`Hot Tub` + Elevator +
-                     `Wood Floors`+ `Garbage Disposal`+ state + source ,
-                   data = dataset_train)
+pricelm2 <- recipe(price ~ square_feet + bathrooms + Pool + View + Refrigerator+ `Patio/Deck` +Playground +`Hot Tub` + Elevator + `Wood Floors`+ `Garbage Disposal`+ state + source , data = dataset_train)
 
 workflow2 <- workflow() %>% 
   add_model(linear_model) %>% 
@@ -329,7 +354,9 @@ metrics2 <- predictions2 %>%
 
 print(metrics2)
 ```
-#Logisitc Regression with Predictors
+\newpage
+
+# Logisitc Regression with Predictors
 
 Not much changed in our prediction error or accuracy, but the mean of all prices was selected as an arbitrary cut off point. Logistic regression tends to outperform the linear model in accuracy for predicting whether the prices will be lower or higher than average, but since we dont know if this cut off point of the average of the overall price is a good classification compared to the other models. It is not yet determined whether the logistic model utilizing classification of low and high is better predictor than examining the prices of the model as a continuous response variable in a linear model, or other options.
 
@@ -371,9 +398,10 @@ print(metrics_log2)
 
 ``` 
 
+\newpage
 
 # Ridge Regression Technique 
-```{r}
+```{r,include=FALSE}
 
 library(tidymodels)
 library(glmnet)
@@ -450,7 +478,9 @@ cv_rmse_plot <- data.frame(lambda_values, cv_rmse) %>%
 
 # Print the plot
 print(cv_rmse_plot)
-
+```
+\newpage    
+```{r,warning=FALSE}
 comparison_plot <- data.frame(Actual = y_test, Predicted = as.vector(predictions_test)) %>%
   ggplot(aes(x = Actual, y = Predicted)) +
   geom_point(color = "blue", alpha = 0.6) +
@@ -460,6 +490,9 @@ comparison_plot <- data.frame(Actual = y_test, Predicted = as.vector(predictions
        y = "Predicted Values") +
   theme_minimal()
 print(comparison_plot)
+```
+
+```{r,warning=FALSE}
 
 comparison_df <- data.frame(Index = 1:length(y_test),  # Index for x-axis
                             Actual = y_test,           # Actual values
@@ -486,6 +519,8 @@ error_summary <- tibble(
 # Print the error summary tibble
 print(error_summary)
 ```
+\newpage
+
 # Lasso Regression Technique 
 
 ```{r,warning=FALSE}
@@ -542,7 +577,9 @@ cv_rmse_plot <- data.frame(lambda_values, cv_rmse) %>%
 
 # Print the plot
 print(cv_rmse_plot)
-
+```
+\newpage
+```{r,warning=FALSE}
 # Plot: Actual vs Predicted for Test Data
 comparison_plot <- data.frame(Actual = y_test, Predicted = as.vector(predictions_test)) %>%
   ggplot(aes(x = Actual, y = Predicted)) +
@@ -553,7 +590,9 @@ comparison_plot <- data.frame(Actual = y_test, Predicted = as.vector(predictions
        y = "Predicted Values") +
   theme_minimal()
 print(comparison_plot)
+```
 
+```{r,warning=FALSE}
 
 
 comparison_df <- data.frame(Index = 1:length(y_test),  # Index for x-axis
@@ -584,12 +623,12 @@ print(error_summary)
 
 Cross-validation is used to select an optimal regularization parameter, helping reduce overfitting to some extent; However, the results for both Lasso and Ridge models show a slight improvement comparing to the previously developed linear model. This suggests that the issue isn't due to the type of regularization but rather the dataset's complexity. Given that cross-validation with ten folds is a rational choice, the next steps should focus on using more complex models like decision trees, random forests, or gradient boosting, which may better capture the underlying patterns of the data.
 
-
+\newpage
 # Tree Based Methods
 
 ## Remove rare levels
 
-```{r}
+```{r,echo=TRUE}
 # Threshold for minimum occurrences
 threshold <- 10
 
@@ -619,6 +658,7 @@ dataset_trees_split <- initial_split(dataset_spread_trees, prop = 0.6)
 dataset_trees_train <- training(dataset_trees_split)
 dataset_trees_test <- testing(dataset_trees_split)
 ```
+\newpage
 
 # Decision Tree
 ## Tune depth
@@ -658,6 +698,9 @@ tree_final_fit <- tree_final |>
 tree_final_fit |>
   extract_fit_engine() |>
   rpart.plot(roundint=FALSE)
+```
+
+```{r}
 
 vip(tree_final_fit)
 
@@ -667,6 +710,8 @@ RMSE
 ```
 
 Tuning depth gives an RMSE of 35.64 and depth equal to just one layer.
+
+\newpage
 
 ## Tune alpha
 ```{r, cache=TRUE}
@@ -692,7 +737,9 @@ tree_tune_fit |>
   autoplot()
 
 show_best(tree_tune_fit, metric = "rmse", n = 1)
+```
 
+```{r}
 tree_final <- finalize_workflow(tree_wf, select_best(tree_tune_fit, metric = "rmse"))
 
 tree_final_fit <- tree_final |>
@@ -701,6 +748,9 @@ tree_final_fit <- tree_final |>
 tree_final_fit |>
   extract_fit_engine() |>
   rpart.plot(roundint=FALSE)
+```
+
+```{r}
 
 vip(tree_final_fit)
 
@@ -708,8 +758,9 @@ dataset_pred_tree <- predict(tree_final_fit, dataset_trees_test)
 RMSE <- sqrt((1/nrow(dataset_pred_tree))*(sum(dataset_trees_test$price - dataset_pred_tree$.pred))^2)
 RMSE
 ```
-
 Tuning alpha gives a value of 0.001 and an RMSE score of 35.64, which is the same as with just the depth.
+
+\newpage
 
 # Random Forest
 
@@ -735,8 +786,9 @@ dataset_pred_rf <- predict(rf_fit, dataset_trees_test)
 RMSE <- sqrt((1/nrow(dataset_pred_rf))*(sum(dataset_trees_test$price - dataset_pred_rf$.pred))^2)
 RMSE
 ```
-
 A random forest with trees set to 100 gives an RMSE of 135.63, which is worse than the decision tree.
+
+\newpage
 
 ## Tune lambda and depth
 
@@ -789,9 +841,9 @@ dataset_pred_boost <- predict(boost_final_fit, dataset_trees_test)
 RMSE <- sqrt((1/nrow(dataset_pred_boost))*(sum(dataset_trees_test$price - dataset_pred_boost$.pred))^2)
 RMSE
 ```
-
 Tuning depth and lambda simultaneously gives a depth of 2 and lambda equal to 0.01. The RMSE is 173.16, making it the worst of the tree based methods.
 
 \newpage
+
 # References
 - “Apartment for Rent Classified.” UCI Machine Learning Repository. https://doi.org/10.24432/C5X623.
