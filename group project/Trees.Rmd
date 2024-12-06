@@ -240,9 +240,12 @@ set.seed(445)
 
 train_cv_5fold <- vfold_cv(dataset_trees_train, v = 5)
 
-# Setup parallel processing
-all_cores <- parallel::detectCores(logical = FALSE)
-cl <- makePSOCKcluster(all_cores)
+#Setup parallel processing
+cores <- parallel::detectCores(logical = FALSE)
+if(cores >= 16){
+  cores <- 32
+}
+cl <- makePSOCKcluster(cores)
 registerDoParallel(cl)
 
 # Model setup
