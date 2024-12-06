@@ -805,6 +805,7 @@ Tuning depth and lambda simultaneously gives a depth of 2 and lambda equal to 0.
 
 The regression model with the best RMSE is the decision tree model, which is suprising given its simpleness compared to random forests and boosted models, especially considering that XG boost handles inbalanced datasets better.
 
+Logisitic regression had higher accuracy when predicting on higher or lower than average apartment prices based on the predictors provided in the dataset but little improvements can be made to the model past this. The linear pregression model can be improved upon and is probably the easest to interpret but has a larger residual error mean.
 # References
 - “Apartment for Rent Classified.” UCI Machine Learning Repository. https://doi.org/10.24432/C5X623.
 
