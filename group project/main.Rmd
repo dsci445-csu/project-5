@@ -146,6 +146,8 @@ dataset_train
 ```
 
 # Distribution Map of the Apartments
+In order to understand the pricing of apartments in the US, it is important to visualize where our data is courced from as the cost of living heavily depends on the location. The map below shows that the vast majority of states are represented in the data set. The map does not show DC data points although they do exist. Texas had the majority of apartment data while states in gray like West Virigina did not have any apartment data points.
+
 ```{r}
 ##Create dataset for the states with longitude and latitude. map_data function is in ggplot2
 USmap <- map_data("state")
@@ -177,6 +179,7 @@ ggplot(USmap, aes(x = long, y = lat, group = group, fill = frequency)) +
 ```
 
 # Summary of the Statistics
+Below are small examples of the average prices of certain predictors of interest. Although we will use all the remaining predictors, these tables do provide some information on the raw data before any analysis occurs. 
 ```{r}
 ## Average income for each state 
 table <- dataset_spread %>%
@@ -211,6 +214,7 @@ table4
 
 ```
 # Linear Model
+The simpliest model to first examine was the linear model since the resposnse variable of price is continious. In this case we were more interested in seeing how the model preforms and less interested in which predictors were signifcant. 
 ```{r}
 set.seed(445)
 linear_model <- linear_reg() %>% 
