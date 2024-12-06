@@ -1,19 +1,17 @@
 ---
 title: "DSCI445 - Group Project"
-authors: "Amanda Bartels, Mohamed Habibniaykoochesfahani, Isabella Kukor, Casey Martin"
+author: "Amanda Bartels, Mohamad Habibniaykoochesfahani, Isabella Kukor, Casey Martin"
 output: pdf_document
 editor_options: 
   chunk_output_type: console
 ---
 
 
-## Basic R
+# Dataset introduction
 
-# Remove NA fields
-
-```{r, include=FALSE}
-
-dataset <- read.csv("apartments_for_rent_classified_10K.csv", sep = ";")
+```{r}
+dataset <- read.csv("group project/apartments_for_rent_classified_10K.csv", sep = ";")
+#dataset <- read.csv("apartments_for_rent_classified_10K.csv", sep = ";")
 
 head(dataset)
 sapply(dataset, class)
@@ -33,20 +31,20 @@ table(dataset$source)
 
 ```
 
-# Remove columns that do not contain useful information:
+# Removing Useless Columns
 
-Removed 'currency' column because all values in it are "USD".
-Removed 'fee' column because all values are "No" so this will not provide insights.
-Kept value 'has_photo' because it could correlate with listing quality and affect price.
-Removed 'price_display' column because it is a repeat of price column.
-Kept(?) 'source' column tracks the source of the listing (i.e. different websites). This is only useful for comparing listings across sources which we will/not be doing in this analysis.
-'title' and 'body' columns are removed because they contain text descriptions which are not going to be analyzed in this study.
-Removed 'address' because it's not useful and has a large ammount of NAs.
-Removed 'latitude', 'longitude', 'address', 'cityname', and 'time' columns because they are not interpretable in this study.
-Only 4 rows in the entire dataset have \textit{category} values other than 'apartment', so these rows and consequently the "category" column are deleted.  
-Only 2 rows in the entire dataset have \textit{price\_type} values other than 'Monthly', so these rows and consequently the "price\_type" column are deleted.
+- Removed 'currency' column because all values in it are "USD".
+- Removed 'fee' column because all values are "No" so this will not provide insights.
+- Kept value 'has_photo' because it could correlate with listing quality and affect price.
+- Removed 'price_display' column because it is a repeat of price column.
+- Kept 'source' column tracks the source of the listing (i.e. different websites). This is only useful for comparing listings across  sources which we will be doing in this analysis.
+- 'title' and 'body' columns are removed because they contain text descriptions which are not going to be analyzed in this study.
+- Removed 'address' because it's not useful and has a large amount of NAs.
+- Removed 'latitude', 'longitude', 'address', 'cityname', and 'time' columns because they are not interpretable in this study.
+- Only 4 rows in the entire dataset have \textit{category} values other than 'apartment', so these rows and consequently the "category" column are deleted.  
+- Only 2 rows in the entire dataset have \textit{price\_type} values other than 'Monthly', so these rows and consequently the "price\_type" column are deleted.
 
-```{r, include=FALSE}
+```{r}
 library(tidyverse)
 
 # Remove rows
@@ -83,7 +81,7 @@ str(dataset)
 
 # Remove null values.
 
-```{r, include=FALSE}
+```{r}
 # Replace "null" with NA across all character columns in the dataset for easier handling
 dataset[] <- lapply(dataset, function(x) {
   if (is.character(x)) {
@@ -105,7 +103,7 @@ summary(dataset)
 ```
 
 
-# Standardizes categorical values for consistency.
+# Standardizing Categorical Values for Consistency.
 
 ```{r}
 
@@ -113,15 +111,14 @@ summary(dataset)
 dataset$has_photo[dataset$has_photo == "No Thumbnail"] <- "No"
 
 # Correct the special character in `source`
-dataset$source[dataset$source == "RENTCaf\xe9"] <- "RENTCafé"
+dataset$source[dataset$source == "RENTCaf\xe9"] <- "RENTCafe"
 
 ```
 
-# Spread amenities column
+# Spread Amenities Column
 
 ```{r}
 dataset_spread <- dataset %>%
-  # Split and widen amenities
   mutate(amenities_split = str_split(amenities, ",")) %>%
   unnest(amenities_split) %>%
   mutate(has_amenity = 1) %>%
@@ -129,9 +126,10 @@ dataset_spread <- dataset %>%
   select(-amenities, -id)
 
 dataset_spread_copy <- dataset_spread
+
 ```
 
-# Train test split
+# Train-Test Split
 ```{r}
 library(tidymodels)
 set.seed(445)
@@ -147,12 +145,11 @@ dataset_test <- testing(dataset_split)
 dataset_train
 ```
 
-##Map of Apartments
+# Distribution Map of the Apartments
 ```{r}
 ##Create dataset for the states with longitude and latitude. map_data function is in ggplot2
 USmap <- map_data("state")
-USmap
-dataset_spread
+
 ##Need to change abbreviations to full state name to match with USMap datatset 
 dataset_spread$state_full <- state.name[match(dataset_spread$state, state.abb)]
 ##Lowercase letters for exact match
@@ -168,7 +165,6 @@ state_counts <- dataset_spread %>%
 ##Join frequency for each state in the dataset
 USmap <- USmap %>%
   left_join(state_counts, by = c("region" = "state"))
-USmap
 
 ##Map out the United States using ggplot, and color by frequency used. 
 ggplot(USmap, aes(x = long, y = lat, group = group, fill = frequency)) +
@@ -180,7 +176,7 @@ ggplot(USmap, aes(x = long, y = lat, group = group, fill = frequency)) +
 
 ```
 
-Summary Statistics
+# Summary of the Statistics
 ```{r}
 ## Average income for each state 
 table <- dataset_spread %>%
@@ -214,12 +210,12 @@ table4
 
 
 ```
-Linear Model
+# Linear Model
 ```{r}
 set.seed(445)
 linear_model <- linear_reg() %>% 
   set_engine("lm")
-glimpse(dataset_train)
+#glimpse(dataset_train)
 
 pricelm <- recipe(price ~ square_feet + bathrooms + bedrooms + has_photo + pets_allowed + state + source , data = dataset_train)
 
@@ -240,7 +236,7 @@ metrics <- predictions %>%
 print(metrics)
 ```
 
-###Logisitic Regression
+# Logistic Regression
 Average price of house, above mean 1, below 0. See if we can get better predictions from binary logistic regression. In this model we get 19.45% error rate using a logistic model with the same predictors. 
 
 ```{r}
@@ -280,7 +276,7 @@ print(matrix_log)
 print(metrics_log)
 
 ```
-### Choosing the correct predictors:
+# Choosing the correct predictors:
 In our model, we have a significant amount of factor variables, where there is a lot of categorical data. When these categories are broke up there are 90+ variables that could be included in the model. For example: state includes all 47 states that is contained in the data set. Knowing which predictors are significant to the model is difficult to determine so we used forward and backward selection to weed out of all the variables which would be the best to make predictions on. 
 
 When talking about price of apartments, we know location can have an impact over the general price. For these models, we were more curious about separating out amenities, bedrooms, ad type, etc. 
@@ -291,7 +287,7 @@ The adjusted r square value indicates a slightly different model would be best b
 
 The backwards selection indicated the same model as the forward selection did for BIC and AdjR. This leads us to decrease our predictors on our models and disregard insignificant amenities that do not influence the price point of the apartment. 
 
-```{r}
+```{r,include=FALSE}
 library(leaps)
 sub_for <- regsubsets(price ~ . -bi_price -state, data = dataset_spread, method = "forward", nvmax=20)
 summary(sub_for)
@@ -303,17 +299,19 @@ summary(sub_back)
 summary(sub_back)$bic
 summary(sub_back)$adjr2
 ```
-Linear model with predictors
-Slight improvement in our R squared value where our model is explaining 58.9% 
+Linear model with predictors shows slight improvement in our R squared value where our model is explaining 58.9%.
 
 ```{r}
 set.seed(445)
 linear_model <- linear_reg() %>% 
   set_engine("lm")
-glimpse(dataset_train)
-dataset_spread$`Garbage Disposal`
+#glimpse(dataset_train)
+#dataset_spread$`Garbage Disposal`
 
-pricelm2 <- recipe(price ~ square_feet + bathrooms + Pool + View + Refrigerator+ `Patio/Deck` +Playground +`Hot Tub` + Elevator + `Wood Floors`+ `Garbage Disposal`+ state + source , data = dataset_train)
+pricelm2 <- recipe(price ~ square_feet + bathrooms + Pool + View + Refrigerator+
+                     `Patio/Deck` +Playground +`Hot Tub` + Elevator +
+                     `Wood Floors`+ `Garbage Disposal`+ state + source ,
+                   data = dataset_train)
 
 workflow2 <- workflow() %>% 
   add_model(linear_model) %>% 
@@ -331,7 +329,7 @@ metrics2 <- predictions2 %>%
 
 print(metrics2)
 ```
-###Logisitc Regression with Predictors
+#Logisitc Regression with Predictors
 
 Not much changed in our prediction error or accuracy, but the mean of all prices was selected as an arbitrary cut off point. Logistic regression tends to outperform the linear model in accuracy for predicting whether the prices will be lower or higher than average, but since we dont know if this cut off point of the average of the overall price is a good classification compared to the other models. It is not yet determined whether the logistic model utilizing classification of low and high is better predictor than examining the prices of the model as a continuous response variable in a linear model, or other options.
 
@@ -374,7 +372,7 @@ print(metrics_log2)
 ``` 
 
 
-#"Lasso" and "Ridge" regressions are used to include regularization to the linear regression and prevent overfitting.
+# Ridge Regression Technique 
 ```{r}
 
 library(tidymodels)
@@ -382,7 +380,9 @@ library(glmnet)
 library(ggplot2)
 
 set.seed(445)
+```
 
+```{r,warning=FALSE}
 rec <- recipe(price ~ ., data = dataset_train) %>%
   step_novel(all_nominal_predictors()) %>% # Handle unseen factor levels
   step_dummy(all_nominal_predictors()) %>% # Convert categorical variables to dummy variables
@@ -486,8 +486,9 @@ error_summary <- tibble(
 # Print the error summary tibble
 print(error_summary)
 ```
+# Lasso Regression Technique 
 
-```{r}
+```{r,warning=FALSE}
 set.seed(445)
 
 # Fit Lasso regression model with cross-validation (alpha = 1 for Lasso)
@@ -581,12 +582,12 @@ error_summary <- tibble(
 print(error_summary)
 ```
 
-Despite of utilizing cross-validation to select an optimal regularization parameter, the Ridge regression model shows signs of overfitting. There is a noticeable gap between training and test performance, with the model performing better on the training data, indicating it may have learned patterns specific to the training set that don't generalize well. While regularization has helped reduce overfitting to some extent, the results remain relatively unchanged when switching to Lasso, suggesting the issue isn't due to the type of regularization but rather the dataset's complexity. Given that cross-validation with ten folds is a rational choice, the next steps should focus on using more complex models like decision trees, random forests, or gradient boosting, which may better capture the underlying patterns of the data.
->>>>>>> origin/main
+Cross-validation is used to select an optimal regularization parameter, helping reduce overfitting to some extent; However, the results for both Lasso and Ridge models show a slight improvement comparing to the previously developed linear model. This suggests that the issue isn't due to the type of regularization but rather the dataset's complexity. Given that cross-validation with ten folds is a rational choice, the next steps should focus on using more complex models like decision trees, random forests, or gradient boosting, which may better capture the underlying patterns of the data.
 
-#Tree Based Methods
 
-### Remove rare levels
+# Tree Based Methods
+
+## Remove rare levels
 
 ```{r}
 # Threshold for minimum occurrences
@@ -608,6 +609,9 @@ for (col_name in colnames(dataset_spread_copy)) {
 dataset_spread_trees <- dataset_spread_copy[rows_to_keep, ]
 ```
 
+Due to the extreme inbalance of the dataset, levels with less than 10 values were removed as they could cause a mismatch between the training and testing sets as well as the different folds for cross validation.
+
+## Recreate train test split
 ```{r}
 set.seed(445)
 
@@ -619,9 +623,8 @@ dataset_trees_train <- training(dataset_trees_split)
 dataset_trees_test <- testing(dataset_trees_split)
 ```
 
-###Decision Tree
-
-### Tune depth
+# Decision Tree
+## Tune depth
 ```{r, cache=TRUE}
 library(rpart.plot)
 library(vip)
@@ -668,7 +671,7 @@ RMSE
 
 Tuning depth gives an RMSE of 35.64 and depth equal to just one layer.
 
-### Tune alpha
+## Tune alpha
 ```{r, cache=TRUE}
 set.seed(445)
 train_cv_5fold <- vfold_cv(dataset_trees_train, v = 5)
@@ -711,7 +714,7 @@ RMSE
 
 Tuning alpha gives a value of 0.001 and an RMSE score of 35.64, which is the same as with just the depth.
 
-### Random Forest
+# Random Forest
 
 ```{r, cache=TRUE}
 set.seed(445)
@@ -736,17 +739,17 @@ RMSE <- sqrt((1/nrow(dataset_pred_rf))*(sum(dataset_trees_test$price - dataset_p
 RMSE
 ```
 
-A random forest with trees set to 100 gives an RMSE of 135.63, which is worse than the decision tree.
+A random forest with trees set to 100 gives an RMSE of 135.63, which is a lot worse than the decision tree, but still better than lasso, ridge, and basic linear regression. Cross validation was skipped due to extremely long computation times, but manually choosing 100 trees seemed to give approximately the best performance.
 
-### Tune lambda and depth
+## Tune lambda and depth
 
 ```{r, cache=TRUE}
 #Setup parallel processing
-cores <- parallel::detectCores(logical = FALSE)
-if(cores >= 16){
-  cores <- 32
+all_cores <- parallel::detectCores(logical = FALSE)
+if(all_cores >= 16){
+  all_cores <- 32
 }
-cl <- makePSOCKcluster(cores)
+cl <- makePSOCKcluster(all_cores)
 registerDoParallel(cl)
 
 set.seed(445)
@@ -791,3 +794,13 @@ RMSE
 ```
 
 Tuning depth and lambda simultaneously gives a depth of 2 and lambda equal to 0.01. The RMSE is 173.16, making it the worst of the tree based methods.
+
+\newpage
+
+# Conclusion
+
+The regression model with the best RMSE is the decision tree model, which is suprising given its simpleness compared to random forests and boosted models, especially considering that XG boost handles inbalanced datasets better.
+
+# References
+- “Apartment for Rent Classified.” UCI Machine Learning Repository. https://doi.org/10.24432/C5X623.
+
