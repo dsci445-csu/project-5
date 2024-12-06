@@ -609,6 +609,9 @@ for (col_name in colnames(dataset_spread_copy)) {
 dataset_spread_trees <- dataset_spread_copy[rows_to_keep, ]
 ```
 
+Due to the extreme inbalance of the dataset, levels with less than 10 values were removed as they could cause a mismatch between the training and testing sets as well as the different folds for cross validation.
+
+## Recreate train test split
 ```{r}
 set.seed(445)
 
@@ -736,7 +739,7 @@ RMSE <- sqrt((1/nrow(dataset_pred_rf))*(sum(dataset_trees_test$price - dataset_p
 RMSE
 ```
 
-A random forest with trees set to 100 gives an RMSE of 135.63, which is worse than the decision tree.
+A random forest with trees set to 100 gives an RMSE of 135.63, which is a lot worse than the decision tree, but still better than lasso, ridge, and basic linear regression. Cross validation was skipped due to extremely long computation times, but manually choosing 100 trees seemed to give approximately the best performance.
 
 ## Tune lambda and depth
 
@@ -793,6 +796,11 @@ RMSE
 Tuning depth and lambda simultaneously gives a depth of 2 and lambda equal to 0.01. The RMSE is 173.16, making it the worst of the tree based methods.
 
 \newpage
+
+# Conclusion
+
+The regression model with the best RMSE is the decision tree model, which is suprising given its simpleness compared to random forests and boosted models, especially considering that XG boost handles inbalanced datasets better.
+
 # References
 - “Apartment for Rent Classified.” UCI Machine Learning Repository. https://doi.org/10.24432/C5X623.
 
