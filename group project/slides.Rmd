@@ -1,32 +1,55 @@
 ---
-title: "Apartment Rental Rates Across the United States"
-author: "Amanda Bartels, Mohamad Habibniaykoochesfahani, Isabella Kukor, Casey Martin"
 output: pdf_document
-date: "2024-12-02"
-geometry: "landscape"
+geometry: landscape
+fontsize: 12pt
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(echo = FALSE,warning = FALSE,message=FALSE)
 ```
 
-# Dataset introduction
+\newpage
+\begin{center}
+\vspace*{\fill} % Push content to the vertical center
 
-- Each variable in the dataset was examined for NA values 
+{\Huge Apartment Rental Rates Across the United States}
 
-- Categorical data counts explored potential levels with 1 count. i.e. only 1 apartment was pay type “Weekly”, 1 apartment was both “Monthly and Weekly” while 9998 apartments were “Monthly” 
+\vspace{3cm} % Add vertical space
 
-- This led to removing unnecessary variables in the dataset such as address and time. 
+{\large Amanda Bartels, Mohamad Habibniaykoochesfahani, Isabella Kukor, Casey Martin}
 
-- All NA data points were removed.  
+\vspace{3cm} % Add vertical space
 
-- Several amenities were included in the data set. Pivoted these wider and attached dummy variables to extract information on specific amenities. 
+{\normalsize December 2, 2024}
 
-- Data set was split for training and testing data to be the same for each portion of the project 
+\vspace*{\fill} % Push content to the vertical center
+\end{center}
+\newpage
+
+\LARGE
+# Dataset introduction and cleaning
+
+\large
+- The "Apartment for Rent Classified" dataset, donated on December 25, 2019, is a multivariate dataset containing classified ads for apartments for rent in the USA.
+- The dataset consists of 10,000 instances with 21 categorical and integer features.
+- Attributes  includes details like apartment amenities (e.g., AC, gym, pool), bathrooms, bedrooms, rental price, square footage, location (address, city, state), and more.
+- Each variable in the dataset was examined for NA values.
+
+- Categorical data counts explored potential levels with 1 count. For example:
+  - Only 1 apartment was pay type “Weekly.”
+  - 1 apartment was both “Monthly and Weekly.”
+  - 9998 apartments were “Monthly.”
+
+- This led to removing unnecessary variables in the dataset, such as address, time, longitude, latitude, etc.
+
+- All NA data points were removed.
+
+
+
 
 \newpage
 
-```{r}
+```{r,include=FALSE}
 
 dataset <- read.csv("apartments_for_rent_classified_10K.csv", sep = ";")
 
@@ -47,22 +70,11 @@ table(dataset$price_type)
 table(dataset$source)
 
 ```
-\newpage
-# Removing Useless Columns
 
-- Removed 'currency' column because all values in it are "USD".
-- Removed 'fee' column because all values are "No" so this will not provide insights.
-- Kept value 'has_photo' because it could correlate with listing quality and affect price.
-- Removed 'price_display' column because it is a repeat of price column.
-- Kept 'source' column tracks the source of the listing (i.e. different websites). This is only useful for comparing listings across  sources which we will be doing in this analysis.
-- 'title' and 'body' columns are removed because they contain text descriptions which are not going to be analyzed in this study.
-- Removed 'address' because it's not useful and has a large amount of NAs.
-- Removed 'latitude', 'longitude', 'address', 'cityname', and 'time' columns because they are not interpretable in this study.
-- Only 4 rows in the entire dataset have \textit{category} values other than 'apartment', so these rows and consequently the "category" column are deleted.  
-- Only 2 rows in the entire dataset have \textit{price\_type} values other than 'Monthly', so these rows and consequently the "price\_type" column are deleted.
 
 ```{r}
 library(tidyverse)
+library(knitr)
 
 # Remove rows
 dataset <- dataset[dataset$category=='housing/rent/apartment',]
@@ -70,7 +82,7 @@ dataset <- dataset[dataset$price_type=='Monthly',]
 
 # Remove columns
 dataset <- dataset %>%
-  select(
+  dplyr::select(
     -currency,
     -fee,
     -price_display,
@@ -89,16 +101,23 @@ dataset <- dataset %>%
     # -source
   )
 
-# View cleaned dataset
-str(dataset)
+summary_table <- data.frame(
+  Type = sapply(dataset, class),
+  Missing = sapply(dataset, function(x) sum(is.na(x))),
+  Unique = sapply(dataset, function(x) length(unique(x)))
+)
 
+knitr::kable(summary_table, format = "latex", caption = "Summary of the Cleaned Dataset")
 
 ```
+\large
+- Several amenities were included in the dataset. These were pivoted wider, and dummy variables were attached to extract information on specific amenities.
 
+- The dataset was split into training and testing data to remain consistent across all portions of the project.
 
-# Remove null values.
+\newpage
 
-```{r}
+```{r,include=FALSE}
 # Replace "null" with NA across all character columns in the dataset for easier handling
 dataset[] <- lapply(dataset, function(x) {
   if (is.character(x)) {
@@ -121,7 +140,7 @@ summary(dataset)
 
 
 
-```{r}
+```{r,include=FALSE}
 
 # Change `has_photo` entries containing "No Thumbnail" into "No" category so only categories are "Yes" or "No"
 dataset$has_photo[dataset$has_photo == "No Thumbnail"] <- "No"
@@ -132,9 +151,8 @@ dataset$source[dataset$source == "RENTCaf\xe9"] <- "RENTCafe"
 ```
 \newpage
 
-# Spread Amenities Column
 
-```{r, echo=TRUE}
+```{r,include=FALSE}
 dataset_spread <- dataset %>%
   # Split and widen amenities
   mutate(amenities_split = str_split(amenities, ",")) %>%
@@ -147,8 +165,7 @@ dataset_spread_copy <- dataset_spread
 
 ```
 
-# Train-Test Split
-```{r}
+```{r,include=FALSE}
 library(tidymodels)
 set.seed(445)
 dataset_spread$bathrooms <- as.numeric(dataset_spread$bathrooms)
@@ -196,8 +213,7 @@ ggplot(USmap, aes(x = long, y = lat, group = group, fill = frequency)) +
 ```
 \newpage
 
-# Summary of the Statistics
-```{r}
+```{r,include=FALSE}
 ## Average income for each state 
 table <- dataset_spread %>%
   group_by(state) %>%
@@ -231,12 +247,16 @@ table4
 
 ```
 \newpage
-
+\LARGE
 # Linear Model
+\large
+- A linear regression model with all remaining predictors was used to predict the price of apartments.
+- Price is a continuous variable, making it an easy candidate for a linear model.
+- Linear models are easily interpretable, as any predictor would showcase a dollar amount associated with the addition of features such as square footage, amenities, bathrooms, etc.
+- The focus was on evaluating the accuracy of the model and determining whether other models learned in class would outperform simpler models.
 
-A linear regression model with all remaining predictors was used to predict the price of apartments. Price is a continuous variable, so it makes it an easy candidate for a linear model. It is easily interpretable as any predictor would essentially showcase a dollar amount associated with the addition of square footage, amenities, bathrooms etc. We were interested more so in how accurate our model would be and whether other models we learned in class would outperform simpler models.   
+\newpage
 
- 
 ```{r}
 set.seed(445)
 linear_model <- linear_reg() %>% 
@@ -260,14 +280,23 @@ predictions <- fitted_model %>%
 metrics <- predictions %>% 
   metrics(truth = price, estimate = .pred)
 
-print(metrics)
+metrics %>%
+  knitr::kable(
+    format = "latex",
+    caption = "Model Performance Metrics",
+    align = "c"
+  )
 ```
+\large
+- The model has limitations in fully explaining price variability (as seen from the R² value).
+- The errors (RMSE and MAE) indicate that further optimization might improve performance.
+
 \newpage
 
 # Logistic Regression
 Average price of house, above mean 1, below 0. See if we can get better predictions from binary logistic regression. In this model we get 19.45% error rate using a logistic model with the same predictors. 
 
-```{r}
+```{r,include=FALSE}
 set.seed(445)
 logistic_model <- logistic_reg() %>%
   set_engine("glm")
@@ -284,12 +313,10 @@ fitted_model_log <- workflow_log %>%
 predictions_log <- fitted_model_log %>%
   predict(new_data = dataset_test, type = "prob") %>%
   bind_cols(dataset_test)
-predictions_log
 
 class_predictions_log <- fitted_model_log %>%
   predict(new_data = dataset_test) %>%
   bind_cols(dataset_test)
-class_predictions_log
 
 metrics_log <- class_predictions_log %>%
   metrics(truth = bi_price, estimate = .pred_class)
@@ -297,23 +324,29 @@ metrics_log <- class_predictions_log %>%
 matrix_log <-class_predictions_log %>%
   conf_mat(truth = bi_price, estimate = .pred_class)
 
-print(matrix_log)
+#print(matrix_log)
 
-(239+138)/(1104+239+138+457)
+#(239+138)/(1104+239+138+457)
 
-print(metrics_log)
-
+metrics_log %>%
+  knitr::kable(
+    format = "latex",
+    caption = "Model Performance Metrics",
+    align = "c"
+  )
 ```
 ## Choosing the correct predictors:
-In our model, we have a significant amount of factor variables, where there is a lot of categorical data. When these categories are broke up there are 90+ variables that could be included in the model. For example: state includes all 47 states that is contained in the data set. Knowing which predictors are significant to the model is difficult to determine so we used forward and backward selection to weed out of all the variables which would be the best to make predictions on. 
-
-When talking about price of apartments, we know location can have an impact over the general price. For these models, we were more curious about separating out amenities, bedrooms, ad type, etc. 
-
-Based on forward selection and using the BIC and ADJR we see that the predictors of availability of a playground, hot tub, view, wood floors, washer dryer, patio/ deck, elevator, garbage disposal, refrigerator are all amenities that influence price in the model. Rent Lingo and ListedBuy are the only two sources of posting that tend to influence the predictability of price. Lastly, the square footage and bathrooms are significant to the price of the apartment. 
-
-The adjusted r square value indicates a slightly different model would be best but it only explains about 25.28% of the variability. That model includes all the above predictors and adds Tennis and Pool to the list of significant predictors. We know from our linear model that included every variable, specifically the state variable is going to explain a lot of our variability, and with all predictors in that model, naturally R^2 will be higher. 
-
-The backwards selection indicated the same model as the forward selection did for BIC and AdjR. This leads us to decrease our predictors on our models and disregard insignificant amenities that do not influence the price point of the apartment. 
+- The model includes a significant number of factor variables, with over 90 potential predictors when categorical data is broken into categories (e.g., state includes 47 unique states).
+- Forward and backward selection were used to identify the best predictors for making price predictions.
+- Location (e.g., state) can influence apartment prices, but this analysis focused on separating out amenities, bedrooms, ad type,      etc.
+- Forward selection using BIC and Adjusted R² identified the following predictors:
+  - Amenities: Playground, Hot Tub, View, Wood Floors, Washer/Dryer, Patio/Deck, Elevator, Garbage Disposal, and Refrigerator.
+  - Sources: Only two sources (Rent Lingo and ListedBuy) influenced price predictability.
+  - Structural Features: Square footage and Bathrooms.
+- The adjusted R² model explains about 25.28% of the variability in apartment prices and includes all the above predictors plus Additional Amenities of Tennis Court and Pool.
+- A full linear model that includes all variables (e.g., state) naturally has a higher R² value because it explains more variability.
+- Backward selection confirmed the same model as forward selection when using BIC and Adjusted R².
+- Insignificant predictors (e.g., certain amenities) were excluded to simplify the model.
 
 ```{r, include=FALSE}
 library(leaps)
@@ -377,12 +410,12 @@ fitted_model_log2 <- workflow_log2 %>%
 predictions_log2 <- fitted_model_log2 %>%
   predict(new_data = dataset_test, type = "prob") %>%
   bind_cols(dataset_test)
-predictions_log2
+#predictions_log2
 
 class_predictions_log2 <- fitted_model_log2 %>%
   predict(new_data = dataset_test) %>%
   bind_cols(dataset_test)
-class_predictions_log2
+#class_predictions_log2
 
 metrics_log2 <- class_predictions_log2 %>%
   metrics(truth = bi_price, estimate = .pred_class)
@@ -390,7 +423,7 @@ metrics_log2 <- class_predictions_log2 %>%
 matrix_log2 <-class_predictions_log2 %>%
   conf_mat(truth = bi_price, estimate = .pred_class)
 
-print(matrix_log2)
+#print(matrix_log2)
 
 (235+138)/(1104+235+138+461)
 
@@ -625,32 +658,26 @@ Cross-validation is used to select an optimal regularization parameter, helping 
 
 \newpage
 # Tree Based Methods
-
 ## Remove rare levels
-
 ```{r,echo=TRUE}
 # Threshold for minimum occurrences
 threshold <- 10
-
 # Identify rows to keep
 rows_to_keep <- seq(TRUE, nrow(dataset_spread_copy))
-
 # Process each column
 for (col_name in colnames(dataset_spread_copy)) {
-  if (is.character(dataset_spread_copy[[col_name]]) || is.factor(dataset_spread_copy[[col_name]])) {
+  if (is.character(dataset_spread_copy[[col_name]]) || 
+      is.factor(dataset_spread_copy[[col_name]])) {
     col_table <- table(dataset_spread_copy[[col_name]])
     valid_categories <- names(col_table[col_table >= threshold])
-    rows_to_keep <- rows_to_keep & dataset_spread_copy[[col_name]] %in% valid_categories
+    rows_to_keep <- rows_to_keep & dataset_spread_copy[[col_name]] %in% 
+      valid_categories
   }
 }
-
-# Filter the dataframe
 dataset_spread_trees <- dataset_spread_copy[rows_to_keep, ]
 ```
-
 Due to the extreme inbalance of the dataset, levels with less than 10 values were removed as they could cause a mismatch between the training and testing sets as well as the different folds for cross validation.
 
-## Recreate train test split
 ```{r}
 set.seed(445)
 
@@ -690,8 +717,17 @@ tree_tune_fit <- tree_wf |>
 
 tree_tune_fit |>
   autoplot()
+```
+\newpage
+```{r}
+library(rpart.plot)
 
-show_best(tree_tune_fit, metric = "rmse", n = 1)
+best_result<- show_best(tree_tune_fit, metric = "rmse", n = 1)
+knitr::kable(
+  best_result,
+  caption = "Best Tuning Parameters Based on RMSE",
+  format = "latex"
+)
 
 tree_final <- finalize_workflow(tree_wf, select_best(tree_tune_fit, metric = "rmse"))
 
@@ -703,13 +739,13 @@ tree_final_fit |>
   rpart.plot(roundint=FALSE)
 ```
 
-```{r}
+```{r, results='asis'}
+library(vip)
 
 vip(tree_final_fit)
 
 dataset_pred_tree <- predict(tree_final_fit, dataset_trees_test)
 RMSE <- sqrt((1/nrow(dataset_pred_tree))*(sum(dataset_trees_test$price - dataset_pred_tree$.pred))^2)
-RMSE
 ```
 
 Tuning depth with 5 fold cross validation gives an RMSE of 35.64 and depth equal to just one layer.
@@ -738,11 +774,19 @@ tree_tune_fit <- tree_wf |>
 
 tree_tune_fit |>
   autoplot()
-
-show_best(tree_tune_fit, metric = "rmse", n = 1)
+```
+\newpage
+```{r}
+best_result <- show_best(tree_tune_fit, metric = "rmse", n = 1)
+knitr::kable(
+  best_result,
+  caption = "Best Tuning Parameters Based on RMSE",
+  format = "latex"
+)
 ```
 
 ```{r}
+library(rpart.plot)
 tree_final <- finalize_workflow(tree_wf, select_best(tree_tune_fit, metric = "rmse"))
 
 tree_final_fit <- tree_final |>
@@ -759,7 +803,7 @@ vip(tree_final_fit)
 
 dataset_pred_tree <- predict(tree_final_fit, dataset_trees_test)
 RMSE <- sqrt((1/nrow(dataset_pred_tree))*(sum(dataset_trees_test$price - dataset_pred_tree$.pred))^2)
-RMSE
+
 ```
 
 Tuning alpha gives a value of 0.001 and an RMSE score of 35.64, which is the same as with just tuning the depth.
@@ -788,10 +832,10 @@ vip(rf_fit)
 
 dataset_pred_rf <- predict(rf_fit, dataset_trees_test)
 RMSE <- sqrt((1/nrow(dataset_pred_rf))*(sum(dataset_trees_test$price - dataset_pred_rf$.pred))^2)
-RMSE
+
 ```
 
-A random forest with trees set to 100 gives an RMSE of 135.63, which is a lot worse than the decision tree, but still better than lasso, ridge, and basic linear regression. Cross validation was skipped due to extremely long computation times, but manually choosing 100 trees seemed to give approximately the best performance.
+A random forest with 100 trees achieved an RMSE of 135.63, worse than the decision tree model but better than other linear models. Cross-validation was skipped due to long computation times, and 100 trees were manually chosen for optimal performance.
 
 \newpage
 
@@ -829,13 +873,19 @@ boost_tune_fit <- boost_wf |>
 
 end.time <- Sys.time()
 time.taken <- end.time - start.time
-print(paste("Time elapsed tuning:", time.taken))
+#print(paste("Time elapsed tuning:", time.taken))
 
 boost_tune_fit |>
   autoplot()
-
-show_best(boost_tune_fit, metric = "rmse", n = 1)
-
+```
+\newpage
+```{r}
+# best_results<- show_best(boost_tune_fit, metric = "rmse", n = 1)
+# knitr::kable(
+#   best_result,
+#   caption = "Best Tuning Parameters Based on RMSE",
+#   format = "latex"
+# )
 boost_final <- finalize_workflow(boost_wf, select_best(boost_tune_fit, metric = "rmse"))
 
 boost_final_fit <- boost_final |>
@@ -845,7 +895,7 @@ vip(boost_final_fit)
 
 dataset_pred_boost <- predict(boost_final_fit, dataset_trees_test)
 RMSE <- sqrt((1/nrow(dataset_pred_boost))*(sum(dataset_trees_test$price - dataset_pred_boost$.pred))^2)
-RMSE
+
 ```
 
 Tuning depth and lambda simultaneously gives a depth of 2 and lambda equal to 0.01. The RMSE is 173.16, making it the worst of the tree based methods.
@@ -853,9 +903,19 @@ Tuning depth and lambda simultaneously gives a depth of 2 and lambda equal to 0.
 \newpage
 
 # Conclusion
+| Model         | RMSE   |
+|---------------|--------|
+| Linear        | 518    |
+| Ridge         | 473    |
+| Lasso         | 474    |
+| Decision Trees| 35     |
+| Random Forest | 173    |
 
-The regression model with the best RMSE is the decision tree model, which is suprising given its simpleness compared to random forests and boosted models, especially considering that XG boost handles inbalanced datasets better.
+- The regression model with the best RMSE is the decision tree model, which is surprising given its simpleness compared to random forests and boosted models, especially considering that XG boost handles unbalanced datasets better.
+- Logistic regression had higher accuracy when predicting on higher or lower than average apartment prices based on the predictors provided in the dataset but little improvements can be made to the model past this.
 
+
+\newpage
 # References
 - “Apartment for Rent Classified.” UCI Machine Learning Repository. https://doi.org/10.24432/C5X623.
 
