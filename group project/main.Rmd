@@ -6,12 +6,22 @@ editor_options:
   chunk_output_type: console
 ---
 
+# Libraries
+```{r}
+library(tidyverse)
+library(tidymodels)
+library(glmnet)
+library(leaps)
+library(rpart.plot)
+library(vip)
+library(doParallel)
+```
+
 
 # Dataset introduction
 
 ```{r}
 dataset <- read.csv("group project/apartments_for_rent_classified_10K.csv", sep = ";")
-#dataset <- read.csv("apartments_for_rent_classified_10K.csv", sep = ";")
 
 head(dataset)
 sapply(dataset, class)
@@ -45,8 +55,6 @@ table(dataset$source)
 - Only 2 rows in the entire dataset have \textit{price\_type} values other than 'Monthly', so these rows and consequently the "price\_type" column are deleted.
 
 ```{r}
-library(tidyverse)
-
 # Remove rows
 dataset <- dataset[dataset$category=='housing/rent/apartment',]
 dataset <- dataset[dataset$price_type=='Monthly',]
@@ -131,7 +139,6 @@ dataset_spread_copy <- dataset_spread
 
 # Train-Test Split
 ```{r}
-library(tidymodels)
 set.seed(445)
 dataset_spread$bathrooms <- as.numeric(dataset_spread$bathrooms)
 dataset_spread$bedrooms <- as.numeric(dataset_spread$bedrooms)
@@ -292,7 +299,7 @@ The adjusted r square value indicates a slightly different model would be best b
 The backwards selection indicated the same model as the forward selection did for BIC and AdjR. This leads us to decrease our predictors on our models and disregard insignificant amenities that do not influence the price point of the apartment. 
 
 ```{r,include=FALSE}
-library(leaps)
+
 sub_for <- regsubsets(price ~ . -bi_price -state, data = dataset_spread, method = "forward", nvmax=20)
 summary(sub_for)
 summary(sub_for)$bic
@@ -377,16 +384,9 @@ print(metrics_log2)
 
 
 # Ridge Regression Technique 
-```{r}
-
-library(tidymodels)
-library(glmnet)
-library(ggplot2)
-
-set.seed(445)
-```
-
 ```{r,warning=FALSE}
+set.seed(445)
+
 rec <- recipe(price ~ ., data = dataset_train) %>%
   step_novel(all_nominal_predictors()) %>% # Handle unseen factor levels
   step_dummy(all_nominal_predictors()) %>% # Convert categorical variables to dummy variables
@@ -630,10 +630,6 @@ dataset_trees_test <- testing(dataset_trees_split)
 # Decision Tree
 ## Tune depth
 ```{r, cache=TRUE}
-library(rpart.plot)
-library(vip)
-library(doParallel)
-
 set.seed(445)
 train_cv_5fold <- vfold_cv(dataset_trees_train, v = 5)
 
