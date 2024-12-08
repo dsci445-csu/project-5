@@ -1,7 +1,7 @@
 # project-5
 Group 5 project for DSCI445 @ CSU
 
-Libraries
+Libraries:
 Install these required libraries:
 leaps
 glmnet
@@ -10,7 +10,7 @@ vip
 doParallel
 xgboost
 
-Instructions
+Instructions:
 Open the project-5.Rproj project file.
 Go into the group project folder and open the main.Rmd file.
 Knit the main.Rmd file.
