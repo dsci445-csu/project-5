@@ -264,7 +264,7 @@ table4
 \newpage
 
 # Linear Model
-The simpliest model to first examine was the linear model since the resposnse variable of price is continious. In this case we were more interested in seeing how the model preforms and less interested in which predictors were signifcant. 
+The simpliest model to first examine was the linear model since the resposnse variable of price is continious. In this case we were more interested in seeing how the model preforms and less interested in which predictors were significant. The model was ran on the training dataset and then predictions were made for the testing model with the results displayed for our test data. Based on this model our RSME was 0.566 and our model fails to explain 43.4% of the variation.
 ```{r}
 set.seed(445)
 linear_model <- linear_reg() %>% 
@@ -289,6 +289,7 @@ metrics <- predictions %>%
   metrics(truth = price, estimate = .pred)
 
 print(metrics)
+1-0.566
 ```
 
 \newpage
@@ -359,7 +360,7 @@ summary(sub_back)
 summary(sub_back)$bic
 summary(sub_back)$adjr2
 ```
-Linear model with predictors shows slight improvement in our R squared value where our model is explaining 58.9%.
+Linear model with predictors shows slight improvement in our R squared value where our model making predictions on our testing data is explaining 58.7% and the RSME dropped to 506.
 
 ```{r}
 set.seed(445)
