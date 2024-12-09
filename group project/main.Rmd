@@ -734,7 +734,7 @@ RMSE <- sqrt((1/nrow(dataset_pred_tree))*(sum(dataset_trees_test$price - dataset
 RMSE
 ```
 
-Tuning depth gives an RMSE of 35.64 and depth equal to just one layer.
+Tuning depth gives a test set RMSE of 35.64 and depth equal to just one layer.
 
 ## Tune alpha
 ```{r, cache=TRUE}
@@ -777,7 +777,7 @@ RMSE <- sqrt((1/nrow(dataset_pred_tree))*(sum(dataset_trees_test$price - dataset
 RMSE
 ```
 
-Tuning alpha gives a value of 0.001 and an RMSE score of 35.64, which is the same as with just the depth.
+Tuning alpha gives a value of 0.001 and a test RMSE score of 35.64, which is the same as with just the depth.
 
 \newpage
 
@@ -806,7 +806,7 @@ RMSE <- sqrt((1/nrow(dataset_pred_rf))*(sum(dataset_trees_test$price - dataset_p
 RMSE
 ```
 
-A random forest with trees set to 100 gives an RMSE of 135.63, which is a lot worse than the decision tree, but still better than lasso, ridge, and basic linear regression. Cross validation was skipped due to extremely long computation times, but manually choosing 100 trees seemed to give approximately the best performance.
+A random forest with trees set to 100 gives a test RMSE of 135.63, which is a lot worse than the decision tree, but still better than lasso, ridge, and basic linear regression. Cross validation was skipped due to extremely long computation times, but manually choosing 100 trees seemed to give approximately the best performance.
 
 ## Tune lambda and depth
 
@@ -860,7 +860,7 @@ RMSE <- sqrt((1/nrow(dataset_pred_boost))*(sum(dataset_trees_test$price - datase
 RMSE
 ```
 
-Tuning depth and lambda simultaneously gives a depth of 2 and lambda equal to 0.01. The RMSE is 173.16, making it the worst of the tree based methods.
+Tuning depth and lambda simultaneously for xgboost gives a depth of 2 and lambda equal to 0.01. The test RMSE is 173.16, making it the worst of the tree based methods.
 
 \newpage
 
