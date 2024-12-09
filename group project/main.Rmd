@@ -730,11 +730,11 @@ tree_final_fit |>
 vip(tree_final_fit)
 
 dataset_pred_tree <- predict(tree_final_fit, dataset_trees_test)
-RMSE <- sqrt((1/nrow(dataset_pred_tree))*(sum(dataset_trees_test$price - dataset_pred_tree$.pred))^2)
+RMSE <- sqrt(mean((dataset_trees_test$price - dataset_pred_tree$.pred)^2))
 RMSE
 ```
 
-Tuning depth gives a test set RMSE of 35.64 and depth equal to just one layer.
+Tuning depth gives a test set RMSE of 659.64 and depth equal to just one layer.
 
 ## Tune alpha
 ```{r, cache=TRUE}
@@ -773,11 +773,11 @@ tree_final_fit |>
 vip(tree_final_fit)
 
 dataset_pred_tree <- predict(tree_final_fit, dataset_trees_test)
-RMSE <- sqrt((1/nrow(dataset_pred_tree))*(sum(dataset_trees_test$price - dataset_pred_tree$.pred))^2)
+RMSE <- sqrt(mean((dataset_trees_test$price - dataset_pred_tree$.pred)^2))
 RMSE
 ```
 
-Tuning alpha gives a value of 0.001 and a test RMSE score of 35.64, which is the same as with just the depth.
+Tuning alpha gives a value of 0.001 and a test RMSE score of 659.64, which is the same as with just the depth.
 
 \newpage
 
@@ -786,7 +786,7 @@ Tuning alpha gives a value of 0.001 and a test RMSE score of 35.64, which is the
 ```{r, cache=TRUE}
 set.seed(445)
 
-rf_spec <- rand_forest(mtry = sqrt(.cols()), trees = 100) |>
+rf_spec <- rand_forest(mtry = sqrt(.cols()), trees = 5000) |>
   set_engine("randomForest", importance = TRUE) |>
   set_mode("regression")
 
@@ -802,11 +802,11 @@ rf_fit <- rf_wf |>
 vip(rf_fit)
 
 dataset_pred_rf <- predict(rf_fit, dataset_trees_test)
-RMSE <- sqrt((1/nrow(dataset_pred_rf))*(sum(dataset_trees_test$price - dataset_pred_rf$.pred))^2)
+RMSE <- sqrt(mean((dataset_trees_test$price - dataset_pred_rf$.pred)^2))
 RMSE
 ```
 
-A random forest with trees set to 100 gives a test RMSE of 135.63, which is a lot worse than the decision tree, but still better than lasso, ridge, and basic linear regression. Cross validation was skipped due to extremely long computation times, but manually choosing 100 trees seemed to give approximately the best performance.
+A random forest with trees set to 5000 gives a test RMSE of 558.64, which is a bit better than the decision tree, but still worse than basic linear regression. Cross validation was skipped due to extremely long computation times, but manually choosing 5000 trees seemed to give good performance.
 
 ## Tune lambda and depth
 
@@ -856,33 +856,34 @@ boost_final_fit <- boost_final |>
 vip(boost_final_fit)
 
 dataset_pred_boost <- predict(boost_final_fit, dataset_trees_test)
-RMSE <- sqrt((1/nrow(dataset_pred_boost))*(sum(dataset_trees_test$price - dataset_pred_boost$.pred))^2)
+RMSE <- sqrt(mean((dataset_trees_test$price - dataset_pred_boost$.pred)^2))
 RMSE
 ```
 
-Tuning depth and lambda simultaneously for xgboost gives a depth of 2 and lambda equal to 0.01. The test RMSE is 173.16, making it the worst of the tree based methods.
+Tuning depth and lambda simultaneously for xgboost gives a depth of 2 and lambda equal to 0.01. The test RMSE is 621.34.
 
 \newpage
 
 # Conclusion
 
 
-The table below presents the Root Mean Squared Error (RMSE) for various models. The Decision Trees model has the lowest RMSE at 35, showing the best performance among the models. Linear regression shows the highest RMSE of 518, followed by Lasso and Ridge models at 474 and 473, respectively. This comparison highlights the different performance of each model, with Decision Trees outperforming others in terms of accuracy.
+The table below presents the Root Mean Squared Error (RMSE) for various models. The Ridge model has the lowest RMSE at 473, showing the best performance among the models. The Decision Tree shows the highest RMSE of 660, followed by XGboost and Random Forest at 621 and 559, respectively. This comparison highlights the different performance of each model, with Ridge outperforming others in terms of accuracy.
 
 | Model         | RMSE   |
 |---------------|--------|
 | Linear        | 518    |
-| Ridge         | 473    |
+| **Ridge**     | **473**|
 | Lasso         | 474    |
-| **Decision Trees**| **35**     |
-| Random Forest | 173    |
+| Decision Trees| 660    |
+| Random Forest | 559    |
+| XGBoost       | 621    |
 
 The key takeaways are:  
 
 - The first model used in this study was the linear model, but the error rate didn't show an acceptable performance.  
 - Logistic regression had higher accuracy when predicting on higher or lower than average apartment prices based on the predictors provided in the dataset but little improvements can be made to the model past this. The linear regression model was considered to be improved upon.  
-- Although lasso and ridge regression techniques were used to avoid overfitting through employing regularization, linear model didn't show much improvement, showing that the complexity of the dataset might be high. In this step it was decided to use nonlinear models.  
-- The nonlinear regression model with the best RMSE is the decision tree model, which is surprising given its simpleness compared to random forests and boosted models, especially considering that XG boost handles inbalanced datasets better.  
+- Lasso and ridge regression techniques were used to avoid overfitting through employing regularization, linear model showed slight improvement, showing that the complexity of the dataset might be high. 
+- The nonlinear regression tree based models had the worse performance overall. This is suprising given the high complexity of these models, especially considering that XGBoost is supposed to be good with unbalanced datasets. 
 
 
 \newpage
