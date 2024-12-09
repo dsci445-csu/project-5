@@ -746,7 +746,7 @@ A random forest with trees set to 100 gives an RMSE of 135.63, which is a lot wo
 ```{r, cache=TRUE}
 #Setup parallel processing
 all_cores <- parallel::detectCores(logical = FALSE)
-if(all_cores >= 16){
+if(all_cores >= 32){
   all_cores <- 32
 }
 cl <- makePSOCKcluster(all_cores)
