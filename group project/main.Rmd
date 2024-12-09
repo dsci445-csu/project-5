@@ -437,7 +437,7 @@ print(metrics_log2)
 \newpage
 
 # Ridge Regression Technique 
-In this step, Ridge and Lasso techniques are used to improve the performance of the linear model through employing regularization to avoid overfitting. This is achieved through calibrating and choosing the best $\lambda$ parameter based on the least rmse value.
+In this step, Ridge and Lasso techniques are used to improve the performance of the linear model through employing regularization to avoid overfitting. This is achieved through calibrating and choosing the best $\lambda$ parameter based on the least rmse value. Then the test rsme is used to evaluate the model's performance in comparison with the simple linear model.
 ```{r,warning=FALSE}
 set.seed(445)
 
