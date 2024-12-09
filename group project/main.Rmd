@@ -1,12 +1,44 @@
 ---
-title: "DSCI445 - Group Project"
-author: "Amanda Bartels, Mohamad Habibniaykoochesfahani, Isabella Kukor, Casey Martin"
 output: pdf_document
-editor_options: 
-  chunk_output_type: console
+geometry: portrait
+fontsize: 12pt
 ---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE,message=FALSE)
+```
+\newpage
+\begin{center}
+\vspace*{\fill} % Push content to the vertical center
+ 
+{\Large DSCI445 - Group Project}
+\vspace{3cm} % Add vertical space
+
+{\Huge Apartment Rental Rates Across the United States}
+
+\vspace{3cm} % Add vertical space
+
+{\large Amanda Bartels, Mohamad Habibniaykoochesfahani, Isabella Kukor, Casey Martin}
+
+\vspace{3cm} % Add vertical space
+
+{\normalsize December, 2024}
+
+\vspace*{\fill} % Push content to the vertical center
+\end{center}
+\newpage
+
+
+# Dataset introduction and cleaning
+The "Apartment for Rent Classified" dataset, donated on December 25, 2019, is a multivariate dataset containing classified ads for apartments for rent in the USA. This dataset consists of 10,000 instances with 21 categorical and integer features.
+Attributes  include details like apartment amenities (e.g., AC, gym, pool), bathrooms, bedrooms, rental price, square footage, location (address, city, state), and more. Each variable in the dataset was examined for NA values and all NA data points were removed. Categorical data counts explored potential levels with 1 count. For example:
+  - Only 1 apartment was pay type “Weekly.”
+  - 1 apartment was both “Monthly and Weekly.”
+  - 9998 apartments were “Monthly.”
+This led to removing unnecessary variables in the dataset, such as address, time, longitude, latitude, etc.
+
 
 # Libraries
+Different libraries are used in this study and each of these libraries serves a distinct purpose in data manipulation, modeling, evaluation, and parallel computing, helping streamline and optimize the workflow.
 ```{r}
 library(tidyverse)
 library(tidymodels)
@@ -15,13 +47,22 @@ library(leaps)
 library(rpart.plot)
 library(vip)
 library(doParallel)
+library(knitr)
 ```
 
 
 # Dataset introduction
 
 ```{r}
-dataset <- read.csv("group project/apartments_for_rent_classified_10K.csv", sep = ";")
+dataset <- tryCatch(
+  {
+    read.csv("apartments_for_rent_classified_10K.csv", sep = ";")
+  },
+  error = function(e) {
+    # If the first path fails, try the second path
+    read.csv("group project/apartments_for_rent_classified_10K.csv", sep = ";")
+  }
+)
 
 head(dataset)
 sapply(dataset, class)
@@ -42,17 +83,17 @@ table(dataset$source)
 ```
 
 # Removing Useless Columns
-
-- Removed 'currency' column because all values in it are "USD".
-- Removed 'fee' column because all values are "No" so this will not provide insights.
-- Kept value 'has_photo' because it could correlate with listing quality and affect price.
-- Removed 'price_display' column because it is a repeat of price column.
-- Kept 'source' column tracks the source of the listing (i.e. different websites). This is only useful for comparing listings across  sources which we will be doing in this analysis.
+The detailed procedure of cleaning the data is as follows:  
+- Removed 'currency' column because all values in it are "USD".  
+- Removed 'fee' column because all values are "No" so this will not provide insights.  
+- Kept value 'has_photo' because it could correlate with listing quality and affect price.  
+- Removed 'price_display' column because it is a repeat of price column.  
+- Kept 'source' column tracks the source of the listing (i.e. different websites). This is only useful for comparing listings across  sources which we will be doing in this analysis.  
 - 'title' and 'body' columns are removed because they contain text descriptions which are not going to be analyzed in this study.
-- Removed 'address' because it's not useful and has a large amount of NAs.
-- Removed 'latitude', 'longitude', 'address', 'cityname', and 'time' columns because they are not interpretable in this study.
-- Only 4 rows in the entire dataset have \textit{category} values other than 'apartment', so these rows and consequently the "category" column are deleted.  
-- Only 2 rows in the entire dataset have \textit{price\_type} values other than 'Monthly', so these rows and consequently the "price\_type" column are deleted.
+- Removed 'address' because it's not useful and has a large amount of NAs.  
+- Removed 'latitude', 'longitude', 'address', 'cityname', and 'time' columns because they are not interpretable in this study.  
+- Only 4 rows in the entire dataset have \textit{category} values other than 'apartment', so these rows and consequently the "category" column are deleted.    
+- Only 2 rows in the entire dataset have \textit{price\_type} values other than 'Monthly', so these rows and consequently the "price\_type" column are deleted.  
 
 ```{r}
 # Remove rows
@@ -115,7 +156,7 @@ summary(dataset)
 
 ```{r}
 
-# Change `has_photo` entries containing "No Thumbnail" into "No" category so only categories are "Yes" or "No"
+# Change `has_photo` entries containing "No Thumbnail" into "No" 
 dataset$has_photo[dataset$has_photo == "No Thumbnail"] <- "No"
 
 # Correct the special character in `source`
@@ -149,9 +190,8 @@ dataset_spread$bi_price <- as.factor(dataset_spread$bi_price)
 dataset_split <- initial_split(dataset_spread, prop = 0.6)
 dataset_train <- training(dataset_split)
 dataset_test <- testing(dataset_split)
-dataset_train
 ```
-
+\newpage
 # Distribution Map of the Apartments
 In order to understand the pricing of apartments in the US, it is important to visualize where our data is courced from as the cost of living heavily depends on the location. The map below shows that the vast majority of states are represented in the data set. The map does not show DC data points although they do exist. Texas had the majority of apartment data while states in gray like West Virigina did not have any apartment data points.
 
@@ -220,6 +260,9 @@ table4
 
 
 ```
+
+\newpage
+
 # Linear Model
 The simpliest model to first examine was the linear model since the resposnse variable of price is continious. In this case we were more interested in seeing how the model preforms and less interested in which predictors were signifcant. 
 ```{r}
@@ -228,7 +271,8 @@ linear_model <- linear_reg() %>%
   set_engine("lm")
 #glimpse(dataset_train)
 
-pricelm <- recipe(price ~ square_feet + bathrooms + bedrooms + has_photo + pets_allowed + state + source , data = dataset_train)
+pricelm <- recipe(price ~ square_feet + bathrooms + bedrooms + has_photo +
+                    pets_allowed + state + source , data = dataset_train)
 
 workflow <- workflow() %>% 
   add_model(linear_model) %>% 
@@ -246,6 +290,8 @@ metrics <- predictions %>%
 
 print(metrics)
 ```
+
+\newpage
 
 # Logistic Regression
 Average price of house, above mean 1, below 0. See if we can get better predictions from binary logistic regression. In this model we get 19.45% error rate using a logistic model with the same predictors. 
@@ -287,6 +333,9 @@ print(matrix_log)
 print(metrics_log)
 
 ```
+
+\newpage
+
 # Choosing the correct predictors:
 In our model, we have a significant amount of factor variables, where there is a lot of categorical data. When these categories are broke up there are 90+ variables that could be included in the model. For example: state includes all 47 states that is contained in the data set. Knowing which predictors are significant to the model is difficult to determine so we used forward and backward selection to weed out of all the variables which would be the best to make predictions on. 
 
@@ -340,7 +389,9 @@ metrics2 <- predictions2 %>%
 
 print(metrics2)
 ```
-#Logisitc Regression with Predictors
+\newpage
+
+# Logisitc Regression with Predictors
 
 Not much changed in our prediction error or accuracy, but the mean of all prices was selected as an arbitrary cut off point. Logistic regression tends to outperform the linear model in accuracy for predicting whether the prices will be lower or higher than average, but since we dont know if this cut off point of the average of the overall price is a good classification compared to the other models. It is not yet determined whether the logistic model utilizing classification of low and high is better predictor than examining the prices of the model as a continuous response variable in a linear model, or other options.
 
@@ -382,8 +433,10 @@ print(metrics_log2)
 
 ``` 
 
+\newpage
 
 # Ridge Regression Technique 
+In this step, Ridge and Lasso techniques are used to improve the performance of the linear model through employing regularization to avoid overfitting. This is achieved through calibrating and choosing the best $\lambda$ parameter based on the least rmse value.
 ```{r,warning=FALSE}
 set.seed(445)
 
@@ -428,7 +481,8 @@ r2_test <- 1 - sum((y_test - predictions_test)^2) / sum((y_test - mean(y_test))^
 predictions_train <- predict(ridge_model, s = best_lambda, newx = x_train)
 
 # Calculate Training R2
-r2_train <- 1 - sum((y_train - predictions_train)^2) / sum((y_train - mean(y_train))^2)
+r2_train <- 1 - sum((y_train - predictions_train)^2) / 
+  sum((y_train - mean(y_train))^2)
 
 # Calculate Training MSE and RMSE
 train_mse <- mean((y_train - predictions_train)^2)
@@ -444,21 +498,23 @@ cv_rmse_plot <- data.frame(lambda_values, cv_rmse) %>%
   geom_line(color = "blue") +
   geom_point(color = "red") +
   geom_point(aes(x = log(best_lambda), y = min(cv_rmse)), 
-             shape = 1, size = 4, color = "green") +  # Add circle around best_lambda
+             shape = 1, size = 4, color = "green") +  
   labs(title = "CV RMSE vs. Log(Lambda)",
        x = "Log(Lambda)",
        y = "Cross-Validation RMSE") +
   theme_minimal() +
-  annotate("text", x = log(best_lambda), y = min(cv_rmse) + 20, label = paste("Best Lambda: ", round(best_lambda, 2)), 
-           color = "green", angle = 0, vjust = 0, hjust = 1)  # Add annotation for best lambda
+  annotate("text", x = log(best_lambda), y = min(cv_rmse) + 20,
+           label = paste("Best Lambda: ", round(best_lambda, 2)), 
+           color = "green", angle = 0, vjust = 0, hjust = 1) 
 
 # Print the plot
 print(cv_rmse_plot)
 
-comparison_plot <- data.frame(Actual = y_test, Predicted = as.vector(predictions_test)) %>%
+comparison_plot <- data.frame(Actual = y_test, 
+                              Predicted = as.vector(predictions_test)) %>%
   ggplot(aes(x = Actual, y = Predicted)) +
   geom_point(color = "blue", alpha = 0.6) +
-  geom_abline(intercept = 0, slope = 1, color = "red", linetype = "dashed") +  # Reference line y=x
+  geom_abline(intercept = 0, slope = 1, color = "red", linetype = "dashed") +  
   labs(title = "Actual vs Predicted Values",
        x = "Actual Values",
        y = "Predicted Values") +
@@ -467,16 +523,16 @@ print(comparison_plot)
 
 comparison_df <- data.frame(Index = 1:length(y_test),  # Index for x-axis
                             Actual = y_test,           # Actual values
-                            Predicted = as.vector(predictions_test))  # Predicted values
-
+                            Predicted = as.vector(predictions_test))  
 comparison_plot2 <- comparison_df %>%
   ggplot(aes(x = Index)) +
-  geom_line(aes(y = Actual, color = "Actual"), size = 1) +   # Line for actual values
-  geom_line(aes(y = Predicted, color = "Predicted"), size = 1, linetype = "dashed",alpha = 0.8) +  # Line for predicted values
+  geom_line(aes(y = Actual, color = "Actual"), size = 1) +   
+  geom_line(aes(y = Predicted, color = "Predicted"), size = 1, 
+            linetype = "dashed",alpha = 0.8) + 
   labs(title = "Actual vs Predicted Values Over Index",
        x = "Index",
        y = "Values") +
-  scale_color_manual(values = c("Actual" = "blue", "Predicted" = "red")) +  # Custom colors
+  scale_color_manual(values = c("Actual" = "blue", "Predicted" = "red")) +  
   theme_minimal()
 
 # Print the plot
@@ -490,6 +546,9 @@ error_summary <- tibble(
 # Print the error summary tibble
 print(error_summary)
 ```
+
+\newpage
+
 # Lasso Regression Technique 
 
 ```{r,warning=FALSE}
@@ -536,22 +595,24 @@ cv_rmse_plot <- data.frame(lambda_values, cv_rmse) %>%
   geom_line(color = "blue") +
   geom_point(color = "red") +
   geom_point(aes(x = log(best_lambda), y = min(cv_rmse)), 
-             shape = 1, size = 4, color = "green") +  # Add circle around best_lambda
+             shape = 1, size = 4, color = "green") +  
   labs(title = "CV RMSE vs. Log(Lambda)",
        x = "Log(Lambda)",
        y = "Cross-Validation RMSE") +
   theme_minimal() +
-  annotate("text", x = log(best_lambda), y = min(cv_rmse) + 20, label = paste("Best Lambda: ", round(best_lambda, 2)), 
-           color = "green", angle = 0, vjust = 0, hjust = 1)  # Add annotation for best lambda
+  annotate("text", x = log(best_lambda), y = min(cv_rmse) + 20,
+           label = paste("Best Lambda: ", round(best_lambda, 2)), 
+           color = "green", angle = 0, vjust = 0, hjust = 1)  
 
 # Print the plot
 print(cv_rmse_plot)
 
 # Plot: Actual vs Predicted for Test Data
-comparison_plot <- data.frame(Actual = y_test, Predicted = as.vector(predictions_test)) %>%
+comparison_plot <- data.frame(Actual = y_test, 
+                              Predicted = as.vector(predictions_test)) %>%
   ggplot(aes(x = Actual, y = Predicted)) +
   geom_point(color = "blue", alpha = 0.6) +
-  geom_abline(intercept = 0, slope = 1, color = "red", linetype = "dashed") +  # Reference line y=x
+  geom_abline(intercept = 0, slope = 1, color = "red", linetype = "dashed") +  
   labs(title = "Actual vs Predicted Values for Lasso",
        x = "Actual Values",
        y = "Predicted Values") +
@@ -560,34 +621,35 @@ print(comparison_plot)
 
 
 
-comparison_df <- data.frame(Index = 1:length(y_test),  # Index for x-axis
-                            Actual = y_test,           # Actual values
-                            Predicted = as.vector(predictions_test))  # Predicted values
-
+comparison_df <- data.frame(Index = 1:length(y_test),  
+                            Actual = y_test,         
+                            Predicted = as.vector(predictions_test))  
 comparison_plot2 <- comparison_df %>%
   ggplot(aes(x = Index)) +
-  geom_line(aes(y = Actual, color = "Actual"), size = 1) +   # Line for actual values
-  geom_line(aes(y = Predicted, color = "Predicted",alpha = 0.8), size = 1, linetype = "dashed", alpha = 0.8) +  # Line for predicted values
+  geom_line(aes(y = Actual, color = "Actual"), size = 1) +  
+  geom_line(aes(y = Predicted, color = "Predicted",alpha = 0.8), size = 1, 
+            linetype = "dashed", alpha = 0.8) +  
   labs(title = "Actual vs Predicted Values Over Index",
        x = "Index",
        y = "Values") +
-  scale_color_manual(values = c("Actual" = "blue", "Predicted" = "red")) +  # Custom colors
+  scale_color_manual(values = c("Actual" = "blue", "Predicted" = "red")) +  
   theme_minimal()
 
 # Print the plot
 print(comparison_plot2)
 
 error_summary <- tibble(
-  Metric = c("Training MSE", "Training RMSE", "Training R2", "Test MSE", "Test RMSE", "Test R2"),
+  Metric = c("Training MSE", "Training RMSE", "Training R2", "Test MSE",
+             "Test RMSE", "Test R2"),
   Value = c(train_mse, train_rmse, r2_train, test_mse, test_rmse, r2_test)
 )
 
-# Print the error summary tibble
 print(error_summary)
 ```
 
 Cross-validation is used to select an optimal regularization parameter, helping reduce overfitting to some extent; However, the results for both Lasso and Ridge models show a slight improvement comparing to the previously developed linear model. This suggests that the issue isn't due to the type of regularization but rather the dataset's complexity. Given that cross-validation with ten folds is a rational choice, the next steps should focus on using more complex models like decision trees, random forests, or gradient boosting, which may better capture the underlying patterns of the data.
 
+\newpage
 
 # Tree Based Methods
 
@@ -626,6 +688,8 @@ dataset_trees_split <- initial_split(dataset_spread_trees, prop = 0.6)
 dataset_trees_train <- training(dataset_trees_split)
 dataset_trees_test <- testing(dataset_trees_split)
 ```
+
+\newpage
 
 # Decision Tree
 ## Tune depth
@@ -714,6 +778,8 @@ RMSE
 
 Tuning alpha gives a value of 0.001 and an RMSE score of 35.64, which is the same as with just the depth.
 
+\newpage
+
 # Random Forest
 
 ```{r, cache=TRUE}
@@ -746,7 +812,7 @@ A random forest with trees set to 100 gives an RMSE of 135.63, which is a lot wo
 ```{r, cache=TRUE}
 #Setup parallel processing
 all_cores <- parallel::detectCores(logical = FALSE)
-if(all_cores >= 32){
+if(all_cores >= 16){
   all_cores <- 32
 }
 cl <- makePSOCKcluster(all_cores)
@@ -799,9 +865,27 @@ Tuning depth and lambda simultaneously gives a depth of 2 and lambda equal to 0.
 
 # Conclusion
 
-The regression model with the best RMSE is the decision tree model, which is suprising given its simpleness compared to random forests and boosted models, especially considering that XG boost handles inbalanced datasets better.
 
-Logisitic regression had higher accuracy when predicting on higher or lower than average apartment prices based on the predictors provided in the dataset but little improvements can be made to the model past this. The linear pregression model can be improved upon and is probably the easest to interpret but has a larger residual error mean.
+The table below presents the Root Mean Squared Error (RMSE) for various models. The Decision Trees model has the lowest RMSE at 35, showing the best performance among the models. Linear regression shows the highest RMSE of 518, followed by Lasso and Ridge models at 474 and 473, respectively. This comparison highlights the different performance of each model, with Decision Trees outperforming others in terms of accuracy.
+
+| Model         | RMSE   |
+|---------------|--------|
+| Linear        | 518    |
+| Ridge         | 473    |
+| Lasso         | 474    |
+| **Decision Trees**| **35**     |
+| Random Forest | 173    |
+
+The key takeaways are:  
+
+- The first model used in this study was the linear model, but the error rate didn't show an acceptable performance.  
+- Logistic regression had higher accuracy when predicting on higher or lower than average apartment prices based on the predictors provided in the dataset but little improvements can be made to the model past this. The linear regression model was considered to be improved upon.  
+- Although lasso and ridge regression techniques were used to avoid overfitting through employing regularization, linear model didn't show much improvement, showing that the complexity of the dataset might be high. In this step it was decided to use nonlinear models.  
+- The nonlinear regression model with the best RMSE is the decision tree model, which is surprising given its simpleness compared to random forests and boosted models, especially considering that XG boost handles inbalanced datasets better.  
+
+
+\newpage
+
 # References
 - “Apartment for Rent Classified.” UCI Machine Learning Repository. https://doi.org/10.24432/C5X623.
 
