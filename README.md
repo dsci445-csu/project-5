@@ -3,13 +3,13 @@ Group 5 project for DSCI445 @ CSU
 
 Libraries:
 Install these required libraries:
-leaps
-glmnet
-rpart.plot
-vip
-doParallel
-xgboost
-maps
+leaps,
+glmnet,
+rpart.plot,
+vip,
+doParallel,
+xgboost,
+maps.
 
 Instructions:
 Open the project-5.Rproj project file.
