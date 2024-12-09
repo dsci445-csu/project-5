@@ -9,6 +9,7 @@ rpart.plot
 vip
 doParallel
 xgboost
+maps
 
 Instructions:
 Open the project-5.Rproj project file.
