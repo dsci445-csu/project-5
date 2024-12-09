@@ -674,16 +674,16 @@ for (col_name in colnames(dataset_spread_copy)) {
 
 # Filter the dataframe
 dataset_spread_trees <- dataset_spread_copy[rows_to_keep, ]
+
+# Remove state and source
+dataset_spread_trees <- dataset_spread_trees %>% select(-state, -source)
 ```
 
-Due to the extreme inbalance of the dataset, levels with less than 10 values were removed as they could cause a mismatch between the training and testing sets as well as the different folds for cross validation.
+Due to the extreme inbalance of the dataset, levels with less than 10 values were removed as they could cause a mismatch between the training and testing sets as well as the different folds for cross validation. This mismatch caused compile errors when fitting the models. Attempts to remedy this inbalance using SMOTE did not work because some of the levels only have one value, which is incompatable with SMOTE's KNN based method. Additionally, oversampling caused the dataset to be extremely large while undersampling caused the dataset to be extremely small. Additionally, the state and source columns were removed as they negatively impacted the RMSE.
 
 ## Recreate train test split
 ```{r}
 set.seed(445)
-
-dataset_spread_trees <- dataset_spread_trees %>% select(-state, -source)
-
 
 dataset_trees_split <- initial_split(dataset_spread_trees, prop = 0.6)
 dataset_trees_train <- training(dataset_trees_split)
