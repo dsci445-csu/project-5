@@ -23,4 +23,13 @@ df <- df %>% mutate(ymd_born = mdy(date_of_birth),
   mutate(year_born = ifelse(year_born > 2002, year_born - 100, year_born),
          year_adm = ifelse(year_adm > 2018, year_adm - 100, year_adm))
 
-#adm = admitted 
+#the step above returns a warning about NAs. Need to make a decision on what to do with those rows, work around or drop.
+
+#adm = admitted
+
+#Found some issues with formatting in the name column, seems like there's a space before every name.
+df2 <- df %>% filter(name == "JUAN") #returns 0 rows
+df2 <- df[df$name == " JUAN",] #returns the correct 227 rows
+
+
+
