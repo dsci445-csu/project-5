@@ -12,6 +12,9 @@ remove(packages, pkg)
 
 
 df <- read.csv("Documents/GitHub/project-5/CSV Files/person_1024.csv")
+# the above line of code does not work for me -- 
+# if everyone is cloning from github would the following line work instead? - Hope
+# df <- read.csv("CSV Files/person_1024.csv")
 
 #Adding columns that will allow us to work with lubridate's functions in R 
 
@@ -31,5 +34,11 @@ df <- df %>% mutate(ymd_born = mdy(date_of_birth),
 df2 <- df %>% filter(name == "JUAN") #returns 0 rows
 df2 <- df[df$name == " JUAN",] #returns the correct 227 rows
 
+# strips whitespace before and after all string rows -- resolves whitespace issue for name
+for (column in colnames(df)){
+  if (class(df[,column]) == "character"){
+    df[, column] = str_trim(df[, column])
+  }
+}
 
-
+df |> filter(name == "JUAN") |> nrow()
