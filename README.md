@@ -6,17 +6,15 @@ Group 5 Project for DSCI445 @ CSU
 https://www.kaggle.com/datasets/davidjfisher/illinois-doc-labeled-faces-dataset/data
 
 # Questions we want answered
--What predictors have the strongest effect on sentencing length?
+- What predictors have the strongest effect on sentencing length?
 
--How accurately can we predict sentencing length?
-
--
+- How accurately can we predict sentencing length?
 
 # Methods for answering these questions
--Cross validation
+- Cross validation
 
--LASSO
+- LASSO
 
--KNN
+- KNN
 
 
