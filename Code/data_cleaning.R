@@ -42,3 +42,10 @@ for (column in colnames(df)){
 }
 
 df |> filter(name == "JUAN") |> nrow()
+uh <-  df %>% filter(id == "K97815")
+
+
+### sentencing.csv
+
+df2 <- read.csv("Documents/GitHub/project-5/CSV Files/sentencing_1105.csv")
+length(unique(df2$offense))
