@@ -11,10 +11,9 @@ for (pkg in packages) {
 remove(packages, pkg)
 
 
-df <- read.csv("Documents/GitHub/project-5/CSV Files/person_1024.csv")
 # the above line of code does not work for me -- 
 # if everyone is cloning from github would the following line work instead? - Hope
-# df <- read.csv("CSV Files/person_1024.csv")
+df <- read.csv("CSV Files/person_1024.csv")
 
 #Adding columns that will allow us to work with lubridate's functions in R 
 
@@ -31,8 +30,8 @@ df <- df %>% mutate(ymd_born = mdy(date_of_birth),
 #adm = admitted
 
 #Found some issues with formatting in the name column, seems like there's a space before every name.
-df2 <- df %>% filter(name == "JUAN") #returns 0 rows
-df2 <- df[df$name == " JUAN",] #returns the correct 227 rows
+#df2 <- df %>% filter(name == "JUAN") #returns 0 rows
+#df2 <- df[df$name == " JUAN",] #returns the correct 227 rows
 
 # strips whitespace before and after all string rows -- resolves whitespace issue for name
 for (column in colnames(df)){
@@ -41,11 +40,6 @@ for (column in colnames(df)){
   }
 }
 
-df |> filter(name == "JUAN") |> nrow()
-uh <-  df %>% filter(id == "K97815")
 
 
-### sentencing.csv
 
-df2 <- read.csv("Documents/GitHub/project-5/CSV Files/sentencing_1105.csv")
-length(unique(df2$offense))
