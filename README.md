@@ -17,4 +17,18 @@ https://www.kaggle.com/datasets/davidjfisher/illinois-doc-labeled-faces-dataset/
 
 - KNN
 
+# Create one model per person and then rejoin to discuss results
+- Linear Regression
+-- interactions
+
+- Random forest
+-- with bagging
+-- with boosting
+
+- KNN 
+
+- generalized additive model
+-- with splines
+-- polynomial
+
 
