@@ -10,8 +10,11 @@ for (pkg in packages) {
 }
 remove(packages, pkg)
 
-
 ### sentencing.csv ID ROW NOT UNIQUE
+# group by id
+# Key: split sentencing "x Years", "y Months", "z Days"
+# Drop days
 
 df_sentencing <- read.csv("CSV Files/sentencing_1105.csv")
 length(unique(df_sentencing$id))
+head(df_sentencing)

@@ -1,5 +1,4 @@
 #Loads specified libraries, installs and loads if not installed.
-
 packages <- c("lubridate", "tidyverse")
 
 for (pkg in packages) {
@@ -10,9 +9,7 @@ for (pkg in packages) {
 }
 remove(packages, pkg)
 
-
-# the above line of code does not work for me -- 
-# if everyone is cloning from github would the following line work instead? - Hope
+# read in person csv
 df <- read.csv("CSV Files/person_1024.csv")
 
 #Adding columns that will allow us to work with lubridate's functions in R 
