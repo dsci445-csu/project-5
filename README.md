@@ -18,16 +18,16 @@ https://www.kaggle.com/datasets/davidjfisher/illinois-doc-labeled-faces-dataset/
 - KNN
 
 # Create one model per person and then rejoin to discuss results
-- Linear Regression
+- Linear Regression (Hope)
 -- interactions
 
-- Random forest
+- Random forest (Juan)
 -- with bagging
 -- with boosting
 
-- KNN 
+- KNN (Aaron)
 
-- generalized additive model
+- generalized additive model (Ilijah)
 -- with splines
 -- polynomial
 
