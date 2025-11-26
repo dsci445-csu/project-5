@@ -18,12 +18,14 @@ head(df)
 df2 <- read.csv2("CSV Files/marks.csv")
 str(df2)
 head(df2)
+# unexpected additional column X
 head(df2[df2$X != "",])
 # some X are because there are multiple tattoos separated by \;
 # some X are multiple entries that failed to be separated by the semicolons
 
 # replace all \; with , to avoid unnecessary splits
 text <- readLines("CSV Files/marks.csv")
+text <- gsub("\\\"", "", text)
 text <- gsub("\\\\;", ",", text)
 writeLines(text, "CSV Files/marks_no_semicolon.csv")
 
@@ -33,5 +35,26 @@ str(df3)
 nrow(df3[is.na(df3$X),]) == nrow(df3)
 # column X has no values; drop column X
 df3 <- subset(df3, select = -X)
+write.csv(df3, "CSV Files/marks_cleaned.csv", row.names = F)
 
-#TODO: pivot longer to create categories scars, tattoos, other
+#pivot wider to create categories scars, tattoos, other
+library(dplyr)
+library(tidyr)
+
+df_summary <- df3 %>%
+  mutate(
+    mark_type = case_when(
+      grepl("TATTOO", mark, ignore.case = TRUE) ~ "TATTOO",
+      grepl("SCAR",   mark, ignore.case = TRUE) ~ "SCAR",
+      TRUE ~ "OTHER"
+    )
+  ) %>%
+  count(id, mark_type) %>% 
+  pivot_wider(
+    names_from = mark_type,
+    values_from = n,
+    values_fill = 0
+  )
+head(df_summary)
+
+write.csv(df_summary, "CSV Files/marks_unique_counts.csv", row.names = F)
