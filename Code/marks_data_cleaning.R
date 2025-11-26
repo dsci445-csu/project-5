@@ -10,4 +10,16 @@ for (pkg in packages) {
 remove(packages, pkg)
 
 # read in marks csv
-df <- read.csv("CSV Files/marks.csv")
+df <- read.csv("CSV Files/marks.csv", header = F)
+str(df)
+head(df)
+
+#previewing marks.csv reveals columns may be separated by semicolons rather than commas
+df2 <- read.csv2("CSV Files/marks.csv")
+str(df2)
+head(df2)
+head(df2[df2$X != "",])
+# some X are because there are multiple tatoos separated by semicolons
+# some X are multiple entries that failed to be separated by the semicolons
+
+#TODO: pivot longer to create categories scars, tattoos, other
