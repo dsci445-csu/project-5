@@ -19,7 +19,19 @@ df2 <- read.csv2("CSV Files/marks.csv")
 str(df2)
 head(df2)
 head(df2[df2$X != "",])
-# some X are because there are multiple tatoos separated by semicolons
+# some X are because there are multiple tattoos separated by \;
 # some X are multiple entries that failed to be separated by the semicolons
+
+# replace all \; with , to avoid unnecessary splits
+text <- readLines("CSV Files/marks.csv")
+text <- gsub("\\\\;", ",", text)
+writeLines(text, "CSV Files/marks_no_semicolon.csv")
+
+df3 <- read.csv2("CSV Files/marks_no_semicolon.csv")
+head(df3)
+str(df3)
+nrow(df3[is.na(df3$X),]) == nrow(df3)
+# column X has no values; drop column X
+df3 <- subset(df3, select = -X)
 
 #TODO: pivot longer to create categories scars, tattoos, other
