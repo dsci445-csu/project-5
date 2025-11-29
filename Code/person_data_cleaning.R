@@ -18,7 +18,8 @@ df <- df %>% mutate(ymd_born = mdy(date_of_birth),
                     year_born = year(ymd_born),
                     month_born = month(ymd_born),
                     ymd_adm = mdy(admission_date),
-                    year_adm = year(ymd_adm)) %>% 
+                    year_adm = year(ymd_adm),
+                    month_adm = month(ymd_adm)) %>% 
   mutate(year_born = ifelse(year_born > 2002, year_born - 100, year_born),
          year_adm = ifelse(year_adm > 2018, year_adm - 100, year_adm))
 
@@ -28,7 +29,7 @@ df <- df %>% mutate(ymd_born = mdy(date_of_birth),
 
 #Found some issues with formatting in the name column, seems like there's a space before every name.
 #df2 <- df %>% filter(name == "JUAN") #returns 0 rows
-#df2 <- df[df$name == " JUAN",] #returns the correct 227 rows
+#df2 <- df[df$name == "JUAN",] #returns the correct 227 rows
 
 # strips whitespace before and after all string rows -- resolves whitespace issue for name
 for (column in colnames(df)){
@@ -37,6 +38,13 @@ for (column in colnames(df)){
   }
 }
 
+df_prep <- df %>% select(-projected_parole_date, -last_paroled_date, -projected_discharge_date, -parole_date,
+                        -electronic_detention_date, -discharge_date, -location, -sex_offender_registry_required,
+                        -ymd_born, -date_of_birth, -month_born, -ymd_adm, -admission_date)
+#keep location ?
+
+#writing csv
+write_csv(df_prep, "CSV Files/person_cleaned.csv")
 
 
 
