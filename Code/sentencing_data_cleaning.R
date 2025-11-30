@@ -1,6 +1,6 @@
 #Loads specified libraries, installs and loads if not installed.
 
-packages <- c("lubridate", "tidyverse")
+packages <- c("lubridate", "tidyverse", "stringr")
 
 for (pkg in packages) {
   if (!require(pkg, character.only = TRUE)) {
@@ -22,17 +22,21 @@ tail(df_sentencing)
 dim(df_sentencing)
 
 # extract sentence into a column for days and months & total sentence length
-sentencing_cleaned <- df_sentencing |>
+sentencing_clean <- df_sentencing |>
   extract(sentence, into = c("years_sentence", "months_sentence",
                              "days_sentence"),
           regex = "(\\d+) Years (\\d+) Months (\\d+) Days",
           convert = TRUE) |>
-  mutate(total_sentence = years_sentence + (months_sentence / 12) +
+  mutate(years_sentence = replace_na(years_sentence, 0),
+         months_sentence = replace_na(months_sentence, 0),
+         days_sentence = replace_na(days_sentence, 0),
+         total_sentence = years_sentence + (months_sentence / 12) +
            (days_sentence / 365.25)) |>
   select(-days_sentence)
-head(sentencing_cleaned)
+head(sentencing_clean)
 
-sentencing_cleaned |> count(offense, sort = TRUE)
+
+sentencing_clean |> count(offense, sort = TRUE)
 # OFFENSE CATEGORIES:
 # attempted or committed?
 # aggravated or not?
@@ -53,24 +57,86 @@ sentencing_cleaned |> count(offense, sort = TRUE)
 # vehicular hijacking/theft
 # DUI
 # child porn
+# obstructing justice
+# home invasion
 # other
 
-table(sentencing_cleaned$class)
+class_severity_rank <- c("X", "M", "1", "2", "3", "4", "A", "B", "C", "U")
 
-#sentence_temp <- sentencing_cleaned |>
- # group_by(id) |>
-  #mutate(c_class = if_else(class == "X", "X", max(as.numeric(class))),
-   #      c_count = sum(count),
-    #     attempted = ifelse(offense %in% c("ATTEMPT", "ATT"), 1, 0),
-     #    aggravated = ifelse(offense %in% c("AGG", "AGGRAVATED"), 1, 0),
-      #   armed = ifelse(offense %in% c("ARMED", "ARM"), 1, 0),
-       #  offense_category = case_when(
-        #  offense %in% c("POSS AMT CON SUB", "SUB") ~ "illegal_contr_subst_poss",
-         # offense %in% c("BURGLARY") ~ "BURGLARY",
-          #TRUE ~ "OTHER"
-            #))
+sentence_cleaner <- sentencing_clean |>
+  mutate(c_class = factor(class, levels = class_severity_rank, ordered = TRUE),
+         attempted = ifelse(str_detect(offense, "ATTEMPT|ATT"), 1, 0),
+         aggravated = ifelse(str_detect(offense, "AGG|AGGRAVATED"), 1, 0),
+         armed = ifelse(str_detect(offense, "ARMED|ARM"), 1, 0)) |>
+  mutate(offense_category = case_when(
+          str_detect(offense, "POSS AMT|SUB|NARC|POSSESSION OF METH") ~
+            "ILL. CONTR. SUBST. POSS",
+          str_detect(offense, "BURGLARY") ~ "BURGLARY",
+          str_detect(offense, "MURDER|KILL") ~ "MURDER",
+          str_detect(offense, "ROBBERY") ~ "ROBBERY",
+          str_detect(offense, "THEFT") ~ "THEFT",
+          str_detect(offense, "BATTERY|BTRY") ~ "BATTERY",
+          str_detect(offense, "SEXUAL|SEX") ~ "SEXUAL OFFENSE",
+          str_detect(offense, "FORGERY") ~ "FORGERY",
+          #str_detect(offense, "HARASSMENT") ~ "HARASSMENT", 0
+          str_detect(offense, "KIDNAPPING") ~ "KIDNAPPING",
+          str_detect(offense, "FIREARM|WEAPON|HANDGUN") ~
+            "ILLEGAL WEAPON USE/POSS",
+          #str_detect(offense, "BRIBERY") ~ "BRIBERY", less than 50
+          str_detect(offense, "MANUF|MANUFACTURE|MANU") ~
+            "DRUG MANUFACTURE",
+          str_detect(offense, "VEH|HIJACK|VEH THEFT") ~
+            "VEHICULAR HIJACKING/THEFT",
+          str_detect(offense, "DUI") ~ "DUI",
+          str_detect(offense, "CHILD PORN|PORN") ~ "ILLEGAL/CHILD PORN",
+          str_detect(offense, "OBSTR|OBSTRUCTING|JUSTICE") ~ 
+            "OBSTRUCTING JUSTICE",
+          str_detect(offense, "HOME INVASION") ~ "HOME INVASION",
+          TRUE ~ "OTHER"))
+table(sentence_cleaner$offense_category)
+
+# group by id and summarize for one row per person
+sentencing_cleanest <- sentence_cleaner |>
+  group_by(id) |>
+  filter(class == max(c_class)) |>
+  summarize(total_counts = sum(count),
+            custody_date = custody_date,
+            total_sentence = sum(total_sentence, na.rm = T),
+            class = c_class,
+            offense_category = offense_category,
+            attempted = attempted,
+            aggravated = aggravated,
+            armed = armed,
+            illegal_contr_subst_poss = ifelse(offense_category ==
+                                                "ILL. CONTR. SUBST. POSS", 1, 0),
+            burglary = ifelse(offense_category == "BURGLARY", 1, 0),
+            murder = ifelse(offense_category == "MURDER", 1, 0),
+            robbery = ifelse(offense_category == "ROBBERY", 1, 0),
+            theft = ifelse(offense_category == "THEFT", 1, 0),
+            battery = ifelse(offense_category == "BATTERY", 1, 0),
+            sexual_offense = ifelse(offense_category == "SEXUAL OFFENSE", 1, 0),
+            forgery = ifelse(offense_category == "FORGERY", 1, 0),
+            kidnapping = ifelse(offense_category == "KIDNAPPING", 1, 0),
+            ill_weapon_use_or_poss = ifelse(offense_category ==
+                                              "ILLEGAL WEAPON USE/POSS", 1, 0),
+            drug_manufacture = ifelse(offense_category == "DRUG MANUFACTURE",
+                                      1, 0),
+            veh_hijacking_or_theft = ifelse(offense_category ==
+                                              "VEHICULAR HIJACKING/THEFT", 1, 0),
+            dui = ifelse(offense_category == "DUI", 1, 0),
+            child_or_illegal_porn = ifelse(offense_category == "ILLEGAL/CHILD PORN",
+                                           1, 0),
+            obstructing_justice = ifelse(offense_category ==
+                                           "OBSTRUCTING JUSTICE", 1, 0),
+            home_invasion = ifelse(offense_category ==
+                                     "HOME INVASION", 1, 0)) |>
+  slice_sample(n = 1)  # if ties for max charge, choose randomly
+
+head(sentencing_cleanest)
+dim(sentencing_cleanest)
+anyNA(sentencing_cleanest$total_sentence)
 
 
-# will write csv when confirmed
-#write.csv(sentencing_cleaned, "CSV Files/sentencing_cleaned.csv",
-#           row.names = F)
+
+write.csv(sentencing_cleanest, "CSV Files/sentencing_cleaned.csv",
+           row.names = F)
