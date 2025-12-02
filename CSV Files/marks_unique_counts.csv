@@ -1,4 +1,4 @@
-"id","SCAR","TATTOO","NEITHER"
+"id","num_scars","num_tattoos","num_other_marks"
 "A00147",2,1,0
 "A00220",2,0,0
 "A00360",1,1,0

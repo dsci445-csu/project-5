@@ -44,9 +44,9 @@ library(tidyr)
 df_summary <- df3 %>%
   mutate(
     mark_type = case_when(
-      grepl("TATTOO", mark, ignore.case = TRUE) ~ "TATTOO",
-      grepl("SCAR",   mark, ignore.case = TRUE) ~ "SCAR",
-      TRUE ~ "OTHER"
+      grepl("TATTOO", mark, ignore.case = TRUE) ~ "num_tattoos",
+      grepl("SCAR",   mark, ignore.case = TRUE) ~ "num_scars",
+      TRUE ~ "num_other_marks"
     )
   ) %>%
   count(id, mark_type) %>% 
