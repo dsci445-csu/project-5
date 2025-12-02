@@ -20,7 +20,7 @@ df <- df %>% mutate(ymd_born = mdy(date_of_birth),
                     ymd_adm = mdy(admission_date),
                     year_adm = year(ymd_adm),
                     month_adm = month(ymd_adm)) %>% 
-  mutate(year_born = ifelse(year_born > 2002, year_born - 100, year_born),
+  mutate(year_born = ifelse(year_born >= 2002, year_born - 100, year_born),
          year_adm = ifelse(year_adm > 2018, year_adm - 100, year_adm))
 
 #the step above returns a warning about NAs. Need to make a decision on what to do with those rows, work around or drop.
@@ -43,8 +43,16 @@ df_prep <- df %>% select(-projected_parole_date, -last_paroled_date, -projected_
                         -ymd_born, -date_of_birth, -month_born, -ymd_adm, -admission_date)
 #keep location ?
 
+length(unique(df_prep$id)) == nrow(df_prep)
+
+#excluding two weird cases I found in the data. must be data input issues
+df_prep <- df_prep %>% filter(!id %in% c("X78949", "R56400") & year_adm > year_born)
+
+
+
 #writing csv
 write_csv(df_prep, "CSV Files/person_cleaned.csv")
+
 
 
 
