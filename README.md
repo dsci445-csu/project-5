@@ -10,6 +10,10 @@ https://www.kaggle.com/datasets/davidjfisher/illinois-doc-labeled-faces-dataset/
 
 - How accurately can we predict sentencing length?
 
+- What predictors have the strongest effect on offence category?
+
+- How accurately can we predict offence categories?
+
 # Data cleaning
 The kaggle dataset provided us with three csv files: marks.csv, sentencing.csv, and person.csv. 
 Cleaning for each dataset was done in separate R files. These R files do not need to be rerun 
