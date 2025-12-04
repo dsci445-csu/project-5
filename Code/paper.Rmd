@@ -1,0 +1,20 @@
+---
+title: "paper"
+author: "Group 5"
+date: "2025-12-04"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Background
+
+## KNN
+
+## Random Forest
+
+## Linear Regression
+
+## GAM
