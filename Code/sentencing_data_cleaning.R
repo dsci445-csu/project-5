@@ -37,6 +37,7 @@ df_clean2[df_clean2$sentence == "DEATH",]$sentence <- "15 Years 0 Months 0 Days"
 non_numerical <- subset(df_clean2, !grepl("Year", sentence))
 head(non_numerical[,c("id", "sentence", "death_sentence", "life_sentence")], 100)
 
+
 # extract sentence into a column for days and months & total sentence length
 sentencing_clean <- df_clean2 |>
   extract(sentence, into = c("years_sentence", "months_sentence",
