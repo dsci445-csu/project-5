@@ -21,6 +21,23 @@ head(df_sentencing)
 tail(df_sentencing)
 dim(df_sentencing)
 
+df_clean2 <- data.frame(df_sentencing)
+non_numerical <- subset(df_clean2, !grepl("Year", sentence))
+head(non_numerical[,c("id", "sentence")], 50)
+# four exceptions to numerical sentences: LIFE, DEATH, SDP, blank
+# convert life sentences to numerical, cap sentences to 100
+df_clean2$life_sentence <- ifelse(str_detect(df_clean2$sentence, "LIFE"), TRUE, FALSE)
+df_clean2[df_clean2$sentence == "LIFE",]$sentence <- "100 Years 0 Months 0 Days"
+# replace sexually dangerous person sentence with 0 years
+df_clean2[df_clean2$sentence == "SDP"]$sentence <- "0 Years 0 Months 0 Days"
+# replace add categorical variable for death sentence
+df_clean2$death_sentence <- ifelse(str_detect(df_clean2$sentence, "DEATH"), TRUE, FALSE)
+non_numerical <- subset(df_clean2, !grepl("Year", sentence))
+# median time spent in prison preceding the carrying out of death sentence is 15 years
+df_clean2[df_clean2$sentence == "DEATH",]$sentence <- "15 Years 0 Months 0 Days"
+head(non_numerical[,c("id", "sentence", "death_sentence", "life_sentence")], 50)
+
+
 # extract sentence into a column for days and months & total sentence length
 sentencing_clean <- df_sentencing |>
   extract(sentence, into = c("years_sentence", "months_sentence",
