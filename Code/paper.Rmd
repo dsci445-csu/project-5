@@ -1,0 +1,49 @@
+---
+title: "paper"
+author: "Group 5"
+date: "2025-12-04"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Abstract
+have a summary of the paper
+
+## Background
+here's our data and why we chose it
+here's where the data is from
+here are our research questions
+
+## Methods
+### KNN
+
+- basic explanation of model
+- results
+
+### Random Forest
+
+- basic explanation of model
+- variable selection
+- results
+
+### Linear Regression
+
+- basic explanation of model
+- variable selection
+- LASSO
+- Ridge
+- results
+
+### GAM
+
+- basic explanation of model
+- results
+
+## Conclusion
+here's why we pick x model over y model
+
+## References
+kaggle data set
