@@ -53,6 +53,22 @@ sentencing_clean <- df_clean2 |>
 head(sentencing_clean)
 
 
+
+#group by date - HERES WHERE WE LEFT OFF
+
+test <- sentencing_clean %>% group_by(id, custody_date) %>% select(id, custody_date, everything()) 
+
+test <- test[0:100,] %>% 
+  mutate(ymd_custodydate = mdy(custody_date))
+
+# %>% 
+  # mutate(year_born = ifelse(year_born >= 2002, year_born - 100, year_born),
+  #        year_adm = ifelse(year_adm > 2018, year_adm - 100, year_adm))
+
+#%>% summary(charges = n())
+
+#
+
 sentencing_clean |> count(offense, sort = TRUE)
 # OFFENSE CATEGORIES:
 # attempted or committed?
