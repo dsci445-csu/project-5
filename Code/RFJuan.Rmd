@@ -1,0 +1,65 @@
+---
+title: "Juan's Modeling - RF"
+author: "Juan Gonzalez"
+date: "2025-12-04"
+output: html_document
+---
+
+# Loading the Data and Packages
+
+```{r, warning=FALSE}
+
+packages <- c("lubridate", "tidyverse", "tidymodels", "rpart.plot", "vip")
+
+for (pkg in packages) {
+  if (!require(pkg, character.only = TRUE)) {
+    install.packages(pkg, dependencies = TRUE)
+    library(pkg, character.only = TRUE)
+  }
+}
+remove(packages, pkg)
+
+df_load <- read.csv("~/Documents/GitHub/project-5/CSV Files/merged_data.csv")
+
+df <- df_load %>% select(-name, -last_name, -id, -offense_category, -custody_date, -offender_status)%>%
+  mutate(total_sentence = round(total_sentence,2))
+
+nrow(df_load[df_load$total_sentence == 0,])/nrow(df_load)
+
+df[df$id == "B23828"]
+
+```
+
+
+# Preparing training and test data split
+
+```{r}
+
+df_split <- initial_split(df, prop = 0.8)
+
+df_train <- training(df_split)
+df_test <- testing(df_split)
+
+
+#rf
+rf_spec <- rand_forest(mtry = sqrt(.cols())) |>
+  set_engine("randomForest", importance = TRUE) |>
+  set_mode("regression")
+
+rf_fit <- rf_spec |>
+  fit( ~ ., data = df_train)
+
+
+#bagging
+bagging_spec <- rand_forest(mtry = .cols()) |>
+  set_engine("randomForest", importance = TRUE) |>
+  set_mode("regression")
+
+bagging_fit <- bagging_spec |>
+  fit(high_sales ~ ., data = df_train)
+
+```
+
+
+
+
