@@ -36,7 +36,7 @@ df_clean2$death_sentence <- ifelse(str_detect(df_clean2$sentence, "DEATH"), TRUE
 df_clean2[df_clean2$sentence == "DEATH",]$sentence <- "15 Years 0 Months 0 Days"
 non_numerical <- subset(df_clean2, !grepl("Year", sentence))
 head(non_numerical[,c("id", "sentence", "death_sentence", "life_sentence")], 100)
-
+remove(non_numerical)
 
 # extract sentence into a column for days and months & total sentence length
 sentencing_clean <- df_clean2 |>
@@ -54,9 +54,8 @@ head(sentencing_clean)
 
 #group by date - HERES WHERE WE LEFT OFF
 # convert dates from character to Date type
-test <- sentencing_clean[0:100,] %>% 
-  mutate(ymd_custodydate = mdy(test$custody_date)) |>
-  subset(-custody_date)
+test <- sentencing_clean |>
+  mutate(ymd_custodydate = mdy(custody_date)) 
 # convert 2060s dates into 1960s dates
 test[test$ymd_custodydate > as.Date("2020/01/01") & !is.na(test$ymd_custodydate), "ymd_custodydate"] <- 
   test[test$ymd_custodydate > as.Date("2020/01/01") & !is.na(test$ymd_custodydate), "ymd_custodydate"] - 36525
@@ -78,10 +77,10 @@ prior2 <- prior |> group_by(id) |>
 colnames(most_recent)[colnames(most_recent) == 'sentence_by_date'] <- 'current_sentence'
 # new data set has id, current sentence, most recent custody date, and 
 # time sentenced prior to most recent custody date
-sentence_lengths <- merge(most_recent, prior2, on = id)
+sentence_lengths <- merge(most_recent, prior2, on = id, all.x = TRUE) 
+sentence_lengths$time_sentenced_prior <- replace_na(sentence_lengths$time_sentenced_prior, 0)
 
 mr_offense <- merge(most_recent, test, by = c("id", "ymd_custodydate"))
-p_offense <- merge(prior, test, by = c("id", "ymd_custodydate"))
 
 life_death <- test |> group_by(id) |> summarise(life_sentence = any(life_sentence),
                                   death_sentence = any(death_sentence))
@@ -92,7 +91,7 @@ sl2[cap_current, "current_sentence"] <- 100
 sl2[cap_current, "life_sentence"] <- T
 # cap prior sentences to 100 years
 cap_prior <- which(sl2$time_sentenced_prior > 100)
-sl2[cap_prior, "current_sentence"] <- 100
+sl2[cap_prior, "time_sentenced_prior"] <- 100
 sl2[cap_prior, "life_sentence"] <- T
 
 sentencing_clean |> count(offense, sort = TRUE)
@@ -151,7 +150,6 @@ sentence_cleaner <- mr_offense |>
           str_detect(offense, "HOME INVASION") ~ "HOME INVASION",
           TRUE ~ "OTHER"))
 table(sentence_cleaner$offense_category)
-sentence_cleaner
 
 # group by id and summarize for one row per person
 sentencing_cleanest <- sentence_cleaner |>
@@ -174,6 +172,11 @@ final_dataset <- merge(sentencing_cleanest, sl2, by = c("id"))
 final_dataset <- final_dataset[,!names(final_dataset) %in% c("custody_date", "ymd_custodydate")]
 
 
+length(unique(df_sentencing$id))
+nrow(final_dataset)
 
 write.csv(final_dataset, "CSV Files/sentencing_cleaned.csv",
            row.names = F)
+
+confirm <- read.csv("CSV Files/sentencing_cleaned.csv")
+head(confirm)
