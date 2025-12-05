@@ -53,17 +53,33 @@ sentencing_clean <- df_clean2 |>
 head(sentencing_clean)
 
 #group by date - HERES WHERE WE LEFT OFF
+# convert dates from character to Date type
 test <- sentencing_clean[0:100,] %>% 
-  mutate()
-test$ymd_custodydate = mdy(test$custody_date)
-
+  mutate(ymd_custodydate = mdy(test$custody_date)) |>
+  subset(-custody_date)
+# convert 2060s dates into 1960s dates
 test[test$ymd_custodydate > as.Date("2020/01/01") & !is.na(test$ymd_custodydate), "ymd_custodydate"] <- 
   test[test$ymd_custodydate > as.Date("2020/01/01") & !is.na(test$ymd_custodydate), "ymd_custodydate"] - 36525
+# get sentence lengths for each custody date
 test2 <- test |> group_by(id, ymd_custodydate) |> summarise(sentence_by_date = sum(total_sentence)) 
-test2
-test3 <- test |> group_by(id) |> summarise(most_recent = max(ymd_custodydate))
-test3
-merge(test2, test3, on = id)
+# get most recent custody date
+test3 <- test |> group_by(id) |> summarise(most_recent_custody_date = max(ymd_custodydate))
+# combine
+test4 <- merge(test2, test3, on = id)
+# split into most recent custody date and prior custody dates
+most_recent <- test4[test4$ymd_custodydate == test4$most_recent, ]
+prior <- test4[test4$ymd_custodydate != test4$most_recent, ]
+# assume that if an individual has an NA custody date, that is their most recent
+prior <- drop_na(prior)
+# combine all prior sentence lengths into one
+prior2 <- prior |> group_by(id) |> 
+  summarise(time_sentenced_prior = sum(sentence_by_date))
+colnames(most_recent)[colnames(most_recent) == 'sentence_by_date'] <- 'current_sentence'
+most_recent <- most_recent[ , !(names(most_recent) %in% "ymd_custodydate")]
+# new data set has id, current sentence, most recent custody date, and 
+# time sentenced prior to most recent custody date
+sentence_lengths <- merge(most_recent, prior2, on = id)
+
 # %>% 
   # mutate(year_born = ifelse(year_born >= 2002, year_born - 100, year_born),
   #        year_adm = ifelse(year_adm > 2018, year_adm - 100, year_adm))
