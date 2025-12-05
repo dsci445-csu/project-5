@@ -17,6 +17,12 @@ here's our data and why we chose it
 here's where the data is from
 here are our research questions
 
+### Research Questions
+- What predictors have the strongest effect on sentencing length?
+- How accurately can we predict sentencing length?
+- What predictors have the strongest effect on offence category?
+- How accurately can we predict offence categories?
+
 ## Methods
 ### KNN
 
@@ -30,8 +36,18 @@ here are our research questions
 - results
 
 ### Linear Regression
-
 - basic explanation of model
+quantitative response: current sentence
+
+if the relationship is approximately linear, least squares will have low bias
+if we have many data points, n >> p, also have low variance -- do have many data points
+limitations to linear model: linearity is an approximation
+
+use LASSO, forward, backward to obtain more interpretable model, drop predictors not associated with the response
+
+not doing best subset because there are over 20 predictors and fitting approximately $2^20$ models would be too computationally expensive; not doing principle component regression because interpretability again; ridge doesn't eliminate does not eliminate predictors and I care about interpretation
+
+Ridge regression: RSS + $\lambda \sum_{j = 1}^{p} \beta_{j}^2$ where $\lambda$ is the tuning parameter
 - variable selection
 - LASSO
 - Ridge
