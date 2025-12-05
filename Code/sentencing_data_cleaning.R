@@ -66,6 +66,7 @@ test2 <- test |> group_by(id, ymd_custodydate) |> summarise(sentence_by_date = s
 test3 <- test |> group_by(id) |> summarise(most_recent_custody_date = max(ymd_custodydate))
 # combine
 test4 <- merge(test2, test3, on = id)
+
 # split into most recent custody date and prior custody dates
 most_recent <- test4[test4$ymd_custodydate == test4$most_recent, ]
 prior <- test4[test4$ymd_custodydate != test4$most_recent, ]
@@ -75,10 +76,25 @@ prior <- drop_na(prior)
 prior2 <- prior |> group_by(id) |> 
   summarise(time_sentenced_prior = sum(sentence_by_date))
 colnames(most_recent)[colnames(most_recent) == 'sentence_by_date'] <- 'current_sentence'
-most_recent <- most_recent[ , !(names(most_recent) %in% "ymd_custodydate")]
 # new data set has id, current sentence, most recent custody date, and 
 # time sentenced prior to most recent custody date
 sentence_lengths <- merge(most_recent, prior2, on = id)
+
+mr_offense <- merge(most_recent, test, by = c("id", "ymd_custodydate"))
+p_offense <- merge(prior, test, by = c("id", "ymd_custodydate"))
+
+life_death <- test |> group_by(id) |> summarise(life_sentence = any(life_sentence),
+                                  death_sentence = any(death_sentence))
+sl2 <- merge(sentence_lengths, life_death)
+# cap current sentences to 100 years
+cap_current <- which(sl2$current_sentence > 100)
+sl2[cap_current, "current_sentence"] <- 100
+sl2[cap_current, "life_sentence"] <- T
+# cap prior sentences to 100 years
+cap_prior <- which(sl2$time_sentenced_prior > 100)
+sl2[cap_prior, "current_sentence"] <- 100
+sl2[cap_prior, "life_sentence"] <- T
+
 
 # %>% 
   # mutate(year_born = ifelse(year_born >= 2002, year_born - 100, year_born),
