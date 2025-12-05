@@ -21,12 +21,13 @@ remove(packages, pkg)
 
 df_load <- read.csv("~/Documents/GitHub/project-5/CSV Files/merged_data.csv")
 
-df <- df_load %>% select(-name, -last_name, -id, -offense_category, -custody_date, -offender_status)%>%
+df <- df_load %>% select(-id, -last_name, -name, -offense_category, -most_recent_custody_date, offender_status, )%>%
   mutate(total_sentence = round(total_sentence,2))
 
-nrow(df_load[df_load$total_sentence == 0,])/nrow(df_load)
 
-df[df$id == "B23828"]
+
+
+
 
 ```
 
