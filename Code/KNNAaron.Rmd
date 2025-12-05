@@ -1,0 +1,67 @@
+---
+title: "KNNAaron"
+output: pdf_document
+---
+# Libraries
+```{r libraries}
+library(ggplot2)
+library(tidymodels)
+library(dplyr)
+```
+
+# KNN Analysis - Offense Category
+## Load Data
+
+```{r loaddata}
+illinois_doc_data <- read.csv("~/DSCI445/project-5/CSV Files/merged_data.csv")
+cleaned_doc_data <- illinois_doc_data |> select(-c(last_name, name, id)) |>
+  mutate(offense_category = as.factor(offense_category),
+         weight_lbs = as.numeric(weight),
+         sex = as.factor(sex),
+         height_in = as.numeric(height),
+         race = as.factor(race),
+         eye_color = as.factor(eyes),
+         offender_status = as.factor(offender_status),
+         class = as.factor(class),
+         most_recent_custody_date = as.Date(most_recent_custody_date)) |>
+  select(-c(eyes, height, weight)) |> na.omit()
+head(cleaned_doc_data)
+```
+## Training and Test Split
+```{r ttsplit}
+set.seed(445)
+df_split <- initial_split(cleaned_doc_data, prop = 0.8)
+df_train <- training(df_split)
+df_test <- testing(df_split)
+```
+## KNN Analysis
+```{r knn}
+set.seed(445)
+knn_10foldcv <- vfold_cv(df_train, v = 10)
+knn_spec <- nearest_neighbor(mode = "classification", neighbors = tune()) |>
+  set_engine("kknn")
+knn_rec <- recipe(offense_category ~ ., data = df_train)
+knn_wf <- workflow() |> add_recipe(knn_rec) |> add_model(knn_spec)
+#tune_results <- tune_grid(knn_wf,
+                          resamples = knn_10foldcv,
+                          grid = tibble(neighbors = 5:75))
+#collect_metrics(tune_results)
+#best_knn <- select_best(tune_results, metric = "accuracy")
+#final_knn <- finalize_workflow(knn_wf, best_knn)
+#final_knn_fit <- fit(final_knn, data = df_train)
+
+# 2. Create a confusion matrix for the `test` data
+#fit |>
+ # augment(new_data = test) -> test_res
+
+#test_res |>
+ # conf_mat(truth = offense_category, estimate = .pred_class)
+
+# test error
+#test_res |>
+ # accuracy(truth = offense_category, estimate = .pred_class) |>
+#  mutate(error = 1 - .estimate) |>
+#  pull(error)
+```
+
+
