@@ -49,18 +49,21 @@ sentencing_clean <- df_clean2 |>
          days_sentence = replace_na(days_sentence, 0),
          total_sentence = years_sentence + (months_sentence / 12) +
            (days_sentence / 365.25)) |>
-  select(-days_sentence)
+  select(-c(days_sentence, years_sentence, months_sentence))
 head(sentencing_clean)
 
-
-
 #group by date - HERES WHERE WE LEFT OFF
+test <- sentencing_clean[0:100,] %>% 
+  mutate()
+test$ymd_custodydate = mdy(test$custody_date)
 
-test <- sentencing_clean %>% group_by(id, custody_date) %>% select(id, custody_date, everything()) 
-
-test <- test[0:100,] %>% 
-  mutate(ymd_custodydate = mdy(custody_date))
-
+test[test$ymd_custodydate > as.Date("2020/01/01") & !is.na(test$ymd_custodydate), "ymd_custodydate"] <- 
+  test[test$ymd_custodydate > as.Date("2020/01/01") & !is.na(test$ymd_custodydate), "ymd_custodydate"] - 36525
+test2 <- test |> group_by(id, ymd_custodydate) |> summarise(sentence_by_date = sum(total_sentence)) 
+test2
+test3 <- test |> group_by(id) |> summarise(most_recent = max(ymd_custodydate))
+test3
+merge(test2, test3, on = id)
 # %>% 
   # mutate(year_born = ifelse(year_born >= 2002, year_born - 100, year_born),
   #        year_adm = ifelse(year_adm > 2018, year_adm - 100, year_adm))
