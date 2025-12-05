@@ -95,15 +95,6 @@ cap_prior <- which(sl2$time_sentenced_prior > 100)
 sl2[cap_prior, "current_sentence"] <- 100
 sl2[cap_prior, "life_sentence"] <- T
 
-
-# %>% 
-  # mutate(year_born = ifelse(year_born >= 2002, year_born - 100, year_born),
-  #        year_adm = ifelse(year_adm > 2018, year_adm - 100, year_adm))
-
-#%>% summary(charges = n())
-
-#
-
 sentencing_clean |> count(offense, sort = TRUE)
 # OFFENSE CATEGORIES:
 # attempted or committed?
@@ -131,11 +122,11 @@ sentencing_clean |> count(offense, sort = TRUE)
 
 class_severity_rank <- c("X", "M", "1", "2", "3", "4", "A", "B", "C", "U")
 
-sentence_cleaner <- sentencing_clean |>
+sentence_cleaner <- mr_offense |>
   mutate(c_class = factor(class, levels = class_severity_rank, ordered = TRUE),
-         attempted = ifelse(str_detect(offense, "ATTEMPT|ATT"), 1, 0),
-         aggravated = ifelse(str_detect(offense, "AGG|AGGRAVATED"), 1, 0),
-         armed = ifelse(str_detect(offense, "ARMED|ARM"), 1, 0)) |>
+         attempted = ifelse(str_detect(offense, "ATTEMPT|ATT"), TRUE, FALSE),
+         aggravated = ifelse(str_detect(offense, "AGG|AGGRAVATED"), TRUE, FALSE),
+         armed = ifelse(str_detect(offense, "ARMED|ARM"), TRUE, FALSE)) |>
   mutate(offense_category = case_when(
           str_detect(offense, "POSS AMT|SUB|NARC|POSSESSION OF METH") ~
             "ILL. CONTR. SUBST. POSS",
@@ -146,11 +137,9 @@ sentence_cleaner <- sentencing_clean |>
           str_detect(offense, "BATTERY|BTRY") ~ "BATTERY",
           str_detect(offense, "SEXUAL|SEX") ~ "SEXUAL OFFENSE",
           str_detect(offense, "FORGERY") ~ "FORGERY",
-          #str_detect(offense, "HARASSMENT") ~ "HARASSMENT", 0
           str_detect(offense, "KIDNAPPING") ~ "KIDNAPPING",
           str_detect(offense, "FIREARM|WEAPON|HANDGUN") ~
             "ILLEGAL WEAPON USE/POSS",
-          #str_detect(offense, "BRIBERY") ~ "BRIBERY", less than 50
           str_detect(offense, "MANUF|MANUFACTURE|MANU") ~
             "DRUG MANUFACTURE",
           str_detect(offense, "VEH|HIJACK|VEH THEFT") ~
@@ -162,6 +151,7 @@ sentence_cleaner <- sentencing_clean |>
           str_detect(offense, "HOME INVASION") ~ "HOME INVASION",
           TRUE ~ "OTHER"))
 table(sentence_cleaner$offense_category)
+sentence_cleaner
 
 # group by id and summarize for one row per person
 sentencing_cleanest <- sentence_cleaner |>
@@ -169,42 +159,21 @@ sentencing_cleanest <- sentence_cleaner |>
   filter(class == max(c_class)) |>
   summarize(total_counts = sum(count),
             custody_date = custody_date,
-            total_sentence = sum(total_sentence, na.rm = T),
             class = c_class,
             offense_category = offense_category,
-            attempted = attempted,
-            aggravated = aggravated,
-            armed = armed,
-            illegal_contr_subst_poss = ifelse(offense_category ==
-                                                "ILL. CONTR. SUBST. POSS", 1, 0),
-            burglary = ifelse(offense_category == "BURGLARY", 1, 0),
-            murder = ifelse(offense_category == "MURDER", 1, 0),
-            robbery = ifelse(offense_category == "ROBBERY", 1, 0),
-            theft = ifelse(offense_category == "THEFT", 1, 0),
-            battery = ifelse(offense_category == "BATTERY", 1, 0),
-            sexual_offense = ifelse(offense_category == "SEXUAL OFFENSE", 1, 0),
-            forgery = ifelse(offense_category == "FORGERY", 1, 0),
-            kidnapping = ifelse(offense_category == "KIDNAPPING", 1, 0),
-            ill_weapon_use_or_poss = ifelse(offense_category ==
-                                              "ILLEGAL WEAPON USE/POSS", 1, 0),
-            drug_manufacture = ifelse(offense_category == "DRUG MANUFACTURE",
-                                      1, 0),
-            veh_hijacking_or_theft = ifelse(offense_category ==
-                                              "VEHICULAR HIJACKING/THEFT", 1, 0),
-            dui = ifelse(offense_category == "DUI", 1, 0),
-            child_or_illegal_porn = ifelse(offense_category == "ILLEGAL/CHILD PORN",
-                                           1, 0),
-            obstructing_justice = ifelse(offense_category ==
-                                           "OBSTRUCTING JUSTICE", 1, 0),
-            home_invasion = ifelse(offense_category ==
-                                     "HOME INVASION", 1, 0)) |>
+            attempted = any(attempted),
+            aggravated = any(aggravated),
+            armed = any(armed),
+            ) |>
   slice_sample(n = 1)  # if ties for max charge, choose randomly
 
 head(sentencing_cleanest)
 dim(sentencing_cleanest)
-anyNA(sentencing_cleanest$total_sentence)
+
+final_dataset <- merge(sentencing_cleanest, sl2, by = c("id"))
+final_dataset <- final_dataset[,!names(final_dataset) %in% c("custody_date", "ymd_custodydate")]
 
 
 
-write.csv(sentencing_cleanest, "CSV Files/sentencing_cleaned.csv",
+write.csv(final_dataset, "CSV Files/sentencing_cleaned.csv",
            row.names = F)
