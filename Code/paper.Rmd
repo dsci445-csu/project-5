@@ -34,7 +34,7 @@ k-nearest neighbor, which is an algorithm that cycles through each point
 in a dataset, and identifies the k points that are closest to that point.
 This k value is adjustable and helps determine the classifier itself, so tuning
 k is critical for optimizing classification performance.
-I grouped our dataset into 18 categories: controlled subst poss w/out 
+I grouped offenses/charges into 18 categories: controlled subst poss w/out 
 prescription, burglary, murder, armed robbery, theft (identity or property),
 battery, sexual assault, forgery, kidnapping,
 illegal firearm/weapon/handgun use or possession, harassment, bribery,
