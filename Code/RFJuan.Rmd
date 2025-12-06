@@ -9,7 +9,7 @@ output: html_document
 
 ```{r, warning=FALSE}
 
-packages <- c("lubridate", "tidyverse", "tidymodels", "rpart.plot", "vip")
+packages <- c("lubridate", "tidyverse", "tidymodels", "rpart.plot", "vip", "Metrics")
 
 for (pkg in packages) {
   if (!require(pkg, character.only = TRUE)) {
@@ -21,10 +21,17 @@ remove(packages, pkg)
 
 df_load <- read.csv("~/Documents/GitHub/project-5/CSV Files/merged_data.csv")
 
-df <- df_load %>% select(-id, -last_name, -name, -most_recent_custody_date)%>%
-  mutate(total_sentence = round(total_sentence,2))
+df <- df_load %>% select(-id, -last_name, -name)%>%
+  mutate(time_sentenced_prior = round(time_sentenced_prior,2),
+         height = as.numeric(height),
+         weight = as.numeric(weight)) %>% filter(!hair %in% c("Sandy", "Not Available"),
+                                                 !eyes %in% c("Not Available"))
 
+df <- na.omit(df)
 
+df <- df |>
+  mutate(across(where(is.character), as.factor),
+         across(where(is.logical), ~factor(., levels = c(FALSE, TRUE))))
 
 
 
@@ -36,30 +43,66 @@ df <- df_load %>% select(-id, -last_name, -name, -most_recent_custody_date)%>%
 
 ```{r}
 
-df_split <- initial_split(df, prop = 0.8)
+set.seed(445)
+
+#df <- df %>% slice_sample(n = 3000)
+
+df_split <- initial_split(df, prop = 0.7)
 
 df_train <- training(df_split)
 df_test <- testing(df_split)
 
 
 #rf
+
+
 rf_spec <- rand_forest(mtry = sqrt(.cols())) |>
   set_engine("randomForest", importance = TRUE) |>
   set_mode("regression")
 
+start <-Sys.time()
+
 rf_fit <- rf_spec |>
-  fit( ~ ., data = df_train)
+  fit(current_sentence ~ ., data = df_train)
+
+end <-  Sys.time()
+
+end - start
+
+vip(rf_fit)
+
+
+augmented <- augment(rf_fit, new_data = df_test) %>% pull(.pred)
+
+
+rmse(df_test$current_sentence, augmented)
 
 
 #bagging
-bagging_spec <- rand_forest(mtry = .cols()) |>
-  set_engine("randomForest", importance = TRUE) |>
-  set_mode("regression")
+# bagging_spec <- rand_forest(mtry = .cols()) |>
+#   set_engine("randomForest", importance = TRUE) |>
+#   set_mode("regression")
+# 
+# bagging_fit <- bagging_spec |>
+#   fit(high_sales ~ ., data = df_train)
 
-bagging_fit <- bagging_spec |>
-  fit(high_sales ~ ., data = df_train)
+
 
 ```
+```{r}
+
+#OOB RMSE
+rf_engine <- rf_fit |> extract_fit_engine()
+sqrt(rf_engine$mse[rf_engine$ntree])
+
+
+
+```
+
+
+
+
+
 
 
 
