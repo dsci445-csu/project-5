@@ -16,46 +16,57 @@ library(dplyr)
 illinois_doc_data <- read.csv("~/DSCI445/project-5/CSV Files/merged_data.csv")
 cleaned_doc_data <- illinois_doc_data |> select(-c(last_name, name, id)) |>
   mutate(offense_category = as.factor(offense_category),
+         age_at_adm = year_adm - year_born, # rm when pull w/ new csv
          weight_lbs = as.numeric(weight),
          sex = as.factor(sex),
          height_in = as.numeric(height),
          race = as.factor(race),
          eye_color = as.factor(eyes),
+         hair = as.factor(hair),
          offender_status = as.factor(offender_status),
          class = as.factor(class),
-         most_recent_custody_date = as.Date(most_recent_custody_date)) |>
-  select(-c(eyes, height, weight)) |> na.omit()
+         most_recent_custody_date = as.Date(most_recent_custody_date),
+         parent_institution = as.factor(parent_institution)) |>
+  select(-c(eyes, height, weight, year_born, year_adm)) |> na.omit()
 head(cleaned_doc_data)
 ```
 ## Training and Test Split
 ```{r ttsplit}
 set.seed(445)
-df_split <- initial_split(cleaned_doc_data, prop = 0.8)
+df_split <- initial_split(cleaned_doc_data, prop = 0.7)
 df_train <- training(df_split)
+df_train
 df_test <- testing(df_split)
 ```
 ## KNN Analysis
 ```{r knn}
 set.seed(445)
+# FULL EXPECTED RUNTIME: 60-70 min
+start_time <- Sys.time()
+k_vals <- expand.grid(neighbors = c(10, 50, 100, 200, 500, 1000,
+                                     2000, 5000)) # add 10,000?
 knn_10foldcv <- vfold_cv(df_train, v = 10)
 knn_spec <- nearest_neighbor(mode = "classification", neighbors = tune()) |>
   set_engine("kknn")
-knn_rec <- recipe(offense_category ~ ., data = df_train)
+knn_rec <- recipe(offense_category ~ ., data = df_train) |>
+  step_dummy(all_nominal_predictors()) |>
+  step_normalize(all_numeric_predictors())
 knn_wf <- workflow() |> add_recipe(knn_rec) |> add_model(knn_spec)
 #tune_results <- tune_grid(knn_wf,
-                          resamples = knn_10foldcv,
-                          grid = tibble(neighbors = 5:75))
+#                          resamples = knn_10foldcv,
+#                          grid = k_vals)
 #collect_metrics(tune_results)
 #best_knn <- select_best(tune_results, metric = "accuracy")
 #final_knn <- finalize_workflow(knn_wf, best_knn)
 #final_knn_fit <- fit(final_knn, data = df_train)
-
+#end_time <- Sys.time()
+#elapsed <- end_time - start_time
+#elapsed
 # 2. Create a confusion matrix for the `test` data
-#fit |>
- # augment(new_data = test) -> test_res
+#knn_preds <- predict(knn_fit, new_data = df_test)
 
-#test_res |>
- # conf_mat(truth = offense_category, estimate = .pred_class)
+#knn_test_res |>
+#  conf_mat(truth = offense_category, estimate = .pred_class)
 
 # test error
 #test_res |>
