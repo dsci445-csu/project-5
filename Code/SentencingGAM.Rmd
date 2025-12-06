@@ -1,0 +1,64 @@
+---
+title: "SentencingGAM"
+output: html_document
+---
+
+
+```{r}
+
+
+library(tidyverse)
+library(tidymodels)
+library(knitr)
+
+
+
+set.seed(445)
+
+sentencing_raw <- read_csv("../CSV Files/merged_data.csv")
+sentencing <- sentencing_raw |>
+  mutate(
+    race  = as.factor(race),
+    sex   = as.factor(sex),
+    hair  = as.factor(hair),
+    eyes  = as.factor(eyes),
+    offense_category = as.factor(offense_category),
+    class = as.factor(class),
+    sex = factor(sex),
+    parent_institution = as.factor(parent_institution),,
+    weight = as.numeric(weight),
+    height = as.numeric(height)
+  ) |>
+  drop_na(
+    current_sentence, appx_age, total_counts,
+    time_sentenced_prior, offense_category, sex,
+    weight, height, race, hair, eyes,
+    attempted, aggravated, armed
+  )
+
+sentencing <- as_tibble(sentencing)
+
+sentencing
+
+sent_split  <- initial_split(sentencing, prop = 0.8)
+sent_train  <- training(sent_split)
+sent_test   <- testing(sent_split)
+
+
+lm_spec <- linear_reg() |>
+  set_engine("lm")
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+```

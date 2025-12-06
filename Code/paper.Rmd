@@ -191,10 +191,20 @@ Ridge regression: RSS + $\lambda \sum_{j = 1}^{p} \beta_{j}^2$ where $\lambda$ i
 - results
 
 ### GAM
+We decided to use fit a generalized additive model(GAM) to see how well it can predict sentencing length and what predictors have the strongest effect on sentencing length. GAMs are an extension of linear regression that are used to show relationships between the predictors that can be better explained non-linearly while being easily interpretable.  We then used 10 fold Cross-Validation to evaluate the model 
 
-- basic explanation of model
+When fitting a model that includes physical descriptors and a model without any of the physical descriptors. The model that was able to best predict sentencing length was:
+
+
+
+
+
+
+
+This model shows that:
+
+
 - results
-
 ## Conclusion
 here's why we pick x model over y model
 
