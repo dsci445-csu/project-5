@@ -61,9 +61,22 @@ lasso_tune |>
   geom_point(aes(lambda, rmse^2)) +
   coord_trans(x = "log10")
 
-## the penalty I would choose is
+## best penalty
 show_best(lasso_tune, metric = "rmse", n = 1)
-
 ```
+
+```{r}
+# tune chose smallest provided value for lambda; verify this is the best by providing smaller penalties
+tune_df$lambda <- 10^seq(-5, -2, length.out = 100)
+
+workflow() |>
+  add_model(lasso_spec) |>
+  add_recipe(prep_data) |>
+  tune_grid(resamples = cv_10fold, grid = tune_df) -> lasso_tune
+
+## best penalty
+show_best(lasso_tune, metric = "rmse", n = 1)
+```
+
 
 
