@@ -1,7 +1,12 @@
 ---
 title: "linear_regression_Hope"
-output: html_document
+output: pdf_document
 ---
+```{r, message = F}
+library(ggplot2)
+library(tidymodels)
+library(tidyverse)
+```
 
 ```{r}
 # read in data
@@ -13,13 +18,14 @@ str(all_data)
 # drop id and name columns in dataset for prediction
 useful_columns <- all_data |> subset(select = -c(id, last_name, name))
 useful_columns$weight <- as.numeric(useful_columns$weight)
-# useful_columns$height <- as.numeric(useful_columns$height)
-# useful_columns$attempted <- ifelse(useful_columns$attempted, "Yes", "No")
-# useful_columns$aggravated <- ifelse(useful_columns$aggravated, "Yes", "No")
-# useful_columns$armed <- ifelse(useful_columns$armed, "Yes", "No")
-# useful_columns$life_sentence <- ifelse(useful_columns$life_sentence, "Yes", "No")
-# useful_columns$death_sentence <- ifelse(useful_columns$death_sentence, "Yes", "No")
+useful_columns$height <- as.numeric(useful_columns$height)
+useful_columns$attempted <- as.numeric(useful_columns$attempted)
+useful_columns$aggravated <- as.numeric(useful_columns$aggravated)
+useful_columns$armed <- as.numeric(useful_columns$armed)
+useful_columns$life_sentence <- as.numeric(useful_columns$life_sentence)
+useful_columns$death_sentence <- as.numeric(useful_columns$death_sentence)
 
+useful_columns |> drop_na() -> useful_columns
 # convert categorical variables to dummy variables and normalize numerical variables
 prep_data <- recipe(current_sentence ~ ., data = useful_columns) |>
   step_dummy(all_nominal_predictors()) |>
