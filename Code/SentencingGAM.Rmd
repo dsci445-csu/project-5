@@ -24,22 +24,24 @@ sentencing <- sentencing_raw |>
     eyes  = as.factor(eyes),
     offense_category = as.factor(offense_category),
     class = as.factor(class),
-    sex = factor(sex),
-    parent_institution = as.factor(parent_institution),,
+    parent_institution = as.factor(parent_institution),
     weight = as.numeric(weight),
-    height = as.numeric(height)
-  ) |>
+    height = as.numeric(height),
+    attempted  = as.factor(attempted),
+    aggravated = as.factor(aggravated),
+    armed      = as.factor(armed)
+    ) |>
   drop_na(
     current_sentence, appx_age, total_counts,
     time_sentenced_prior, offense_category, sex,
     weight, height, race, hair, eyes,
-    attempted, aggravated, armed
-  )
+    attempted, aggravated, armed,
+    num_scars, num_tattoos, num_other_marks,
+    year_adm, month_adm
+  ) %>%
+  select(-life_sentence, -death_sentence, -name, -id, -last_name)
 
-sentencing <- as_tibble(sentencing)
-
-sentencing
-
+glimpse(sentencing)
 sent_split  <- initial_split(sentencing, prop = 0.8)
 sent_train  <- training(sent_split)
 sent_test   <- testing(sent_split)
@@ -48,17 +50,49 @@ sent_test   <- testing(sent_split)
 lm_spec <- linear_reg() |>
   set_engine("lm")
   
+num_preds <- c(
+  "num_scars", "num_tattoos", "num_other_marks",
+  "weight", "height",
+  "year_adm", "month_adm",
+  "total_counts", "time_sentenced_prior",
+  "appx_age"
+)
 
 
+gam_rec <- recipe(current_sentence ~ ., data = sent_train) |>
+  step_ns(num_preds, deg_free = tune("df")) |>
+  step_dummy(all_nominal_predictors())
 
 
+gam_wf <- workflow() |>
+  add_model(lm_spec) |>
+  add_recipe(gam_rec)
 
+sent_folds <- vfold_cv(sent_train, v = 10)
 
+deg_grid <- tibble(df = c(3, 4, 5, 6, 7, 9))
 
+gam_tune <- gam_wf |>
+  tune_grid(resamples = sent_folds, grid = deg_grid)
 
+best_df <- select_best(gam_tune, metric = "rmse")
+best_df
+gam_final_wf <- finalize_workflow(gam_wf, best_df)
 
+gam_fit <- gam_final_wf |>
+  fit(data = sent_train)
 
 
 
 
 ```
+
+
+
+
+
+```{r}
+
+
+```
+
