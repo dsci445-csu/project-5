@@ -1,5 +1,82 @@
 ---
 title: "linear_regression_Hope"
-output: html_document
+output: pdf_document
 ---
+```{r, message = F}
+library(ggplot2)
+library(tidymodels)
+library(tidyverse)
+```
+
+```{r}
+# read in data
+all_data <- read.csv("~/DSCI445/project-5/CSV Files/merged_data.csv")
+str(all_data)
+```
+
+```{r prep data}
+# drop id and name columns in dataset for prediction
+useful_columns <- all_data |> subset(select = -c(id, last_name, name))
+useful_columns$weight <- as.numeric(useful_columns$weight)
+useful_columns$height <- as.numeric(useful_columns$height)
+useful_columns$attempted <- as.numeric(useful_columns$attempted)
+useful_columns$aggravated <- as.numeric(useful_columns$aggravated)
+useful_columns$armed <- as.numeric(useful_columns$armed)
+useful_columns$life_sentence <- as.numeric(useful_columns$life_sentence)
+useful_columns$death_sentence <- as.numeric(useful_columns$death_sentence)
+
+useful_columns |> drop_na() -> useful_columns
+# convert categorical variables to dummy variables and normalize numerical variables
+prep_data <- recipe(current_sentence ~ ., data = useful_columns) |>
+  step_dummy(all_nominal_predictors()) |>
+  step_normalize(all_predictors())
+```
+
+```{r set up tune}
+# set up lasso tuning
+cv_10fold <- vfold_cv(useful_columns, v = 10)
+
+lasso_spec <- linear_reg(mixture = 1, penalty = tune("lambda")) |>
+  set_mode("regression") |>
+  set_engine("glmnet")
+
+lambda <- lambda <- 10^seq(-2, 10, length.out = 100)
+tune_df <- data.frame(lambda = lambda)
+```
+
+```{r tune}
+workflow() |>
+  add_model(lasso_spec) |>
+  add_recipe(prep_data) |>
+  tune_grid(resamples = cv_10fold, grid = tune_df) -> lasso_tune
+```
+
+```{r}
+lasso_tune |>
+  collect_metrics() |>
+  select(lambda, .metric, mean) |>
+  pivot_wider(names_from = .metric, values_from = mean) |>
+  ggplot() +
+  geom_line(aes(lambda, rmse^2)) +
+  geom_point(aes(lambda, rmse^2)) +
+  coord_trans(x = "log10")
+
+## best penalty
+show_best(lasso_tune, metric = "rmse", n = 1)
+```
+
+```{r}
+# tune chose smallest provided value for lambda; verify this is the best by providing smaller penalties
+tune_df$lambda <- 10^seq(-5, -2, length.out = 100)
+
+workflow() |>
+  add_model(lasso_spec) |>
+  add_recipe(prep_data) |>
+  tune_grid(resamples = cv_10fold, grid = tune_df) -> lasso_tune
+
+## best penalty
+show_best(lasso_tune, metric = "rmse", n = 1)
+```
+
+
 
