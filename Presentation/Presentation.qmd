@@ -1,24 +1,44 @@
 ---
-title: "Presentation"
+title: "Illinois Sentencing Length Prediction"
 format: pptx
 editor: visual
 ---
 
-## Quarto
+## DATASET
 
-Quarto enables you to weave together content and executable code into a finished presentation. To learn more about Quarto presentations see <https://quarto.org/docs/presentations/>.
+The Dataset we are focusing our project on is Illinois Department Of Corrections Labeled Faces dataset.
 
-## Bullets
+::: {.incremental}
+- 68149 mugshots along with information about their sentencing length, history with the DOC* type of crime, physical descriptors, and demographics.
 
-When you click the **Render** button a document will be generated that includes:
+- Hosted on Kaggle the data was scrapped from the Illinois Department of Corrections website https://www.idoc.state.il.us
+:::
 
--   Content authored with markdown
--   Output from executable code
+## Research Questions
+::: {.incremental}
 
-## Code
+- What predictors have the strongest effect on sentencing length?
 
-When you click the **Render** button a presentation will be generated that includes both content and the output of embedded code. You can embed code like this:
+- How accurately can we predict sentencing length?
+
+- What predictors have the strongest effect on offence category?
+
+- How accurately can we predict offence categories?
+:::
+## Data Preparation
+
+## Linear Regression
+
+## GAM
+
+## Random Forest
+
+## KNN
+
+## Closing thoughts
+
+## Sources
 
 ```{r}
-1 + 1
+
 ```
