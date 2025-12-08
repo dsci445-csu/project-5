@@ -180,6 +180,22 @@ terms_v_rmse <- data.frame(num_terms = c(19, 15, 10, 5),
 terms_v_rmse
 ```
 
+```{r}
+ranked_variables <- forward$metrics$variable
+num_terms <- 1:length(ranked_variables)
+rmse_vals <- rep(0, length(num_terms))
+
+for (i in num_terms){
+  df_subset <- useful_columns |> subset(select = c(ranked_variables[1:i], "current_sentence"))
+  subset_recipe <- recipe(current_sentence ~ ., data = df_subset)
+  subset_fit <- workflow() |> add_model(lm_spec) |> add_recipe(subset_recipe) |> fit(df_train)
+  
+  rmse_vals[i] <- get_rmse(subset_fit)
+}
+
+rmse_v_terms_df <- data.frame(num_terms = num_terms, RMSE = rmse_vals)
+ggplot(rmse_v_terms_df) + geom_point(aes(num_terms, RMSE))
+```
 
 
 
