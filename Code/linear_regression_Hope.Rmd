@@ -109,8 +109,83 @@ save_rs[4] <- max(forward$metrics$r2)
 
 ```{r}
 which.max(save_rs)
+backward
 ```
 Backwards subset selection has the highest $R^2$ and so should be used for prediction.
+
+```{r}
+df_split <- initial_split(useful_columns, prop = 0.7)
+
+df_train <- training(df_split)
+df_test <- testing(df_split)
+
+df_train <- df_train |> subset(select = -c(num_other_marks, sex, height))
+```
+
+```{r}
+lm_spec <- linear_reg()
+df_backwards <- df_train |> subset(select = -c(num_other_marks, sex, height))
+backwards_recipe <- recipe(current_sentence ~ ., data = df_backwards)
+backwards <- workflow() |> add_model(lm_spec) |> add_recipe(linear_recipe) |> fit(df_train)
+
+get_rmse <- function(model) {
+  augment(model, new_data = df_test) |>
+    mutate(resid2 = .resid^2) |>
+    summarise(rmse = sqrt(mean(resid2))) |>
+    pull(rmse)
+}
+
+rmse_backwards <- get_rmse(backwards)
+rmse_backwards
+```
+
+```{r}
+# drops num_other_marks, height, sex
+# reverse order num_scars, month_adm, hair, death_sentence, attempted, weight, eyes, armed, num_tattoos -- 10
+# race, appx_age, aggravated, time_sentenced prior, offense_category
+# top 5 in order: year_adm, life_sentence, class, parent_institution, total_counts
+```
+
+```{r}
+df_fifteen <- df_backwards |> subset(select = -c(num_scars, month_adm, hair, death_sentence))
+fifteen_recipe <- recipe(current_sentence ~ ., data = df_fifteen)
+fifteen <- workflow() |> add_model(lm_spec) |> add_recipe(fifteen_recipe) |> fit(df_train)
+
+rmse_fifteen <- get_rmse(fifteen)
+rmse_fifteen
+```
+
+```{r}
+df_ten <- df_fifteen |> subset(select = -c(attempted, weight, eyes, armed, num_tattoos))
+ten_recipe <- recipe(current_sentence ~ ., data = df_ten)
+ten <- workflow() |> add_model(lm_spec) |> add_recipe(ten_recipe) |> fit(df_train)
+
+rmse_ten <- get_rmse(ten)
+rmse_ten
+```
+
+```{r}
+df_five <- df_ten |> subset(select = -c(race, appx_age, aggravated, 
+                                time_sentenced_prior, offense_category))
+five_recipe <- recipe(current_sentence ~ ., data = df_five)
+five <- workflow() |> add_model(lm_spec) |> add_recipe(five_recipe) |> fit(df_train)
+
+rmse_five <- get_rmse(five)
+rmse_five
+```
+
+```{r}
+terms_v_rmse <- data.frame(num_terms = c(19, 15, 10, 5), 
+                           RMSE = c(rmse_backwards, rmse_fifteen, rmse_ten, rmse_five))
+terms_v_rmse
+```
+
+
+
+
+
+
+
 
 
 
