@@ -3,7 +3,7 @@ title: "linear_regression_Hope"
 output: pdf_document
 ---
 ```{r, message = F}
-packages <- c("ggplot2", "tidyverse", "tidymodels", "olsrr")
+packages <- c("ggplot2", "tidyverse", "tidymodels", "olsrr", "glmnet")
 
 for (pkg in packages) {
   if (!require(pkg, character.only = TRUE)) {
@@ -18,20 +18,20 @@ set.seed(445)
 
 ```{r}
 # read in data
-all_data <- read.csv("~/DSCI445/project-5/CSV Files/merged_data.csv")
+all_data <- read.csv("../CSV Files/merged_data.csv")
 str(all_data)
 ```
 
 ```{r prep data}
 # drop id and name columns in dataset for prediction
-useful_columns <- all_data |> subset(select = -c(id, last_name, name))
+useful_columns <- all_data |> subset(select = -c(id, last_name, name, life_sentence, death_sentence))
 useful_columns$weight <- as.numeric(useful_columns$weight)
 useful_columns$height <- as.numeric(useful_columns$height)
 useful_columns$attempted <- as.numeric(useful_columns$attempted)
 useful_columns$aggravated <- as.numeric(useful_columns$aggravated)
 useful_columns$armed <- as.numeric(useful_columns$armed)
-useful_columns$life_sentence <- as.numeric(useful_columns$life_sentence)
-useful_columns$death_sentence <- as.numeric(useful_columns$death_sentence)
+#useful_columns$life_sentence <- as.numeric(useful_columns$life_sentence)
+#useful_columns$death_sentence <- as.numeric(useful_columns$death_sentence)
 
 useful_columns |> drop_na() -> useful_columns
 # convert categorical variables to dummy variables and normalize numerical variables
@@ -42,6 +42,7 @@ prep_data <- recipe(current_sentence ~ ., data = useful_columns) |>
 
 ```{r set up tune}
 # set up lasso tuning
+set.seed(445)
 cv_10fold <- vfold_cv(useful_columns, v = 10)
 
 lasso_spec <- linear_reg(mixture = 1, penalty = tune("lambda")) |>
@@ -53,7 +54,6 @@ tune_df <- data.frame(lambda = lambda)
 ```
 
 ```{r tune}
-set.seed(445)
 workflow() |>
   add_model(lasso_spec) |>
   add_recipe(prep_data) |>
@@ -76,22 +76,29 @@ show_best(lasso_tune, metric = "rsq", n = 1)
 save_rs <- rep(0, 4)
 save_rs[1] <- show_best(lasso_tune, metric = "rsq", n = 1)$mean
 ```
+```{r}
+set.seed(445)
+df_split <- initial_split(useful_columns, prop = 0.7)
 
+df_train <- training(df_split)
+df_test <- testing(df_split)
+```
 
 ```{r}
-# tune chose smallest provided value for lambda; verify this is the best by providing smaller penalties
-tune_df$lambda <- 10^seq(-5, -2, length.out = 100)
-
-set.seed(445)
+lasso_spec <- linear_reg(mixture = 1, penalty = show_best(lasso_tune, metric = "rmse", n = 1)$lambda) |>
+    set_mode("regression") |>
+    set_engine("glmnet")
+  
 workflow() |>
   add_model(lasso_spec) |>
   add_recipe(prep_data) |>
-  tune_grid(resamples = cv_10fold, grid = tune_df) -> lasso_tune
+  fit(df_train) -> lasso
 
-## best penalty
-show_best(lasso_tune, metric = "rsq", n = 1)
-save_rs[2] <- show_best(lasso_tune, metric = "rsq", n = 1)$mean
+lasso |> tidy() -> lasso_df
+lasso_df[lasso_df$estimate == 0,]
+write.csv(lasso_df[lasso_df$estimate == 0, ], "LinearRegressionOutputs/lasso_terms.csv", row.names = F)
 ```
+LASSO only sets 5 out of 88 terms to 0, and the terms set to 0 do not encapsulate whole categorical variables, so this information is not meaningfully interpretable. 
 
 ```{r}
 set.seed(445)
@@ -114,11 +121,6 @@ backward
 Backwards subset selection has the highest $R^2$ and so should be used for prediction.
 
 ```{r}
-df_split <- initial_split(useful_columns, prop = 0.7)
-
-df_train <- training(df_split)
-df_test <- testing(df_split)
-
 df_train <- df_train |> subset(select = -c(num_other_marks, sex, height))
 ```
 
