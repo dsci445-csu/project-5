@@ -104,6 +104,7 @@ LASSO only sets 5 out of 88 terms to 0, and the terms set to 0 do not encapsulat
 set.seed(445)
 model <- lm(current_sentence ~ ., data = useful_columns)
 backward <- ols_step_backward_adj_r2(model)
+backward$metrics
 backward$metrics$adj_r2
 save_rs[3] <- max(backward$metrics$r2)
 ```
@@ -111,8 +112,17 @@ save_rs[3] <- max(backward$metrics$r2)
 ```{r}
 set.seed(445)
 forward <- ols_step_forward_adj_r2(model)
-save_rs[4] <- max(forward$metrics$r2)
+forward$metrics
 ```
+
+```{r}
+renumbered <- backward$metrics
+renumbered$step <- c(20, 19, 18, 17)
+renumbered <- rbind(forward$metrics, renumbered)
+renumbered <- renumbered[order(renumbered$step),]
+write.csv(renumbered, "LinearRegressionOutputs/ranked_vars.csv", row.names = F)
+```
+
 
 ```{r}
 which.max(save_rs)
@@ -121,12 +131,9 @@ backward
 Backwards subset selection has the highest $R^2$ and so should be used for prediction.
 
 ```{r}
-df_train <- df_train |> subset(select = -c(num_other_marks, sex, height))
-```
-
-```{r}
 lm_spec <- linear_reg()
-df_backwards <- df_train |> subset(select = -c(num_other_marks, sex, height))
+df_backwards <- df_train |> select(-all_of(backward$metrics$variable))
+
 backwards_recipe <- recipe(current_sentence ~ ., data = df_backwards)
 backwards <- workflow() |> add_model(lm_spec) |> add_recipe(linear_recipe) |> fit(df_train)
 
