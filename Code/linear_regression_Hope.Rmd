@@ -3,9 +3,17 @@ title: "linear_regression_Hope"
 output: pdf_document
 ---
 ```{r, message = F}
-library(ggplot2)
-library(tidymodels)
-library(tidyverse)
+packages <- c("ggplot2", "tidyverse", "tidymodels", "olsrr")
+
+for (pkg in packages) {
+  if (!require(pkg, character.only = TRUE)) {
+    install.packages(pkg, dependencies = TRUE)
+    library(pkg, character.only = TRUE)
+  }
+}
+remove(packages, pkg)
+
+set.seed(445)
 ```
 
 ```{r}
@@ -45,6 +53,7 @@ tune_df <- data.frame(lambda = lambda)
 ```
 
 ```{r tune}
+set.seed(445)
 workflow() |>
   add_model(lasso_spec) |>
   add_recipe(prep_data) |>
@@ -62,21 +71,46 @@ lasso_tune |>
   coord_trans(x = "log10")
 
 ## best penalty
-show_best(lasso_tune, metric = "rmse", n = 1)
+show_best(lasso_tune, metric = "rsq", n = 1)
+
+save_rs <- rep(0, 4)
+save_rs[1] <- show_best(lasso_tune, metric = "rsq", n = 1)$mean
 ```
+
 
 ```{r}
 # tune chose smallest provided value for lambda; verify this is the best by providing smaller penalties
 tune_df$lambda <- 10^seq(-5, -2, length.out = 100)
 
+set.seed(445)
 workflow() |>
   add_model(lasso_spec) |>
   add_recipe(prep_data) |>
   tune_grid(resamples = cv_10fold, grid = tune_df) -> lasso_tune
 
 ## best penalty
-show_best(lasso_tune, metric = "rmse", n = 1)
+show_best(lasso_tune, metric = "rsq", n = 1)
+save_rs[2] <- show_best(lasso_tune, metric = "rsq", n = 1)$mean
 ```
+
+```{r}
+set.seed(445)
+model <- lm(current_sentence ~ ., data = useful_columns)
+backward <- ols_step_backward_adj_r2(model)
+backward$metrics$adj_r2
+save_rs[3] <- max(backward$metrics$r2)
+```
+
+```{r}
+set.seed(445)
+forward <- ols_step_forward_adj_r2(model)
+save_rs[4] <- max(forward$metrics$r2)
+```
+
+```{r}
+which.max(save_rs)
+```
+Backwards subset selection has the highest $R^2$ and so should be used for prediction.
 
 
 
