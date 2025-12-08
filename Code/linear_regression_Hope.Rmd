@@ -147,40 +147,6 @@ rmse_backwards
 ```
 
 ```{r}
-df_fifteen <- df_backwards |> subset(select = -c(num_scars, month_adm, hair, death_sentence))
-fifteen_recipe <- recipe(current_sentence ~ ., data = df_fifteen)
-fifteen <- workflow() |> add_model(lm_spec) |> add_recipe(fifteen_recipe) |> fit(df_train)
-
-rmse_fifteen <- get_rmse(fifteen)
-rmse_fifteen
-```
-
-```{r}
-df_ten <- df_fifteen |> subset(select = -c(attempted, weight, eyes, armed, num_tattoos))
-ten_recipe <- recipe(current_sentence ~ ., data = df_ten)
-ten <- workflow() |> add_model(lm_spec) |> add_recipe(ten_recipe) |> fit(df_train)
-
-rmse_ten <- get_rmse(ten)
-rmse_ten
-```
-
-```{r}
-df_five <- df_ten |> subset(select = -c(race, appx_age, aggravated, 
-                                time_sentenced_prior, offense_category))
-five_recipe <- recipe(current_sentence ~ ., data = df_five)
-five <- workflow() |> add_model(lm_spec) |> add_recipe(five_recipe) |> fit(df_train)
-
-rmse_five <- get_rmse(five)
-rmse_five
-```
-
-```{r}
-terms_v_rmse <- data.frame(num_terms = c(19, 15, 10, 5), 
-                           RMSE = c(rmse_backwards, rmse_fifteen, rmse_ten, rmse_five))
-terms_v_rmse
-```
-
-```{r}
 ranked_variables <- forward$metrics$variable
 num_terms <- 1:length(ranked_variables)
 rmse_vals <- rep(0, length(num_terms))
