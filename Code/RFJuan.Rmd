@@ -7,9 +7,9 @@ output: html_document
 
 # Loading the Data and Packages
 
-```{r, warning=FALSE}
+```{r, warning=FALSE, message=FALSE}
 
-packages <- c("lubridate", "tidyverse", "tidymodels", "rpart.plot", "vip", "Metrics")
+packages <- c("lubridate", "tidyverse", "tidymodels", "rpart.plot", "vip", "Metrics", "randomForest")
 
 for (pkg in packages) {
   if (!require(pkg, character.only = TRUE)) {
@@ -56,6 +56,7 @@ df_test <- testing(df_split)
 #rf
 
 
+
 rf_spec <- rand_forest(mtry = sqrt(.cols())) |>
   set_engine("randomForest", importance = TRUE) |>
   set_mode("regression")
@@ -68,6 +69,14 @@ rf_fit <- rf_spec |>
 end <-  Sys.time()
 
 end - start
+
+# For saving fit results
+#saveRDS(rf_fit, "RFfit_model_juan.rds")
+
+
+#Load the model
+#rf_fit <- readRDS("rf_fit_model.rds")
+
 
 vip(rf_fit)
 
@@ -94,6 +103,9 @@ rmse(df_test$current_sentence, augmented)
 #OOB RMSE
 rf_engine <- rf_fit |> extract_fit_engine()
 sqrt(rf_engine$mse[rf_engine$ntree])
+
+
+
 
 
 

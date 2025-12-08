@@ -12,6 +12,7 @@ remove(packages, pkg)
 # read in person csv
 df <- read.csv("CSV Files/person_1024.csv")
 
+
 #Adding columns that will allow us to work with lubridate's functions in R 
 
 df <- df %>% mutate(ymd_born = mdy(date_of_birth),

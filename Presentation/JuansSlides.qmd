@@ -1,0 +1,40 @@
+---
+title: "Juan's Slides on Random Foresting"
+author: "Juan Gonzalez"
+format: pptx
+editor: visual
+---
+
+## Random Forests
+
+-   Chosen to deal with correlation amongst trees.
+-   59,333 observations. 70:30 Split \~ (41,500 \| 17,800)
+-   Fit 500 trees with 4 randomly chosen predictors for each tree.
+
+```{r, echo=FALSE, fig.width=8}
+
+library(vip)
+library(tidyverse)
+
+
+rf_fit <- readRDS("../Code/RFfit_model_juan.rds")
+
+
+
+vi <- vi(rf_fit$fit) %>%
+  top_n(5, Importance) %>%
+  mutate(Variable = recode(Variable,
+                           year_adm = "Year Admitted",
+                           total_counts = "Total Counts",
+                           parent_institution = "Parent Institution",
+                           life_sentence = "Life Sentence",
+                           time_sentenced_prior = "Prior Sentencing Time"))
+
+vip(vi, aesthetics = list(fill = "coral4"))  +
+  ggtitle("5 Most Important Predictors in our Random Forests Model") + theme_bw()
+
+
+```
+
+
+## Random Forests - Results
