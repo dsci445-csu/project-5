@@ -71,7 +71,10 @@ lasso_tune |>
   coord_trans(x = "log10")
 
 ## best penalty
-show_best(lasso_tune, metric = "rmse", n = 1)
+show_best(lasso_tune, metric = "rsq", n = 1)
+
+save_rs <- rep(0, 4)
+save_rs[1] <- show_best(lasso_tune, metric = "rsq", n = 1)$mean
 ```
 
 
@@ -86,24 +89,28 @@ workflow() |>
   tune_grid(resamples = cv_10fold, grid = tune_df) -> lasso_tune
 
 ## best penalty
-show_best(lasso_tune, metric = "r", n = 1)
-```
-```{r}
-lasso_tune |> collect_metrics()
-show_best(lasso_tune, metric = "rsq", n = 3)
+show_best(lasso_tune, metric = "rsq", n = 1)
+save_rs[2] <- show_best(lasso_tune, metric = "rsq", n = 1)$mean
 ```
 
 ```{r}
+set.seed(445)
 model <- lm(current_sentence ~ ., data = useful_columns)
 backward <- ols_step_backward_adj_r2(model)
+backward$metrics$adj_r2
+save_rs[3] <- max(backward$metrics$r2)
 ```
 
 ```{r}
+set.seed(445)
 forward <- ols_step_forward_adj_r2(model)
-forward
+save_rs[4] <- max(forward$metrics$r2)
 ```
 
-
+```{r}
+which.max(save_rs)
+```
+Backwards subset selection has the highest $R^2$ and so should be used for prediction.
 
 
 
