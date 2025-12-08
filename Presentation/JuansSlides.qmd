@@ -7,17 +7,28 @@ editor: visual
 
 ## Random Forests
 
+:::columns
+:::column
+
 -   Chosen to deal with correlation amongst trees.
--   59,333 observations. 70:30 Split \~ (41,500 \| 17,800)
+-   58,836 observations. 70:30 Split  $\sim$ (41,200 | 17,600)
 -   Fit 500 trees with 4 randomly chosen predictors for each tree.
 
-```{r, echo=FALSE, fig.width=8}
+:::
+
+:::column
+
+```{r, echo=FALSE, fig.width=12, fig.height=8.25}
 
 library(vip)
 library(tidyverse)
+library(randomForest)
+library(pdp)
 
-
-rf_fit <- readRDS("../Code/RFfit_model_juan.rds")
+#You must use download link to download the rds file locally and adjust it to your pathway to the rds.
+#
+rf_fit <- readRDS("~/Documents/RFfit_model_juan.rds")
+#rf_fit <- readRDS("../Code/RFfit_model_juan.rds")
 
 
 
@@ -25,16 +36,74 @@ vi <- vi(rf_fit$fit) %>%
   top_n(5, Importance) %>%
   mutate(Variable = recode(Variable,
                            year_adm = "Year Admitted",
-                           total_counts = "Total Counts",
                            parent_institution = "Parent Institution",
-                           life_sentence = "Life Sentence",
-                           time_sentenced_prior = "Prior Sentencing Time"))
+                           total_counts = "Total Counts",
+                           time_sentenced_prior = "Prior Sentencing Time",
+                           class = "Illinois Felony Class",
+                           ))
 
 vip(vi, aesthetics = list(fill = "coral4"))  +
-  ggtitle("5 Most Important Predictors in our Random Forests Model") + theme_bw()
+  ggtitle("5 Most Important Predictors in our Random Forests Model") + theme_bw() + 
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text = element_text(size = 13),
+        plot.title = element_text(size = 16, hjust = 0.5))
+
 
 
 ```
 
+:::
+:::
 
-## Random Forests - Results
+
+
+
+
+## Predictive Performance - Random Forests
+
+::: columns
+::: column
+- **12.11** OOB RMSE / **12. 18** Test RMSE. Similar RMSEs is good (generalizes well).
+- As sentencing length goes up, our models prediction becomes more variable. However, the models' errors scale proportionally to sentencing length. Meaning we don't typically get crazy predictions for lower sentencing lengths.
+:::
+
+::: column
+
+```{r, echo=FALSE, fig.width=8}
+
+rmses <- read_csv("../CSV Files/RF_RMSEbySentencing.csv")
+
+
+ggplot(data = rmses, aes(x = current_sentence_rnd, y = rmse)) + 
+  labs(title = "RMSE by Sentence Length", x = "Sentencing Time", y = "RMSE") +
+  geom_smooth(method = "loess", se = FALSE, color = "coral4") + geom_line() +
+  theme_bw()+theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+:::
+:::
+
+
+### Bonus Slides - Complete Variable Importance for RF
+
+
+```{r, echo=FALSE, fig.width=8}
+vi_all <- vi(rf_fit$fit) %>%
+  top_n(20, Importance) #%>%
+  # mutate(Variable = recode(Variable,
+  #                          year_adm = "Year Admitted",
+  #                          parent_institution = "Parent Institution",
+  #                          total_counts = "Total Counts",
+  #                          time_sentenced_prior = "Prior Sentencing Time",
+  #                          class = "Illinois Felony Class",
+  # ))
+
+vip(vi_all, num_features = 20,aesthetics = list(fill = "coral4"))  +
+  ggtitle("Variable Importance Plot for our Random Forests Model") + theme_bw()
+
+
+
+
+```

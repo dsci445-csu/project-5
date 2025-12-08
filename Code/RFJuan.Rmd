@@ -21,19 +21,18 @@ remove(packages, pkg)
 
 df_load <- read.csv("~/Documents/GitHub/project-5/CSV Files/merged_data.csv")
 
-df <- df_load %>% select(-id, -last_name, -name)%>%
+df <- df_load %>% select(-id, -last_name, -name, -life_sentence, -death_sentence)%>%
   mutate(time_sentenced_prior = round(time_sentenced_prior,2),
          height = as.numeric(height),
          weight = as.numeric(weight)) %>% filter(!hair %in% c("Sandy", "Not Available"),
-                                                 !eyes %in% c("Not Available"))
+                                                 !eyes %in% c("Not Available"),
+                                                 current_sentence > 0)
 
 df <- na.omit(df)
 
 df <- df |>
   mutate(across(where(is.character), as.factor),
          across(where(is.logical), ~factor(., levels = c(FALSE, TRUE))))
-
-
 
 
 ```
@@ -98,15 +97,42 @@ rmse(df_test$current_sentence, augmented)
 
 
 ```
-```{r}
+
+
+```{r, message = FALSE}
 
 #OOB RMSE
 rf_engine <- rf_fit |> extract_fit_engine()
 sqrt(rf_engine$mse[rf_engine$ntree])
 
 
+try <- test %>% mutate(current_sentence_rnd = round(current_sentence,0)) %>% 
+  group_by(current_sentence_rnd) %>% summarise(obs = n(), rmse = mean(abs(current_sentence_rnd - prediction)))
+
+ggplot(data = try, aes(x = current_sentence_rnd, y = rmse)) + 
+  labs(title = "RMSE by Sentence Length", x = "Sentencing Time", y = "RMSE") +
+  geom_smooth(method = "loess", se = FALSE, color = "coral4") + geom_line() +theme_bw()
 
 
+
+
+
+#For entire dataset
+df_with_preds <- df %>%
+  mutate(prediction = predict(rf_fit, new_data = df)$.pred)
+
+
+rmse_alldata <- df_with_preds %>% mutate(current_sentence_rnd = round(current_sentence,0)) %>% 
+  filter(current_sentence_rnd >0) %>% 
+  group_by(current_sentence_rnd) %>% summarise(obs = n(), rmse = mean(abs(current_sentence_rnd - prediction)))
+
+
+ggplot(data = rmse_alldata, aes(x = current_sentence_rnd, y = rmse)) + 
+  labs(title = "RMSE by Sentence Length", x = "Sentencing Time", y = "RMSE") +
+  geom_smooth(method = "loess", se = FALSE, color = "coral4") + geom_line() +theme_bw()
+
+
+write.csv(rmse_alldata, "RF_RMSEbySentencing.csv", row.names = FALSE)
 
 
 ```

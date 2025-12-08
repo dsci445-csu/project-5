@@ -41,4 +41,8 @@ each dataset was cleaned, all three were merged into one dataset called merged_d
 -- with splines
 -- polynomial
 
+# Sources 
+
+- https://drive.google.com/drive/folders/1XqyE_XdYWNoK3NAcTxp41hUJ13zu1Qbr?usp=sharing
+
 
