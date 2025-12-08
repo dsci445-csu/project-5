@@ -1,0 +1,101 @@
+---
+title: "AaronSlides"
+format: pptx
+editor: visual
+---
+
+```{r libraries, include = FALSE}
+library(ggplot2)
+library(tidymodels)
+library(dplyr)
+library(knitr)
+```
+
+```{r loaddata, include = FALSE}
+illinois_doc_data <- read.csv("~/DSCI445/project-5/CSV Files/merged_data.csv")
+cleaned_doc_data <- illinois_doc_data |> select(-c(last_name, name, id)) |>
+  mutate(offense_category = as.factor(offense_category),
+         adm_appx_age = appx_age,
+         weight_lbs = as.numeric(weight),
+         sex = as.factor(sex),
+         height_in = as.numeric(height),
+         race = as.factor(race),
+         eye_color = as.factor(eyes),
+         hair = as.factor(hair),
+         class = as.factor(class),
+         parent_institution = as.factor(parent_institution)) |>
+  select(-c(eyes, height, weight, appx_age)) |> na.omit()
+```
+
+```{r ttsplit, include = FALSE}
+set.seed(445)
+df_split <- initial_split(cleaned_doc_data, prop = 0.8)
+df_train <- training(df_split)
+df_train
+df_test <- testing(df_split)
+```
+
+# K-Nearest Neighbors Background
+
+-   K-Nearest Neighbors (KNN) is a classification method that loops through each point in a dataset, and identifies the k points that are closest to that point
+
+    -   This k value is adjustable and helps determine the classifier itself, so tuning k is critical for optimizing performance.
+
+# KNN on Offense Category
+
+-   **Goal:** Predict offense category for individuals based on all other variables.
+
+    -   **Offense categories (manually created):** controlled substance possession without a prescription, burglary, murder, armed robbery, theft (identity or property), battery, sexual assault, forgery, kidnapping, illegal firearm/weapon/handgun use or possession, harassment, bribery, drug/meth manufacturing, vehicular hijacking/theft, DUI, child porn, obstructing justice, home invasion, and other
+
+        -   Categories besides other accounted for \>90% of offenses
+
+-   **Problem:** This method can be extremely time-expensive with large training sets due to the nature of looping through each point, as I found out during data fitting
+
+    -   47,000+ training observations (for an 80-20 split)
+
+    -   2.75 hour runtime
+
+# KNN Cross Validation Results
+
+-   Ten-fold cross-validation performed with the following possible k-values:
+
+    -   10, 50, 100, 200, 500, 1000, 5000
+
+    -   Chose wide range due to large amount of data
+
+-   Cross-validation used to pick the k-value returning the best accuracy, which was k=50
+
+-   Accuracy decreased significantly for k \> 50
+
+```{r knn_cv, fig.width = 8, fig.height = 6}
+tune_results <- readRDS("~/DSCI445/project-5/Code/knn_CV_results.rds")
+autoplot(tune_results)
+```
+
+# KNN Model Performance
+
+```{r knn_performance, fig.width = 9, fig.height = 7}
+final_knn_fit <- readRDS("~/DSCI445/project-5/Code/final_knn_model.rds")
+knn_preds <- predict(final_knn_fit, new_data = df_test) |>
+  bind_cols(df_test)
+knn_conf_mat <- knn_preds |> conf_mat(truth = offense_category,
+                                      estimate = .pred_class)
+autoplot(knn_conf_mat, type = "heatmap") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),
+        text = element_text(size = 12))
+
+knn_test_error <- knn_preds |>
+  accuracy(truth = offense_category, estimate = .pred_class) |>
+  mutate(error = 1 - .estimate) |>
+  pull(error)
+print(paste0("KNN Test Error for predicting offense category: ",
+             round(knn_test_error, 3)))
+```
+
+-   Test error rate seems high on the surface (almost 50%)
+
+    -   But we have to account for the fact that 17 categories are present
+
+        -   Expected error rate with 17 prediction categories, if randomly guessing: \~94.12%
+
+        -   Reduction in error, from this sense, by almost half
