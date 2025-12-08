@@ -109,8 +109,65 @@ save_rs[4] <- max(forward$metrics$r2)
 
 ```{r}
 which.max(save_rs)
+backward
 ```
 Backwards subset selection has the highest $R^2$ and so should be used for prediction.
+
+```{r}
+df_split <- initial_split(useful_columns, prop = 0.7)
+
+df_train <- training(df_split)
+df_test <- testing(df_split)
+
+df_train <- df_train |> subset(select = -c(num_other_marks, sex, height))
+```
+
+```{r}
+lm_spec <- linear_reg()
+df_backwards <- df_train |> subset(select = -c(num_other_marks, sex, height))
+backwards_recipe <- recipe(current_sentence ~ ., data = df_backwards)
+backwards <- workflow() |> add_model(lm_spec) |> add_recipe(linear_recipe) |> fit(df_train)
+
+get_rmse <- function(model) {
+  augment(model, new_data = df_test) |>
+    mutate(resid2 = .resid^2) |>
+    summarise(rmse = sqrt(mean(resid2))) |>
+    pull(rmse)
+}
+
+rmse_backwards <- get_rmse(backwards)
+rmse_backwards
+```
+
+```{r}
+# drops num_other_marks, height, sex
+# reverse order num_scars, month_adm, hair, death_sentence, attempted, weight, eyes, armed, num_tattoos -- 10
+# race, appx_age, aggravated, time_sentenced prior, offense_category
+# top 5 in order: year_adm, life_sentence, class, parent_institution, total_counts
+```
+
+```{r}
+ranked_variables <- forward$metrics$variable
+num_terms <- 1:length(ranked_variables)
+rmse_vals <- rep(0, length(num_terms))
+
+for (i in num_terms){
+  df_subset <- useful_columns |> subset(select = c(ranked_variables[1:i], "current_sentence"))
+  subset_recipe <- recipe(current_sentence ~ ., data = df_subset)
+  subset_fit <- workflow() |> add_model(lm_spec) |> add_recipe(subset_recipe) |> fit(df_train)
+  
+  rmse_vals[i] <- get_rmse(subset_fit)
+}
+
+rmse_v_terms_df <- data.frame(num_terms = num_terms, RMSE = rmse_vals)
+ggplot(rmse_v_terms_df) + geom_point(aes(num_terms, RMSE))
+```
+
+
+
+
+
+
 
 
 
