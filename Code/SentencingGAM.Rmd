@@ -39,9 +39,14 @@ sentencing <- sentencing_raw |>
     num_scars, num_tattoos, num_other_marks,
     year_adm, month_adm
   ) %>%
-  select(-life_sentence, -death_sentence, -name, -id, -last_name)
+  select(-death_sentence, -name, -id, -last_name)
 
 glimpse(sentencing)
+
+
+
+
+
 sent_split  <- initial_split(sentencing, prop = 0.8)
 sent_train  <- training(sent_split)
 sent_test   <- testing(sent_split)
@@ -70,7 +75,7 @@ gam_wf <- workflow() |>
 
 sent_folds <- vfold_cv(sent_train, v = 10)
 
-deg_grid <- tibble(df = c(3, 4, 5, 6, 7, 9))
+deg_grid <- tibble(df = c(3, 4, 5))
 
 gam_tune <- gam_wf |>
   tune_grid(resamples = sent_folds, grid = deg_grid)
@@ -92,7 +97,64 @@ gam_fit <- gam_final_wf |>
 
 
 ```{r}
+test_preds <- gam_fit |>
+  augment(new_data = sent_test)
+
+gam_rmse <- test_preds |>
+  rmse(truth = current_sentence, estimate = .pred)
+
+gam_rsq <- test_preds |>
+  rsq(truth = current_sentence, estimate = .pred)
+
+gam_rmse
+gam_rsq
+
 
 
 ```
+
+
+
+```{r}
+train_pred <- gam_fit |>
+  augment(new_data = sent_train)
+selected <- c(
+  "num_scars", "num_tattoos", "num_other_marks",
+  "weight", "height",
+  "year_adm", "month_adm",
+  "total_counts", "time_sentenced_prior",
+  "appx_age"
+)
+
+for (pred in selected) {
+  pred_dat <- train_pred |>
+    group_by(.data[[pred]]) |>
+    summarise(.pred = mean(.pred), .groups = "drop")
+
+  out_dat <- train_pred[, c(pred, "current_sentence"), drop = FALSE]
+
+  p<-ggplot() +
+    geom_point(
+      data = out_dat,
+      aes(x = .data[[pred]], y = current_sentence),
+      alpha = 0.01
+    ) +
+    geom_line(
+      data = pred_dat,
+      aes(x = .data[[pred]], y = .pred)
+    ) +
+    labs(
+      x = pred,
+      y = "Sentence length"
+    )
+  print(p)  
+}
+
+```
+
+
+
+
+
+
 
