@@ -1,39 +1,40 @@
 ---
-title: "Illinois Sentencing Length Prediction"
+title: "Illinois DOC Sentencing Machine Learning Analysis"
 format: pptx
 editor: visual
 ---
 
 ## DATASET
 
-The Dataset we are focusing our project on is Illinois Department Of Corrections Labeled Faces dataset.
+The dataset we are focusing our project on is Illinois Department Of Corrections Labeled Faces.
 
-::: {.incremental}
-- 68149 mugshots along with information about their sentencing length, history with the DOC* type of crime, physical descriptors, and demographics.
+::: incremental
+-   68149 Booking photographs along with information about their sentencing length, criminal history, type of crime, physical descriptors, and demographics.
 
-- Hosted on Kaggle the data was scrapped from the Illinois Department of Corrections website https://www.idoc.state.il.us
+-   Hosted on Kaggle the data was scrapped from the Illinois Department of Corrections website https://www.idoc.state.il.us
 :::
 
 ## Research Questions
-::: {.incremental}
 
-- What predictors have the strongest effect on sentencing length?
+::: incremental
+-   What predictors have the strongest effect on sentencing length?
 
-- How accurately can we predict sentencing length?
+-   How accurately can we predict sentencing length?
 
-- What predictors have the strongest effect on offence category?
+-   What predictors have the strongest effect on offence category?
 
-- How accurately can we predict offence categories?
+-   How accurately can we predict offence categories?
 :::
+
 ## Data Preparation
+
+## KNN
 
 ## Linear Regression
 
 ## GAM
 
 ## Random Forest
-
-## KNN
 
 ## Closing thoughts
 
