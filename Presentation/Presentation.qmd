@@ -31,7 +31,107 @@ Our data comes from Kaggle, it consists of 3 CSV files with data scraped off the
 -   How accurately can we predict offence categories?
 :::
 
-## KNN
+
+```{r libraries, include = FALSE}
+library(ggplot2)
+library(tidymodels)
+library(dplyr)
+library(knitr)
+```
+
+```{r loaddata, include = FALSE}
+illinois_doc_data <- read.csv("~/DSCI445/project-5/CSV Files/merged_data.csv")
+cleaned_doc_data <- illinois_doc_data |> select(-c(last_name, name, id)) |>
+  mutate(offense_category = as.factor(offense_category),
+         adm_appx_age = appx_age,
+         weight_lbs = as.numeric(weight),
+         sex = as.factor(sex),
+         height_in = as.numeric(height),
+         race = as.factor(race),
+         eye_color = as.factor(eyes),
+         hair = as.factor(hair),
+         class = as.factor(class),
+         parent_institution = as.factor(parent_institution)) |>
+  select(-c(eyes, height, weight, appx_age)) |> na.omit()
+```
+
+```{r ttsplit, include = FALSE}
+set.seed(445)
+df_split <- initial_split(cleaned_doc_data, prop = 0.8)
+df_train <- training(df_split)
+df_train
+df_test <- testing(df_split)
+```
+## K-Nearest Neighbors Background
+
+-   K-Nearest Neighbors (KNN) is a classification method that loops through each point in a dataset, and identifies the k points that are closest to that point
+
+    -   This k value is adjustable and helps determine the classifier itself, so tuning k is critical for optimizing performance.
+
+## KNN on Offense Category
+
+-   **Goal:** Predict offense category for individuals based on all other variables.
+
+    -   **Offense categories (manually created):** controlled substance possession without a prescription, burglary, murder, armed robbery, theft (identity or property), battery, sexual assault, forgery, kidnapping, illegal firearm/weapon/handgun use or possession, harassment, bribery, drug/meth manufacturing, vehicular hijacking/theft, DUI, child porn, obstructing justice, home invasion, and other
+
+        -   Categories besides other accounted for \>90% of offenses
+
+## Drawbacks/Issues
+
+-   **Problem:** This method can be extremely time-expensive with large training sets due to the nature of looping through each point, as I found out during data fitting
+
+    -   47,000+ training observations (for an 80-20 split)
+
+    -   2.75 hour runtime
+
+-   No variable selection or subset with KNN
+
+## KNN Cross Validation Results
+
+-   Ten-fold cross-validation performed with the following possible k-values:
+
+    -   10, 50, 100, 200, 500, 1000, 5000
+
+    -   Chose wide range due to large amount of data
+
+-   Cross-validation used to pick the k-value returning the best accuracy, which was k=50
+
+-   Accuracy decreased significantly for k \> 50
+
+```{r knn_cv, fig.width = 8, fig.height = 6}
+tune_results <- readRDS("~/DSCI445/project-5/Code/knn_CV_results.rds")
+autoplot(tune_results)
+```
+
+## KNN Model Performance
+
+```{r knn_performance, fig.width = 2, fig.height = 2}
+set.seed(445)
+final_knn_fit <- readRDS("~/DSCI445/project-5/Code/final_knn_model.rds")
+knn_preds <- predict(final_knn_fit, new_data = df_test) |>
+  bind_cols(df_test)
+knn_conf_mat <- knn_preds |> conf_mat(truth = offense_category,
+                                      estimate = .pred_class)
+knn_conf_mat_df <- data.frame(knn_conf_mat$table)
+knn_table <- knn_conf_mat_df |> group_by(Truth) |>
+  summarize(total = sum(Freq),
+            correct = sum(Freq[Truth == Prediction]),
+            prop_correct = round(correct / total, 3))
+knn_table1 <- knn_table[1:9,]
+knn_table2 <- knn_table[10:17,]
+kable(knn_table1)
+kable(knn_table2)
+
+```
+
+## KNN Model Analysis
+
+-   Test error rate seems high on the surface (almost 40%)
+    -   But we have to account for the fact that 17 categories are present
+        -   Expected guessing error w/ 17 prediction categories: \~94.12%
+-   Predictive accuracy was significantly better in categories with more observations (e.g., battery, illegal weapon use/possession, murder) than categories with few observations (e.g., vehicular hijacking/theft, forgery).
+    -   Only exceptions: drug manufacturing, theft (\< 45% accuracy).
+-   Interpretation: more variability in predictor means for lower level offenses
 
 ## LASSO
 
