@@ -7,50 +7,131 @@ editor: visual
 
 ## Dataset and Preparation
 
-
 Our data comes from Kaggle, it consists of 3 CSV files with data scraped off the Illinois Department Of Corrections website.
 
 ::: incremental
-- Contains information 61,052 individuals who have been incarcerated in Illinois from 1952-2018. 
+-   Contains information 61,052 individuals who have been incarcerated in Illinois from 1952-2018.
 
-- "Person" dataset includes simple descriptive information on the person: Name, DOB, Sentencing Date, Race, Eye Color, Hair Color, etc... 
-- "Marks" has multiple rows per person listing any additional descriptive features like scars and tattoos.
-- "Sentencing" is information on the charges faced by the individual, the crime categorized by Illinois' felony classes, and our response variable, sentencing time.
+-   "Person" dataset includes simple descriptive information on the person: Name, DOB, Sentencing Date, Race, Eye Color, Hair Color, etc...
 
+-   "Marks" has multiple rows per person listing any additional descriptive features like scars and tattoos.
+
+-   "Sentencing" is information on the charges faced by the individual, the crime categorized by Illinois' felony classes, and our response variable, sentencing time.
 :::
 
 ## Research Questions
 
 ::: incremental
-- What predictors have the strongest effect on sentencing length?
+-   What predictors have the strongest effect on sentencing length?
 
-- How accurately can we predict sentencing length?
+-   How accurately can we predict sentencing length?
 
-- What predictors have the strongest effect on offence category?
+-   What predictors have the strongest effect on offence category?
 
-- How accurately can we predict offence categories?
+-   How accurately can we predict offence categories?
 :::
 
 ## KNN
 
 ## Linear Regression
 
+## Generalized Additive Model (GAM)
+
+::: incremental
+-   Extension of linear regression that allows each predictor to have a continuous nonlinear effect on the response
+
+-   80:20 split
+
+-   Used 10 fold CV to tune the degrees of freedom
+
+-   On the test set the GAM achieved:
+
+-   RMSE = 12.20631
+
+-   Meaning that our prediction error is $12.20631$ years.
+
+-   R\^2=0.7139504
+
+-   Meaning that our model explains 71% of the variability in sentencing length on new data.
+:::
+
 ## GAM
+
+```{r, echo=FALSE, fig.width=12, fig.height=8.25}
+
+library(tidyverse)
+library(tidymodels)
+library(knitr)
+gam_fit <- readRDS("~/project-5/Code/gam_fit.rds")
+sent_train <- readRDS("~/project-5/Code/GAM_train.rds")
+train_pred <- readRDS("~/project-5/Code/Gam_pred.rds")
+
+
+
+
+pred_dat <- train_pred |>
+  group_by(year_adm) |>
+  summarise(
+    .pred       = mean(.pred,       na.rm = TRUE),
+    .pred_lower = mean(.pred_lower, na.rm = TRUE),
+    .pred_upper = mean(.pred_upper, na.rm = TRUE),
+    .groups     = "drop"
+  )
+
+out_dat <- sent_train |>
+  select(year_adm, current_sentence)
+
+ggplot() +
+  geom_point(
+    data = out_dat,
+    aes(x = year_adm, y = current_sentence),
+    alpha = 0.007
+  ) +
+  geom_line(
+    data = pred_dat,
+    aes(x = year_adm, y = .pred),
+    color = "coral4"
+  ) +
+  geom_line(
+    data = pred_dat,
+    aes(x = year_adm, y = .pred_lower),
+    color = "coral4",
+    linetype = "dashed"
+  ) +
+  geom_line(
+    data = pred_dat,
+    aes(x = year_adm, y = .pred_upper),
+    color = "coral4",
+    linetype = "dashed"
+  ) +
+  coord_cartesian(xlim = c(1980, 2018)) +
+  labs(
+    x = "Year admitted",
+    y = "Sentence length",
+    title = "GAM effect for year admitted 1980–2018"
+  ) +
+  theme_bw(base_size = 18) +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    axis.title = element_text(face = "bold"),
+    axis.text  = element_text(size = 14)
+  )
+
+
+
+```
 
 ## Random Forest
 
-
-:::columns
-:::column
-
+::::: columns
+::: column
 -   Chosen to deal with correlation amongst trees.
--   58,836 observations. 70:30 Split  $\sim$ (41,200 | 17,600)
+-   58,836 observations. 70:30 Split $\sim$ (41,200 \| 17,600)
 -   Fit 500 trees with 4 randomly chosen predictors for each tree.
--   Out-of-Bag error is calculated by checking the performance of each tree on a subset of unseen data during the training process.  
+-   Out-of-Bag error is calculated by checking the performance of each tree on a subset of unseen data during the training process.\
 :::
 
-:::column
-
+::: column
 ```{r, echo=FALSE, fig.width=12, fig.height=8.25}
 
 library(vip)
@@ -60,8 +141,8 @@ library(pdp)
 
 #You must use download link to download the rds file locally and adjust it to your pathway to the rds.
 #
-rf_fit <- readRDS("~/Documents/RFfit_model_juan.rds")
-#rf_fit <- readRDS("../Code/RFfit_model_juan.rds")
+#rf_fit <- readRDS("~/Documents/RFfit_model_juan.rds")
+rf_fit <- readRDS("../Code/RFfit_model_juan.rds")
 
 
 
@@ -85,24 +166,18 @@ vip(vi, aesthetics = list(fill = "coral4"))  +
 
 
 ```
-
 :::
-:::
-
-
-
-
+:::::
 
 ## Predictive Performance - Random Forests
 
-::: columns
+::::: columns
 ::: column
-- **12.11** OOB RMSE / **12. 18** Test RMSE. Similar RMSEs is good (generalizes well).
-- As sentencing length goes up, our models prediction becomes more variable. However, the models' errors scale proportionally to sentencing length. Meaning we don't typically get crazy predictions for lower sentencing lengths.
+-   **12.11** OOB RMSE / **12. 18** Test RMSE. Similar RMSEs is good (generalizes well).
+-   As sentencing length goes up, our models prediction becomes more variable. However, the models' errors scale proportionally to sentencing length. Meaning we don't typically get crazy predictions for lower sentencing lengths.
 :::
 
 ::: column
-
 ```{r, echo=FALSE, fig.width=8}
 
 rmses <- read_csv("../CSV Files/RF_RMSEbySentencing.csv")
@@ -114,23 +189,18 @@ ggplot(data = rmses, aes(x = current_sentence_rnd, y = rmse)) +
   theme_bw()+theme(plot.title = element_text(hjust = 0.5))
 
 ```
-
 :::
-:::
+:::::
 
 ## Conclusion
 
 ## References
 
--https://www.kaggle.com/datasets/davidjfisher/illinois-doc-labeled-faces-dataset
--https://www.idoc.state.il.us
+-https://www.kaggle.com/datasets/davidjfisher/illinois-doc-labeled-faces-dataset -https://www.idoc.state.il.us
 
-
-
-## Questions? 
+## Questions?
 
 ## Bonus Slides - Complete Variable Importance for RF
-
 
 ```{r, echo=FALSE, fig.width=8}
 vi_all <- vi(rf_fit$fit) %>%
@@ -150,4 +220,3 @@ vip(vi_all, num_features = 20,aesthetics = list(fill = "coral4"))  +
 
 
 ```
-
