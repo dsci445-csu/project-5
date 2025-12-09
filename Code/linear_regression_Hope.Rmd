@@ -30,8 +30,6 @@ useful_columns$height <- as.numeric(useful_columns$height)
 useful_columns$attempted <- as.numeric(useful_columns$attempted)
 useful_columns$aggravated <- as.numeric(useful_columns$aggravated)
 useful_columns$armed <- as.numeric(useful_columns$armed)
-#useful_columns$life_sentence <- as.numeric(useful_columns$life_sentence)
-#useful_columns$death_sentence <- as.numeric(useful_columns$death_sentence)
 
 useful_columns |> drop_na() -> useful_columns
 # convert categorical variables to dummy variables and normalize numerical variables
@@ -76,6 +74,7 @@ show_best(lasso_tune, metric = "rsq", n = 1)
 save_rs <- rep(0, 4)
 save_rs[1] <- show_best(lasso_tune, metric = "rsq", n = 1)$mean
 ```
+
 ```{r}
 set.seed(445)
 df_split <- initial_split(useful_columns, prop = 0.7)
@@ -106,7 +105,6 @@ model <- lm(current_sentence ~ ., data = useful_columns)
 backward <- ols_step_backward_adj_r2(model)
 backward$metrics
 backward$metrics$adj_r2
-save_rs[3] <- max(backward$metrics$r2)
 ```
 
 ```{r}
@@ -125,8 +123,12 @@ write.csv(renumbered, "LinearRegressionOutputs/ranked_vars.csv", row.names = F)
 
 
 ```{r}
-which.max(save_rs)
-backward
+get_rmse <- function(model) {
+  augment(model, new_data = df_test) |>
+    mutate(resid2 = .resid^2) |>
+    summarise(rmse = sqrt(mean(resid2))) |>
+    pull(rmse)
+}
 ```
 Backwards subset selection has the highest $R^2$ and so should be used for prediction.
 
@@ -136,13 +138,6 @@ df_backwards <- df_train |> select(-all_of(backward$metrics$variable))
 
 backwards_recipe <- recipe(current_sentence ~ ., data = df_backwards)
 backwards <- workflow() |> add_model(lm_spec) |> add_recipe(linear_recipe) |> fit(df_train)
-
-get_rmse <- function(model) {
-  augment(model, new_data = df_test) |>
-    mutate(resid2 = .resid^2) |>
-    summarise(rmse = sqrt(mean(resid2))) |>
-    pull(rmse)
-}
 
 rmse_backwards <- get_rmse(backwards)
 rmse_backwards
@@ -169,7 +164,8 @@ for (i in num_terms){
 }
 
 rmse_v_terms_df <- data.frame(num_terms = num_terms, RMSE = rmse_vals)
-ggplot(rmse_v_terms_df) + geom_point(aes(num_terms, RMSE))
+write.csv(rmse_v_terms_df, "LinearRegressionOutputs/rmse_v_terms.csv", row.names = F)
+ggplot(rmse_v_terms_df) + geom_point(aes(num_terms, RMSE)) + labs(x = "Number of Terms")
 ```
 
 
