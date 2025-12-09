@@ -110,9 +110,13 @@ ggplot(rmse) + geom_point(aes(num_terms, RMSE, color = RMSE == min(RMSE))) + sca
 library(tidyverse)
 library(tidymodels)
 library(knitr)
-gam_fit <- readRDS("~/project-5/Code/gam_fit.rds")
-sent_train <- readRDS("~/project-5/Code/GAM_train.rds")
-train_pred <- readRDS("~/project-5/Code/Gam_pred.rds")
+# gam_fit <- readRDS("~/project-5/Code/gam_fit.rds")
+# sent_train <- readRDS("~/project-5/Code/GAM_train.rds")
+# train_pred <- readRDS("~/project-5/Code/Gam_pred.rds")
+
+gam_fit <- readRDS("../Code/gam_fit.rds")
+sent_train <- readRDS("../Code/GAM_train.rds")
+train_pred <- readRDS("../Code/gam_pred.rds")
 
 
 
