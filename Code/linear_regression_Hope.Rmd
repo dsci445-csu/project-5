@@ -78,7 +78,7 @@ save_rs[1] <- show_best(lasso_tune, metric = "rsq", n = 1)$mean
 ```
 
 ```{r}
-png("lasso.png")
+png("LinearRegressionOutputs/lasso.png")
 lasso_rmse
 dev.off()
 ```
