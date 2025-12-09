@@ -9,12 +9,18 @@ editor: visual
 
 Quarto enables you to weave together content and executable code into a finished presentation. To learn more about Quarto presentations see <https://quarto.org/docs/presentations/>.
 
-## Bullets
+## Linear Regression
 
-When you click the **Render** button a document will be generated that includes:
+```{r, echo=FALSE, message = FALSE}
+library(tidymodels)
+library(tidyverse)
+library(ggplot2)
+```
 
--   Content authored with markdown
--   Output from executable code
+```{r}
+lasso_terms <- read.csv("../Code/LinearRegressionOutputs/lasso_terms.csv")
+lasso_terms[,c("term", "estimate")]
+```
 
 ## Code
 
