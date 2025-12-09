@@ -7,7 +7,7 @@ editor: visual
 
 ## Dataset and Preparation
 
-Our data comes from Kaggle, it consists of 3 CSV files with data scraped off the Illinois Department Of Corrections website.
+Our data comes from Kaggle, with data scraped off the Illinois Department Of Corrections website.
 
 ::: incremental
 -   Contains information 61,052 individuals who have been incarcerated in Illinois from 1952-2018.
@@ -30,7 +30,6 @@ Our data comes from Kaggle, it consists of 3 CSV files with data scraped off the
 
 -   How accurately can we predict offence categories?
 :::
-
 
 ```{r libraries, include = FALSE}
 library(ggplot2)
@@ -62,6 +61,7 @@ df_train <- training(df_split)
 df_train
 df_test <- testing(df_split)
 ```
+
 ## K-Nearest Neighbors Background
 
 -   K-Nearest Neighbors (KNN) is a classification method that loops through each point in a dataset, and identifies the k points that are closest to that point
@@ -135,14 +135,13 @@ kable(knn_table2)
 
 ## LASSO
 
-:::: columns
+::::: columns
 ::: column
-
 ### LASSO model = RSS + $\lambda \sum_{j = 1}^{p} \beta_{j}^2$
 
 where $\lambda$ is the tuning parameter, to improve interpretability, use penalty to perform feature selection
 
-- cross validation selected $\lambda = 0.01$
+-   cross validation selected $\lambda = 0.01$
 
 ```{r, echo=FALSE, message = FALSE}
 library(tidymodels)
@@ -151,19 +150,18 @@ library(tidyverse)
 library(ggplot2)
 ```
 :::
-::: column
 
+::: column
 ```{r}
 lasso_terms <- read.csv("../Code/LinearRegressionOutputs/lasso_terms.csv")
 kable(lasso_terms[,c("term", "estimate")])
 ```
-
 :::
-::::
-
+:::::
 
 ## Forward and Backward Subset
-:::: columns
+
+::::: columns
 ::: column
 ```{r}
 vars <- read.csv("../Code/LinearRegressionOutputs/ranked_vars.csv")
@@ -181,7 +179,7 @@ rmse <- read.csv("../Code/LinearRegressionOutputs/rmse_v_terms.csv")
 ggplot(rmse) + geom_point(aes(num_terms, RMSE, color = RMSE == min(RMSE))) + scale_color_discrete(labels = c("larger than optimum", "minimum RMSE")) + labs(x = "Number of Terms", color = "", caption = "dropped terms: num_scars, sex, num_other_marks, height")
 ```
 :::
-::::
+:::::
 
 ## Generalized Additive Model (GAM)
 
@@ -346,9 +344,19 @@ ggplot(data = rmses, aes(x = current_sentence_rnd, y = rmse)) +
 
 ## Conclusion
 
+-   The relationship between prison sentence and our predictors is likely not linear
+
+    -   random forest performed best, followed by GAM, and then linear regression
+
+-   The best predictors of prison sentence are year admitted, parent institution, total counts charged, prior sentencing time, and criminal class, and offense category
+
+    -   demographic data like race, sex, and weight are less helpful predictors
+
 ## References
 
--https://www.kaggle.com/datasets/davidjfisher/illinois-doc-labeled-faces-dataset -https://www.idoc.state.il.us
+Fisher, David. 2019. Illinois DOC labeled faces dataset, Version 1. Retrieved 11/19/2025 from <https://www.kaggle.com/datasets/davidjfisher/illinois-doc-labeled-faces-dataset/data>.
+
+Death Penalty Information Center. (2023). *Time on Death Row*. Death Penalty Information Center; Death Penalty Information Center. https://deathpenaltyinfo.org/death-row/death-row-time-on-death-row.
 
 ## Questions?
 
