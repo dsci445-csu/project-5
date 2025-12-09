@@ -49,11 +49,15 @@ df_test <- testing(df_split)
 
         -   Categories besides other accounted for \>90% of offenses
 
+# Drawbacks/Issues
+
 -   **Problem:** This method can be extremely time-expensive with large training sets due to the nature of looping through each point, as I found out during data fitting
 
     -   47,000+ training observations (for an 80-20 split)
 
     -   2.75 hour runtime
+
+-   No variable selection or subset with KNN
 
 # KNN Cross Validation Results
 
@@ -74,28 +78,30 @@ autoplot(tune_results)
 
 # KNN Model Performance
 
-```{r knn_performance, fig.width = 9, fig.height = 7}
+```{r knn_performance, fig.width = 2, fig.height = 2}
+set.seed(445)
 final_knn_fit <- readRDS("~/DSCI445/project-5/Code/final_knn_model.rds")
 knn_preds <- predict(final_knn_fit, new_data = df_test) |>
   bind_cols(df_test)
 knn_conf_mat <- knn_preds |> conf_mat(truth = offense_category,
                                       estimate = .pred_class)
 knn_conf_mat_df <- data.frame(knn_conf_mat$table)
-knn_conf_mat_df
+knn_table <- knn_conf_mat_df |> group_by(Truth) |>
+  summarize(total = sum(Freq),
+            correct = sum(Freq[Truth == Prediction]),
+            prop_correct = round(correct / total, 3))
+knn_table1 <- knn_table[1:9,]
+knn_table2 <- knn_table[10:17,]
+kable(knn_table1)
+kable(knn_table2)
 
-
-knn_test_error <- knn_preds |>
-  accuracy(truth = offense_category, estimate = .pred_class) |>
-  mutate(error = 1 - .estimate) |>
-  pull(error)
-print(paste0("KNN Test Error for predicting offense category: ",
-             round(knn_test_error, 3)))
 ```
 
--   Test error rate seems high on the surface (almost 50%)
+# KNN Model Analysis
 
+-   Test error rate seems high on the surface (almost 40%)
     -   But we have to account for the fact that 17 categories are present
-
-        -   Expected error rate with 17 prediction categories, if randomly guessing: \~94.12%
-
-        -   Reduction in error, from this sense, by almost half
+        -   Expected guessing error w/ 17 prediction categories: \~94.12%
+-   Predictive accuracy was significantly better in categories with more observations (e.g., battery, illegal weapon use/possession, murder) than categories with few observations (e.g., vehicular hijacking/theft, forgery).
+    -   Only exceptions: drug manufacturing, theft (\< 45% accuracy).
+-   Interpretation: more variability in predictor means for lower level offenses
