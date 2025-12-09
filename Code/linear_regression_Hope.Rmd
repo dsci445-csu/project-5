@@ -64,16 +64,25 @@ lasso_tune |>
   select(lambda, .metric, mean) |>
   pivot_wider(names_from = .metric, values_from = mean) |>
   ggplot() +
-  geom_line(aes(lambda, rmse^2)) +
-  geom_point(aes(lambda, rmse^2)) +
-  coord_trans(x = "log10")
+  geom_line(aes(lambda, rmse)) +
+  geom_point(aes(lambda, rmse)) +
+  coord_trans(x = "log10") +
+  labs(title = "LASSO Cross Validation", y = "RMSE") -> lasso_rmse
+
 
 ## best penalty
-show_best(lasso_tune, metric = "rsq", n = 1)
+show_best(lasso_tune, metric = "rmse", n = 1)
 
 save_rs <- rep(0, 4)
 save_rs[1] <- show_best(lasso_tune, metric = "rsq", n = 1)$mean
 ```
+
+```{r}
+png("LinearRegressionOutputs/lasso.png")
+lasso_rmse
+dev.off()
+```
+
 
 ```{r}
 set.seed(445)

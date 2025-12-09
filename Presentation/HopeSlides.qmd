@@ -9,23 +9,55 @@ editor: visual
 
 Quarto enables you to weave together content and executable code into a finished presentation. To learn more about Quarto presentations see <https://quarto.org/docs/presentations/>.
 
-## Linear Regression
+## LASSO
+
+:::: columns
+::: column
+
+### LASSO model = RSS + $\lambda \sum_{j = 1}^{p} \beta_{j}^2$
+
+where $\lambda$ is the tuning parameter, to improve interpretability, use penalty to perform feature selection
+
+- cross validation selected $\lambda = 0.01$
 
 ```{r, echo=FALSE, message = FALSE}
 library(tidymodels)
+library(knitr)
 library(tidyverse)
 library(ggplot2)
 ```
 
+:::
+
+::: column
+
 ```{r}
 lasso_terms <- read.csv("../Code/LinearRegressionOutputs/lasso_terms.csv")
-lasso_terms[,c("term", "estimate")]
+kable(lasso_terms[,c("term", "estimate")])
 ```
 
-## Code
+:::
+::::
 
-When you click the **Render** button a presentation will be generated that includes both content and the output of embedded code. You can embed code like this:
 
+## Forward and Backward Subset
+:::: columns
+::: column
 ```{r}
-1 + 1
+vars <- read.csv("../Code/LinearRegressionOutputs/ranked_vars.csv")
+merge_vars <- vars[1:8,c("step", "variable")]
+merge_vars$"step (cont)" <- vars[9:16, "step"]
+merge_vars$"variable (cont)" <- vars[9:16, "variable"]
+kable(merge_vars)
 ```
+:::
+
+::: column
+```{r}
+rmse <- read.csv("../Code/LinearRegressionOutputs/rmse_v_terms.csv")
+
+ggplot(rmse) + geom_point(aes(num_terms, RMSE, color = RMSE == min(RMSE))) + scale_color_discrete(labels = c("larger than optimum", "minimum RMSE")) + labs(x = "Number of Terms", color = "", caption = "dropped terms: num_scars, sex, num_other_marks, height")
+```
+
+:::
+::::
