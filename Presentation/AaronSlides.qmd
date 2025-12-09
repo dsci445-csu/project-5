@@ -85,6 +85,7 @@ knn_preds <- predict(final_knn_fit, new_data = df_test) |>
   bind_cols(df_test)
 knn_conf_mat <- knn_preds |> conf_mat(truth = offense_category,
                                       estimate = .pred_class)
+<<<<<<< HEAD
 knn_conf_mat_df <- data.frame(knn_conf_mat$table)
 knn_table <- knn_conf_mat_df |> group_by(Truth) |>
   summarize(total = sum(Freq),
@@ -95,6 +96,18 @@ knn_table2 <- knn_table[10:17,]
 kable(knn_table1)
 kable(knn_table2)
 
+=======
+autoplot(knn_conf_mat, type = "heatmap") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),
+        text = element_text(size = 12))
+
+knn_test_error <- knn_preds |>
+  accuracy(truth = offense_category, estimate = .pred_class) |>
+  mutate(error = 1 - .estimate) |>
+  pull(error)
+print(paste0("KNN Test Error for predicting offense category: ",
+             round(knn_test_error, 3)))
+>>>>>>> 8d201392c6a651c3f8d506d3e6cdeedc1f4acd73
 ```
 
 # KNN Model Analysis

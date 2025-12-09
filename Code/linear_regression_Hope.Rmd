@@ -30,8 +30,6 @@ useful_columns$height <- as.numeric(useful_columns$height)
 useful_columns$attempted <- as.numeric(useful_columns$attempted)
 useful_columns$aggravated <- as.numeric(useful_columns$aggravated)
 useful_columns$armed <- as.numeric(useful_columns$armed)
-#useful_columns$life_sentence <- as.numeric(useful_columns$life_sentence)
-#useful_columns$death_sentence <- as.numeric(useful_columns$death_sentence)
 
 useful_columns |> drop_na() -> useful_columns
 # convert categorical variables to dummy variables and normalize numerical variables
@@ -66,16 +64,26 @@ lasso_tune |>
   select(lambda, .metric, mean) |>
   pivot_wider(names_from = .metric, values_from = mean) |>
   ggplot() +
-  geom_line(aes(lambda, rmse^2)) +
-  geom_point(aes(lambda, rmse^2)) +
-  coord_trans(x = "log10")
+  geom_line(aes(lambda, rmse)) +
+  geom_point(aes(lambda, rmse)) +
+  coord_trans(x = "log10") +
+  labs(title = "LASSO Cross Validation", y = "RMSE") -> lasso_rmse
+
 
 ## best penalty
-show_best(lasso_tune, metric = "rsq", n = 1)
+show_best(lasso_tune, metric = "rmse", n = 1)
 
 save_rs <- rep(0, 4)
 save_rs[1] <- show_best(lasso_tune, metric = "rsq", n = 1)$mean
 ```
+
+```{r}
+png("LinearRegressionOutputs/lasso.png")
+lasso_rmse
+dev.off()
+```
+
+
 ```{r}
 set.seed(445)
 df_split <- initial_split(useful_columns, prop = 0.7)
@@ -104,38 +112,41 @@ LASSO only sets 5 out of 88 terms to 0, and the terms set to 0 do not encapsulat
 set.seed(445)
 model <- lm(current_sentence ~ ., data = useful_columns)
 backward <- ols_step_backward_adj_r2(model)
+backward$metrics
 backward$metrics$adj_r2
-save_rs[3] <- max(backward$metrics$r2)
 ```
 
 ```{r}
 set.seed(445)
 forward <- ols_step_forward_adj_r2(model)
-save_rs[4] <- max(forward$metrics$r2)
+forward$metrics
 ```
 
 ```{r}
-which.max(save_rs)
-backward
-```
-Backwards subset selection has the highest $R^2$ and so should be used for prediction.
-
-```{r}
-df_train <- df_train |> subset(select = -c(num_other_marks, sex, height))
+renumbered <- backward$metrics
+renumbered$step <- c(20, 19, 18, 17)
+renumbered <- rbind(forward$metrics, renumbered)
+renumbered <- renumbered[order(renumbered$step),]
+write.csv(renumbered, "LinearRegressionOutputs/ranked_vars.csv", row.names = F)
 ```
 
-```{r}
-lm_spec <- linear_reg()
-df_backwards <- df_train |> subset(select = -c(num_other_marks, sex, height))
-backwards_recipe <- recipe(current_sentence ~ ., data = df_backwards)
-backwards <- workflow() |> add_model(lm_spec) |> add_recipe(linear_recipe) |> fit(df_train)
 
+```{r}
 get_rmse <- function(model) {
   augment(model, new_data = df_test) |>
     mutate(resid2 = .resid^2) |>
     summarise(rmse = sqrt(mean(resid2))) |>
     pull(rmse)
 }
+```
+Backwards subset selection has the highest $R^2$ and so should be used for prediction.
+
+```{r}
+lm_spec <- linear_reg()
+df_backwards <- df_train |> select(-all_of(backward$metrics$variable))
+
+backwards_recipe <- recipe(current_sentence ~ ., data = df_backwards)
+backwards <- workflow() |> add_model(lm_spec) |> add_recipe(linear_recipe) |> fit(df_train)
 
 rmse_backwards <- get_rmse(backwards)
 rmse_backwards
@@ -162,7 +173,8 @@ for (i in num_terms){
 }
 
 rmse_v_terms_df <- data.frame(num_terms = num_terms, RMSE = rmse_vals)
-ggplot(rmse_v_terms_df) + geom_point(aes(num_terms, RMSE))
+write.csv(rmse_v_terms_df, "LinearRegressionOutputs/rmse_v_terms.csv", row.names = F)
+ggplot(rmse_v_terms_df) + geom_point(aes(num_terms, RMSE)) + labs(x = "Number of Terms")
 ```
 
 

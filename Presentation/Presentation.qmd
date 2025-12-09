@@ -1,17 +1,22 @@
 ---
 title: "Illinois DOC Sentencing Machine Learning Analysis"
+author: Juan Gonzalez, Aaron Graff, Ilijah Pearson, Hope Winsor
 format: pptx
 editor: visual
 ---
 
-## DATASET
+## Dataset and Preparation
 
-The dataset we are focusing our project on is Illinois Department Of Corrections Labeled Faces.
+Our data comes from Kaggle, it consists of 3 CSV files with data scraped off the Illinois Department Of Corrections website.
 
 ::: incremental
--   68149 Booking photographs along with information about their sentencing length, criminal history, type of crime, physical descriptors, and demographics.
+-   Contains information 61,052 individuals who have been incarcerated in Illinois from 1952-2018.
 
--   Hosted on Kaggle the data was scrapped from the Illinois Department of Corrections website https://www.idoc.state.il.us
+-   "Person" dataset includes simple descriptive information on the person: Name, DOB, Sentencing Date, Race, Eye Color, Hair Color, etc...
+
+-   "Marks" has multiple rows per person listing any additional descriptive features like scars and tattoos.
+
+-   "Sentencing" is information on the charges faced by the individual, the crime categorized by Illinois' felony classes, and our response variable, sentencing time.
 :::
 
 ## Research Questions
@@ -26,20 +31,244 @@ The dataset we are focusing our project on is Illinois Department Of Corrections
 -   How accurately can we predict offence categories?
 :::
 
-## Data Preparation
-
 ## KNN
 
-## Linear Regression
+## LASSO
+
+:::: columns
+::: column
+
+### LASSO model = RSS + $\lambda \sum_{j = 1}^{p} \beta_{j}^2$
+
+where $\lambda$ is the tuning parameter, to improve interpretability, use penalty to perform feature selection
+
+- cross validation selected $\lambda = 0.01$
+
+```{r, echo=FALSE, message = FALSE}
+library(tidymodels)
+library(knitr)
+library(tidyverse)
+library(ggplot2)
+```
+:::
+::: column
+
+```{r}
+lasso_terms <- read.csv("../Code/LinearRegressionOutputs/lasso_terms.csv")
+kable(lasso_terms[,c("term", "estimate")])
+```
+
+:::
+::::
+
+
+## Forward and Backward Subset
+:::: columns
+::: column
+```{r}
+vars <- read.csv("../Code/LinearRegressionOutputs/ranked_vars.csv")
+merge_vars <- vars[1:8,c("step", "variable")]
+merge_vars$"step (cont)" <- vars[9:16, "step"]
+merge_vars$"variable (cont)" <- vars[9:16, "variable"]
+kable(merge_vars)
+```
+:::
+
+::: column
+```{r}
+rmse <- read.csv("../Code/LinearRegressionOutputs/rmse_v_terms.csv")
+
+ggplot(rmse) + geom_point(aes(num_terms, RMSE, color = RMSE == min(RMSE))) + scale_color_discrete(labels = c("larger than optimum", "minimum RMSE")) + labs(x = "Number of Terms", color = "", caption = "dropped terms: num_scars, sex, num_other_marks, height")
+```
+:::
+::::
+
+## Generalized Additive Model (GAM)
+
+::: incremental
+-   Extension of linear regression that allows each predictor to have a continuous nonlinear effect on the response
+
+-   80:20 split
+
+-   Used 10 fold CV to tune the degrees of freedom
+
+-   On the test set the GAM achieved:
+
+-   RMSE = 12.20631
+
+-   Meaning that our prediction error is $12.20631$ years.
+
+-   R\^2=0.7139504
+
+-   Meaning that our model explains 71% of the variability in sentencing length on new data.
+:::
 
 ## GAM
 
+```{r, echo=FALSE, fig.width=12, fig.height=8.25}
+
+library(tidyverse)
+library(tidymodels)
+library(knitr)
+# gam_fit <- readRDS("~/project-5/Code/gam_fit.rds")
+# sent_train <- readRDS("~/project-5/Code/GAM_train.rds")
+# train_pred <- readRDS("~/project-5/Code/Gam_pred.rds")
+
+gam_fit <- readRDS("../Code/gam_fit.rds")
+sent_train <- readRDS("../Code/GAM_train.rds")
+train_pred <- readRDS("../Code/gam_pred.rds")
+
+
+
+
+pred_dat <- train_pred |>
+  group_by(year_adm) |>
+  summarise(
+    .pred       = mean(.pred,       na.rm = TRUE),
+    .pred_lower = mean(.pred_lower, na.rm = TRUE),
+    .pred_upper = mean(.pred_upper, na.rm = TRUE),
+    .groups     = "drop"
+  )
+
+out_dat <- sent_train |>
+  select(year_adm, current_sentence)
+
+ggplot() +
+  geom_point(
+    data = out_dat,
+    aes(x = year_adm, y = current_sentence),
+    alpha = 0.007
+  ) +
+  geom_line(
+    data = pred_dat,
+    aes(x = year_adm, y = .pred),
+    color = "coral4"
+  ) +
+  geom_line(
+    data = pred_dat,
+    aes(x = year_adm, y = .pred_lower),
+    color = "coral4",
+    linetype = "dashed"
+  ) +
+  geom_line(
+    data = pred_dat,
+    aes(x = year_adm, y = .pred_upper),
+    color = "coral4",
+    linetype = "dashed"
+  ) +
+  coord_cartesian(xlim = c(1980, 2018)) +
+  labs(
+    x = "Year admitted",
+    y = "Sentence length",
+    title = "GAM effect for year admitted 1980–2018"
+  ) +
+  theme_bw(base_size = 18) +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    axis.title = element_text(face = "bold"),
+    axis.text  = element_text(size = 14)
+  )
+
+
+
+```
+
 ## Random Forest
 
-## Closing thoughts
+::::: columns
+::: column
+-   Chosen to deal with correlation amongst trees.
+-   58,836 observations. 70:30 Split $\sim$ (41,200 \| 17,600)
+-   Fit 500 trees with 4 randomly chosen predictors for each tree.
+-   Out-of-Bag error is calculated by checking the performance of each tree on a subset of unseen data during the training process.\
+:::
 
-## Sources
+::: column
+```{r, echo=FALSE, fig.width=12, fig.height=8.25}
 
-```{r}
+library(vip)
+library(tidyverse)
+library(randomForest)
+library(pdp)
+
+#You must use download link to download the rds file locally and adjust it to your pathway to the rds.
+#
+#rf_fit <- readRDS("~/Documents/RFfit_model_juan.rds")
+rf_fit <- readRDS("../Code/RFfit_model_juan.rds")
+
+
+
+vi <- vi(rf_fit$fit) %>%
+  top_n(5, Importance) %>%
+  mutate(Variable = recode(Variable,
+                           year_adm = "Year Admitted",
+                           parent_institution = "Parent Institution",
+                           total_counts = "Total Counts",
+                           time_sentenced_prior = "Prior Sentencing Time",
+                           class = "Illinois Felony Class",
+                           ))
+
+vip(vi, aesthetics = list(fill = "coral4"))  +
+  ggtitle("5 Most Important Predictors in our Random Forests Model") + theme_bw() + 
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text = element_text(size = 13),
+        plot.title = element_text(size = 16, hjust = 0.5))
+
+
+
+```
+:::
+:::::
+
+## Predictive Performance - Random Forests
+
+::::: columns
+::: column
+-   **12.11** OOB RMSE / **12. 18** Test RMSE. Similar RMSEs is good (generalizes well).
+-   As sentencing length goes up, our models prediction becomes more variable. However, the models' errors scale proportionally to sentencing length. Meaning we don't typically get crazy predictions for lower sentencing lengths.
+:::
+
+::: column
+```{r, echo=FALSE, fig.width=8}
+
+rmses <- read_csv("../CSV Files/RF_RMSEbySentencing.csv")
+
+
+ggplot(data = rmses, aes(x = current_sentence_rnd, y = rmse)) + 
+  labs(title = "RMSE by Sentence Length", x = "Sentencing Time", y = "RMSE") +
+  geom_smooth(method = "loess", se = FALSE, color = "coral4") + geom_line() +
+  theme_bw()+theme(plot.title = element_text(hjust = 0.5))
+
+```
+:::
+:::::
+
+## Conclusion
+
+## References
+
+-https://www.kaggle.com/datasets/davidjfisher/illinois-doc-labeled-faces-dataset -https://www.idoc.state.il.us
+
+## Questions?
+
+## Bonus Slides - Complete Variable Importance for RF
+
+```{r, echo=FALSE, fig.width=8}
+vi_all <- vi(rf_fit$fit) %>%
+  top_n(20, Importance) #%>%
+  # mutate(Variable = recode(Variable,
+  #                          year_adm = "Year Admitted",
+  #                          parent_institution = "Parent Institution",
+  #                          total_counts = "Total Counts",
+  #                          time_sentenced_prior = "Prior Sentencing Time",
+  #                          class = "Illinois Felony Class",
+  # ))
+
+vip(vi_all, num_features = 20,aesthetics = list(fill = "coral4"))  +
+  ggtitle("Variable Importance Plot for our Random Forests Model") + theme_bw()
+
+
+
 
 ```

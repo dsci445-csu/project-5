@@ -50,7 +50,7 @@ glimpse(sentencing)
 sent_split  <- initial_split(sentencing, prop = 0.8)
 sent_train  <- training(sent_split)
 sent_test   <- testing(sent_split)
-
+saveRDS(sent_train, "GAM_train.rds")
 
 lm_spec <- linear_reg() |>
   set_engine("lm")
@@ -88,7 +88,7 @@ gam_fit <- gam_final_wf |>
   fit(data = sent_train)
 
 
-
+saveRDS(gam_fit, file = "gam_fit.rds")
 
 ```
 
@@ -110,49 +110,194 @@ gam_rmse
 gam_rsq
 
 
-
 ```
 
 
 
 ```{r}
-train_pred <- gam_fit |>
-  augment(new_data = sent_train)
 selected <- c(
+  "appx_age", "total_counts",
+  "time_sentenced_prior", "offense_category", "sex",
+  "weight", "height", "race", "hair", "eyes",
+  "attempted", "aggravated", "armed",
   "num_scars", "num_tattoos", "num_other_marks",
-  "weight", "height",
-  "year_adm", "month_adm",
-  "total_counts", "time_sentenced_prior",
-  "appx_age"
+  "year_adm", "month_adm"
 )
 
+train_pred <- bind_cols(
+  sent_train[, selected, drop = FALSE],
+  gam_fit |>
+    augment(new_data = sent_train) |>
+    select(.pred),
+  gam_fit |>
+    predict(new_data = sent_train, type = "conf_int")
+)
+saveRDS(train_pred, file = "gam_pred.rds")
+
 for (pred in selected) {
+
   pred_dat <- train_pred |>
     group_by(.data[[pred]]) |>
-    summarise(.pred = mean(.pred), .groups = "drop")
-
-  out_dat <- train_pred[, c(pred, "current_sentence"), drop = FALSE]
-
-  p<-ggplot() +
-    geom_point(
-      data = out_dat,
-      aes(x = .data[[pred]], y = current_sentence),
-      alpha = 0.01
-    ) +
-    geom_line(
-      data = pred_dat,
-      aes(x = .data[[pred]], y = .pred)
-    ) +
-    labs(
-      x = pred,
-      y = "Sentence length"
+    summarise(
+      .pred       = mean(.pred, na.rm = TRUE),
+      .pred_lower = mean(.pred_lower, na.rm = TRUE),
+      .pred_upper = mean(.pred_upper, na.rm = TRUE),
+      .groups     = "drop"
     )
-  print(p)  
-}
+  
+  out_dat <- sent_train[, c(pred, "current_sentence"), drop = FALSE]
+  
+    if (is.numeric(out_dat[[pred]])) {
+      p <- ggplot() +
+      geom_point(
+        data = out_dat,
+        aes(x = .data[[pred]], y = current_sentence),
+        alpha = 0.05
+      ) +
+      geom_line(
+        data = pred_dat,
+        aes(x = .data[[pred]], y = .pred),
+        color = "darkgreen"
+      ) +
+      geom_line(
+        data = pred_dat,
+        aes(x = .data[[pred]], y = .pred_lower),
+        color = "darkgreen", linetype = "dashed"
+      ) +
+      geom_line(
+        data = pred_dat,
+        aes(x = .data[[pred]], y = .pred_upper),
+        color = "darkgreen", linetype = "dashed"
+      ) +
+      labs(
+        x = pred,
+        y = "Sentence length",
+        title = paste("GAM for", pred)
+      )
+        print(p)
+      } else {
+    p <- ggplot() +
+      geom_jitter(
+        data = out_dat,
+        aes(x = .data[[pred]], y = current_sentence),
+        alpha = 0.3, width = 0.2, height = 0
+      ) +
+      geom_point(
+        data = pred_dat,
+        aes(x = .data[[pred]], y = .pred),
+        colour = "darkgreen"
+      ) +
+      geom_errorbar(
+        data = pred_dat,
+        aes(x = .data[[pred]],
+            ymin = .pred_lower,
+            ymax = .pred_upper),
+        colour = "darkgreen"
+      ) +
+      labs(
+        x = pred,
+        y = "Sentence length",
+        title = paste("GAM for", pred)
+      )
+      print(p)
+    }
+  }
+
+
+
+
 
 ```
+```{r}
+
+pred_dat <- train_pred |>
+  group_by(year_adm) |>
+  summarise(
+    .pred       = mean(.pred,       na.rm = TRUE),
+    .pred_lower = mean(.pred_lower, na.rm = TRUE),
+    .pred_upper = mean(.pred_upper, na.rm = TRUE),
+    .groups     = "drop"
+  )
+
+out_dat <- sent_train |>
+  select(year_adm, current_sentence)
+
+ggplot() +
+  geom_point(
+    data = out_dat,
+    aes(x = year_adm, y = current_sentence),
+    alpha = 0.007
+  ) +
+  geom_line(
+    data = pred_dat,
+    aes(x = year_adm, y = .pred),
+    color = "coral4"
+  ) +
+  geom_line(
+    data = pred_dat,
+    aes(x = year_adm, y = .pred_lower),
+    color = "coral4",
+    linetype = "dashed"
+  ) +
+  geom_line(
+    data = pred_dat,
+    aes(x = year_adm, y = .pred_upper),
+    color = "coral4",
+    linetype = "dashed"
+  ) +
+  coord_cartesian(xlim = c(1980, 2018)) +
+  labs(
+    x = "Year admitted",
+    y = "Sentence length",
+    title = "GAM effect for year admitted 1980–2018"
+  )
 
 
+
+
+pred_dat <- train_pred |>
+  group_by(total_counts) |>
+  summarise(
+    .pred       = mean(.pred,       na.rm = TRUE),
+    .pred_lower = mean(.pred_lower, na.rm = TRUE),
+    .pred_upper = mean(.pred_upper, na.rm = TRUE),
+    .groups     = "drop"
+)
+
+out_dat <- sent_train |>
+  select(total_counts, current_sentence)
+
+ggplot() +
+  geom_point(
+    data = out_dat,
+    aes(x = total_counts, y = current_sentence),
+    alpha = 0.01
+  ) +
+  geom_line(
+    data = pred_dat,
+    aes(x = total_counts, y = .pred),
+    colour = "coral4"
+  ) +
+  geom_line(
+    data = pred_dat,
+    aes(x = total_counts, y = .pred_lower),
+    colour = "coral4",
+    linetype = 2
+  ) +
+  geom_line(
+    data = pred_dat,
+    aes(x = total_counts, y = .pred_upper),
+    colour = "coral4",
+    linetype = 2
+  ) +
+  coord_cartesian(xlim = c(0, 10), ylim = c(0, 100)) +
+  
+  labs(
+    x = "Total counts",
+    y = "Sentence length",
+    title = "GAM effect for total counts"
+  )
+```
 
 
 
