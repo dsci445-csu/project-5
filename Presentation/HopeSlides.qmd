@@ -9,23 +9,32 @@ editor: visual
 
 Quarto enables you to weave together content and executable code into a finished presentation. To learn more about Quarto presentations see <https://quarto.org/docs/presentations/>.
 
-## Linear Regression
+## LASSO
+
+:::: {.columns}
+::: {.column width = "70%"}
+
+### LASSO model = RSS + $\lambda \sum_{j = 1}^{p} \beta_{j}^2$
+
+where $\lambda$ is the tuning parameter, to improve interpretability, use penalty to perform feature selection
+
+- cross validation selected $\lambda = 0.01$
 
 ```{r, echo=FALSE, message = FALSE}
 library(tidymodels)
+library(knitr)
 library(tidyverse)
 library(ggplot2)
 ```
 
+:::
+
+::: {.column width = "30%"}
+
 ```{r}
 lasso_terms <- read.csv("../Code/LinearRegressionOutputs/lasso_terms.csv")
-lasso_terms[,c("term", "estimate")]
+kable(lasso_terms[,c("term", "estimate")])
 ```
 
-## Code
+:::
 
-When you click the **Render** button a presentation will be generated that includes both content and the output of embedded code. You can embed code like this:
-
-```{r}
-1 + 1
-```
