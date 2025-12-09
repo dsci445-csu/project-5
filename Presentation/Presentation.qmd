@@ -33,8 +33,6 @@ Our data comes from Kaggle, it consists of 3 CSV files with data scraped off the
 
 ## KNN
 
-## Linear Regression
-
 ## LASSO
 
 :::: columns
