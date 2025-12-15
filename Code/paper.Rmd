@@ -173,9 +173,14 @@ rmse(df_test$current_sentence, augmented)
 
 
 ### Linear Regression
-To explore the relationship between prison sentence and our other variables, we chose to analyze a variety of linear models for their superior interpretability over non-parametric models. Because we were interested in identifying the most important variables for prison sentence prediction, we chose not to fit either a generic linear regression model or a Ridge regression model. Both of these models would have assigned a non-zero coefficient to every predictor in the model, requiring every variable to be incorporated into the interpretation of a given prison sentence. We suspected that not every variable would be important so we focused on models that have a component of feature selection, including LASSO and subset selection models.
+To explore the relationship between prison sentence and our other variables, we chose to analyze a variety of linear models for their superior interpretability over non-parametric models. Because we were interested in identifying the most important variables for prison sentence prediction, we chose not to fit either an ordinary least squares regression model or a Ridge regression model. Both of these models would have assigned a non-zero coefficient to every predictor in the model, requiring every variable to be incorporated into the interpretation of a given prison sentence. We suspected that not every variable would be important so we focused on models that have a component of feature selection, including LASSO and subset selection models.
 
+The first model we fit was the LASSO model, which selects optimal predictor coefficients by minimizing the combination of residual sum of squares and a penalty shrinking the size of those coefficients according to the formula below. 
 
+$$
+\sum_{i=1}^n (y_i-\beta_0-\sum_{j=1}^p\beta_jx_j)^2+\lambda\sum_{j=1}^p|\beta_j|=\text{RSS } + \lambda\sum_{j=1}^p|\beta_j|
+$$
+The penalty parameter $\lambda$ was chosen according to 10 fold cross validation using 100 possible values of $\lambda$ between 0.01 and $10 \times 10^10$.
 - basic explanation of model
 quantitative response: current sentence
 
