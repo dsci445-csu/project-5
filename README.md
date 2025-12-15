@@ -45,4 +45,12 @@ each dataset was cleaned, all three were merged into one dataset called merged_d
 
 - https://drive.google.com/drive/folders/1XqyE_XdYWNoK3NAcTxp41hUJ13zu1Qbr?usp=sharing
 
+# Reproducibility - IMPORTANT
+
+- You can find the quarto markdown file for our slides saved as "Presentation.qmd" in the "Presentation" folder. 
+- To run the file it requires you to download our random forest model using the link to the google drive under Sources just above this. It was too big a file to push to github (117.5 MB).
+- Add your local path on line 293 and make sure any other paths to that file are commented out.
+- Only issues when running our slides is that we couldn't figure out how to change the font size on quarto. This only effects slides 2 and 13, which we adjusted the font for manually before presenting.
+- Our paper is saved in the "Code" folder under the file name "paper.Rmd"
+- You must do the same with the rds file for the random forest model on line ###
 

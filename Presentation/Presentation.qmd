@@ -32,14 +32,20 @@ Our data comes from Kaggle, with data scraped off the Illinois Department Of Cor
 :::
 
 ```{r libraries, include = FALSE}
+
 library(ggplot2)
-library(tidymodels)
 library(dplyr)
+library(kknn)
+library(tidyverse)
+library(tidymodels)
 library(knitr)
+library(vip)
+library(randomForest)
+
 ```
 
 ```{r loaddata, include = FALSE}
-illinois_doc_data <- read.csv("~/DSCI445/project-5/CSV Files/merged_data.csv")
+illinois_doc_data <- read.csv("../CSV Files/merged_data.csv")
 cleaned_doc_data <- illinois_doc_data |> select(-c(last_name, name, id)) |>
   mutate(offense_category = as.factor(offense_category),
          adm_appx_age = appx_age,
@@ -55,11 +61,13 @@ cleaned_doc_data <- illinois_doc_data |> select(-c(last_name, name, id)) |>
 ```
 
 ```{r ttsplit, include = FALSE}
+
 set.seed(445)
 df_split <- initial_split(cleaned_doc_data, prop = 0.8)
 df_train <- training(df_split)
 df_train
 df_test <- testing(df_split)
+
 ```
 
 ## K-Nearest Neighbors Background
@@ -99,15 +107,17 @@ df_test <- testing(df_split)
 -   Accuracy decreased significantly for k \> 50
 
 ```{r knn_cv, fig.width = 8, fig.height = 6}
-tune_results <- readRDS("~/DSCI445/project-5/Code/knn_CV_results.rds")
+
+tune_results <- readRDS("../Code/knn_CV_results.rds")
 autoplot(tune_results)
+
 ```
 
 ## KNN Model Performance
 
 ```{r knn_performance, fig.width = 2, fig.height = 2}
-set.seed(445)
-final_knn_fit <- readRDS("~/DSCI445/project-5/Code/final_knn_model.rds")
+
+final_knn_fit <- readRDS("../Code/final_knn_model.rds")
 knn_preds <- predict(final_knn_fit, new_data = df_test) |>
   bind_cols(df_test)
 knn_conf_mat <- knn_preds |> conf_mat(truth = offense_category,
@@ -143,18 +153,14 @@ where $\lambda$ is the tuning parameter, to improve interpretability, use penalt
 
 -   cross validation selected $\lambda = 0.01$
 
-```{r, echo=FALSE, message = FALSE}
-library(tidymodels)
-library(knitr)
-library(tidyverse)
-library(ggplot2)
-```
 :::
 
 ::: column
 ```{r}
+
 lasso_terms <- read.csv("../Code/LinearRegressionOutputs/lasso_terms.csv")
 kable(lasso_terms[,c("term", "estimate")])
+
 ```
 :::
 :::::
@@ -164,19 +170,23 @@ kable(lasso_terms[,c("term", "estimate")])
 ::::: columns
 ::: column
 ```{r}
+
 vars <- read.csv("../Code/LinearRegressionOutputs/ranked_vars.csv")
 merge_vars <- vars[1:8,c("step", "variable")]
 merge_vars$"step (cont)" <- vars[9:16, "step"]
 merge_vars$"variable (cont)" <- vars[9:16, "variable"]
 kable(merge_vars)
+
 ```
 :::
 
 ::: column
 ```{r}
+
 rmse <- read.csv("../Code/LinearRegressionOutputs/rmse_v_terms.csv")
 
 ggplot(rmse) + geom_point(aes(num_terms, RMSE, color = RMSE == min(RMSE))) + scale_color_discrete(labels = c("larger than optimum", "minimum RMSE")) + labs(x = "Number of Terms", color = "", caption = "dropped terms: num_scars, sex, num_other_marks, height")
+
 ```
 :::
 :::::
@@ -196,7 +206,7 @@ ggplot(rmse) + geom_point(aes(num_terms, RMSE, color = RMSE == min(RMSE))) + sca
 
 -   Meaning that our prediction error is $12.20631$ years.
 
--   R\^2=0.7139504
+-   $R^2$=0.7139504
 
 -   Meaning that our model explains 71% of the variability in sentencing length on new data.
 :::
@@ -205,9 +215,6 @@ ggplot(rmse) + geom_point(aes(num_terms, RMSE, color = RMSE == min(RMSE))) + sca
 
 ```{r, echo=FALSE, fig.width=12, fig.height=8.25}
 
-library(tidyverse)
-library(tidymodels)
-library(knitr)
 # gam_fit <- readRDS("~/project-5/Code/gam_fit.rds")
 # sent_train <- readRDS("~/project-5/Code/GAM_train.rds")
 # train_pred <- readRDS("~/project-5/Code/Gam_pred.rds")
@@ -267,8 +274,6 @@ ggplot() +
     axis.text  = element_text(size = 14)
   )
 
-
-
 ```
 
 ## Random Forest
@@ -284,15 +289,10 @@ ggplot() +
 ::: column
 ```{r, echo=FALSE, fig.width=12, fig.height=8.25}
 
-library(vip)
-library(tidyverse)
-library(randomForest)
-library(pdp)
-
-#You must use download link to download the rds file locally and adjust it to your pathway to the rds.
+#You must use the download link to download the rds file locally and adjust the pathway then store it in rf_fit.
 #
 #rf_fit <- readRDS("~/Documents/RFfit_model_juan.rds")
-rf_fit <- readRDS("../Code/RFfit_model_juan.rds")
+#rf_fit <- readRDS("../Code/RFfit_model_juan.rds")
 
 
 
@@ -363,6 +363,7 @@ Death Penalty Information Center. (2023). *Time on Death Row*. Death Penalty Inf
 ## Bonus Slides - Complete Variable Importance for RF
 
 ```{r, echo=FALSE, fig.width=8}
+
 vi_all <- vi(rf_fit$fit) %>%
   top_n(20, Importance) #%>%
   # mutate(Variable = recode(Variable,
@@ -375,8 +376,5 @@ vi_all <- vi(rf_fit$fit) %>%
 
 vip(vi_all, num_features = 20,aesthetics = list(fill = "coral4"))  +
   ggtitle("Variable Importance Plot for our Random Forests Model") + theme_bw()
-
-
-
 
 ```
