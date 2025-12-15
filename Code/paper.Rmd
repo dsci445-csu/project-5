@@ -185,9 +185,14 @@ The penalty parameter $\lambda$ was chosen according to 10 fold cross validation
 include_graphics("LinearRegressionOutputs/lasso.png")
 ```
 
-Unfortunately, due to the number of categorical predictors in our dataset, LASSO was not as helpful as we would have liked. Categorical predictors must be reference encoded for LASSO to compute coefficients, turning our 20 predictors into 
+Unfortunately, due to the number of categorical predictors in our dataset, LASSO was not as helpful as we would have liked. Categorical predictors must be reference encoded for LASSO to compute coefficients, turning our 20 predictors into 88. Of these 88 terms, LASSO only selected out the following five variables: 
 
-LASSO only sets 5 out of 88 terms to 0, and the terms set to 0 do not encapsulate whole categorical variables, so this information is not meaningfully interpretable. 
+```{r, echo = F}
+lasso_terms <- read.csv("LinearRegressionOutputs/lasso_terms.csv")
+kable(lasso_terms[,c("term", "estimate")])
+```
+
+This tells us that height is not a significant predictor of prison sentence length. The other four variables, however, are individual categories from hair color, sex, and race respectively. These do not encapsulate whole categorical variables, so this information is not meaningfully interpretable, as it is not possible to only drop some categories from a categorical variable in linear regression. 
 
 if the relationship is approximately linear, least squares will have low bias
 if we have many data points, n >> p, also have low variance -- do have many data points
