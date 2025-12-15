@@ -194,6 +194,23 @@ kable(lasso_terms[,c("term", "estimate")])
 
 This tells us that height is not a significant predictor of prison sentence length. The other four variables, however, are individual categories from hair color, sex, and race respectively. These do not encapsulate whole categorical variables, so this information is not meaningfully interpretable, as it is not possible to only drop some categories from a categorical variable in linear regression. 
 
+Since LASSO did not produce as interprative a model as we had hoped, we moved on to subset selection. We elected not to perform best subset selection, as this method of subset selection requires fitting a model with every possible combination of variables and we decided that fitting approximately $2^20$ models would be too computationally expensive. Instead we fit both forward and backward subset selection. Using the metric of adjusted $R^2$, forward and backward subset selection selected the same combination of variables, excluding the number of scars an individual has, their sex, number of other marks, and height, and including the following variables in order of importance.
+```{r, echo = F}
+vars <- read.csv("../Code/LinearRegressionOutputs/ranked_vars.csv")
+merge_vars <- vars[1:8,c("step", "variable")]
+merge_vars$"step (cont)" <- vars[9:16, "step"]
+merge_vars$"variable (cont)" <- vars[9:16, "variable"]
+kable(merge_vars)
+```
+
+
+```{r}
+rmse <- read.csv("LinearRegressionOutputs/rmse_v_terms.csv")
+
+ggplot(rmse) + geom_point(aes(num_terms, RMSE, color = RMSE == min(RMSE))) + scale_color_discrete(labels = c("larger than optimum", "minimum RMSE")) + labs(x = "Number of Terms", color = "", caption = "dropped terms: num_scars, sex, num_other_marks, height")
+```
+
+
 if the relationship is approximately linear, least squares will have low bias
 if we have many data points, n >> p, also have low variance -- do have many data points
 limitations to linear model: linearity is an approximation
