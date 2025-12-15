@@ -7,7 +7,7 @@ output: pdf_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-packages <- c("lubridate", "tidyverse", "tidymodels", "rpart.plot", "vip", "Metrics")
+packages <- c("lubridate", "tidyverse", "tidymodels", "rpart.plot", "vip", "Metrics", "knitr")
 
 for (pkg in packages) {
   if (!require(pkg, character.only = TRUE)) {
@@ -180,9 +180,14 @@ The first model we fit was the LASSO model, which selects optimal predictor coef
 $$
 \sum_{i=1}^n (y_i-\beta_0-\sum_{j=1}^p\beta_jx_j)^2+\lambda\sum_{j=1}^p|\beta_j|=\text{RSS } + \lambda\sum_{j=1}^p|\beta_j|
 $$
-The penalty parameter $\lambda$ was chosen according to 10 fold cross validation using 100 possible values of $\lambda$ between 0.01 and $10 \times 10^10$.
-- basic explanation of model
-quantitative response: current sentence
+The penalty parameter $\lambda$ was chosen according to 10 fold cross validation using 100 possible values of $\lambda$ between 0.01 and $10 \times 10^10$. As shown on the lambda vs. RMSE graph, cross validation selected $\lambda = 0.01$.
+```{r, echo = F, out.width="50%"}
+include_graphics("LinearRegressionOutputs/lasso.png")
+```
+
+Unfortunately, due to the number of categorical predictors in our dataset, LASSO was not as helpful as we would have liked. Categorical predictors must be reference encoded for LASSO to compute coefficients, turning our 20 predictors into 
+
+LASSO only sets 5 out of 88 terms to 0, and the terms set to 0 do not encapsulate whole categorical variables, so this information is not meaningfully interpretable. 
 
 if the relationship is approximately linear, least squares will have low bias
 if we have many data points, n >> p, also have low variance -- do have many data points
