@@ -29,11 +29,11 @@ each dataset was cleaned, all three were merged into one dataset called merged_d
 
 # Create one model per person and then rejoin to discuss results
 - Linear Regression (Hope)
--- interactions
+    - LASSO
+    - Forwards Subset
+    - Backwards Subset
 
 - Random forest (Juan)
--- with bagging
--- with boosting
 
 - KNN (Aaron)
 
