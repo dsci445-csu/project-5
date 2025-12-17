@@ -27,6 +27,8 @@ here's our data and why we chose it
 here's where the data is from
 here are our research questions
 
+Our data comes from kaggle, it contains three csv files; sentencing, person, and marks. Across these datasets we have a unique id for each prisoner assigned by the Illinois Department of Corrections. (Talk about data cleaning and the work put into making one final dataframe)
+
 ### Research Questions
 - What predictors have the strongest effect on sentencing length?
 - How accurately can we predict sentencing length?
@@ -132,62 +134,64 @@ knn_wf <- workflow() |> add_recipe(knn_rec) |> add_model(knn_spec)
 
 ### Random Forest
 
-(Want to use this in intro) We have taken 3 datasets from kaggle sentencing, person, and marks. Across these datasets we have a unique id for each prisoner assigned by the Illinois Department of Corrections. (Talk about data cleaning and the work put into making one final dataframe)
 
 
-With such a large dataset at 59388, we decided random foresting would be a good model to run our data through for predicting a prisoners sentencing time in years. The use of random forests allows for several trees to be made with random susbsets of our data and then combine to better assess predictions. We found random foresting to be a good option as well because of its' built-in out-of-bag feature which allows for us to run the model on all predictors and not worry about cross-validation. We can also pull the variable importance from the model and see which predictors had the most importance in predicting sentencing time. 
-```{r, warning=FALSE, echo=FALSE, cache=TRUE}
+We made some decisions for this model, filtering out people with the hair color "Sandy" as there were very few observations (5). We also decided to not predict for people who were sentenced to zero years, as there were too many data entry issues around these rows which just sometimes made no sense. This still left us with a large dataset at 59388 observations, where we decided random foresting would be a good model to run our data through for predicting a prisoners sentencing time in years.The use of random forests allows for several trees to be fit with random subsets of our data and then combines results to better assess predictions.We found random foresting to be a good option because of its' built-in out-of-bag feature which allows for us to run the model on all predictors and not worry about cross-validation. We didn't want the correlated trees you would expect in boosting, random forests don't care for the most important features it learns from tree to tree. It builds is trees on random subsets of predictors each time, while boosting begins to "boost" predictions by further finding optimal splits with the important features it learns as it goes. We went with 500 trees, and 4 predictors for each tree. Since we have 20 predictors and it's common practice to choose the square root of how many predictors you have which is $\sqrt{20} = 4.47$. It's also important we note that we kept a similar training split for this model at 70:30 ( $\sim$ 17 41,200:17,600 ). Once this model was fit, we were eager to look into the feature importance plot to see if it was any different to our previous models.  
 
-df <- illinois_doc_data %>% select(-id, -last_name, -name)%>%
+```{r, warning=FALSE, echo=FALSE, cache=TRUE, fig.width=7, fig.height=4, dpi=300, out.width="70%", fig.align='center'}  
+
+df_load <- read.csv("~/Documents/GitHub/project-5/CSV Files/merged_data.csv")
+
+df <- df_load %>% select(-id, -last_name, -name, -life_sentence, -death_sentence)%>%
   mutate(time_sentenced_prior = round(time_sentenced_prior,2),
          height = as.numeric(height),
          weight = as.numeric(weight)) %>% filter(!hair %in% c("Sandy", "Not Available"),
-                                                 !eyes %in% c("Not Available"))
+                                                 !eyes %in% c("Not Available"), current_sentence > 0)
 
 df <- na.omit(df)
 
-df <- df |>
+df <- df %>%
   mutate(across(where(is.character), as.factor),
          across(where(is.logical), ~factor(., levels = c(FALSE, TRUE))))
-
-df <- df %>% slice_sample(n = 3000)
 
 df_split <- initial_split(df, prop = 0.7)
 
 df_train <- training(df_split)
 df_test <- testing(df_split)
 
+rf_fit <- readRDS("~/Documents/RFfit_model_juan.rds")
 
-rf_spec <- rand_forest(mtry = sqrt(.cols())) |>
-  set_engine("randomForest", importance = TRUE) |>
-  set_mode("regression")
+vi <- vi(rf_fit$fit) %>%
+  top_n(5, Importance) %>%
+  mutate(Variable = recode(Variable,
+                           year_adm = "Year Admitted",
+                           parent_institution = "Parent Institution",
+                           total_counts = "Total Counts",
+                           time_sentenced_prior = "Prior Sentencing Time",
+                           class = "Illinois Felony Class",
+                           ))
 
-
-rf_fit <- rf_spec |>
-  fit(current_sentence ~ ., data = df_train)
-
-vip(rf_fit)
-
-```
-
-The predictor with the most importance in this case is the year the prisoner was admitted, which instantly tells us based off our model that the time period they were sentenced plays the biggest role in sentence length. It's interesting to think about and hypothesize why this may be, has the way certain charges have been punished drastically changed throughout the years? (Look and plot effect of year admitted to better understand.) A couple of other predictors that stood out from this variable importance plot are total counts, which makes sense looking at it from a judges point of view. A person with more charges historically will often get a harsher sentencing. There is also our categorical predictor for life sentence, which we were positive would play a big role in predicting for sentencing length because of how we included it in our code. (explain earlier in code that we dealt with anyone getting sentenced "LIFE" by giving them 100 years, and capping anyone sentenced above 100 years to 100.) (Make sure to double check vip plot for all data as this is a subset of the data for paper to knit faster.)
-
-
-While the subset of our data (3000 rows) used for our rough draft got a OOB rmse of 12.8 years and a training rmse of 12.1 years
-```{r,include=FALSE}
-
-
-augmented <- augment(rf_fit, new_data = df_test) %>% pull(.pred)
-#OOB RMSE
-rf_engine <- rf_fit |> extract_fit_engine()
-sqrt(rf_engine$mse[rf_engine$ntree])
-
-#TEST RMSE
-rmse(df_test$current_sentence, augmented)
+vip(vi, aesthetics = list(fill = "coral4"))  +
+  ggtitle("5 Most Important Predictors in our Random Forests Model") + theme_bw() + 
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text = element_text(size = 11),
+        plot.title = element_text(size = 12, hjust = 0.5))
 
 ```
 
+The predictor with the most importance in this case is the year the prisoner was admitted, which instantly tells us based off our model that the time period they were sentenced plays the biggest role in sentence length. It's interesting to think about and hypothesize why this may be; Has the way certain charges have been punished drastically changed throughout the years? Another predictor that stood out from this variable importance plot was total counts, which makes sense looking at it from a judges point of view. It makes sense that a person with more charges historically will often get a longer sentence.
 
+We checked model performance first by looking at the out-of-bag rmse which measures prediction error on the training split by evaluating each tree on the subset of data not used during its training. We got a value of 12.11, which up to this point was the best. But it was still not ideal at first glance. We also looked at the test rmse which checks the model performance on the test split and we found a very similar value at 12.18, meaning our model generalized well. We took a further step to look into why our predictions were off that much by grouping by sentencing length predicted and then calculating rmse per sentencing length. The motivation here was that we feared our model was no good if we were off by 12 years for people with sentencing lengths of 1-5 years. As you can see below, we were very happy to find that this was not the case. We dont get into that 12 rmse region until just about 50 predicted sentencing years. With such a broad range from 1-100 on our response variable, I would actually consider our rmse not that bad with all things considered.
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, cache=TRUE, fig.width=7, fig.height=4, dpi=300, out.width="70%", fig.align='center'}
+
+rmses <- read_csv("../CSV Files/RF_RMSEbySentencing.csv")
+ggplot(data = rmses, aes(x = current_sentence_rnd, y = rmse)) + 
+  labs(title = "RMSE by Sentence Length", x = "Sentencing Time", y = "RMSE") +
+  geom_smooth(method = "loess", se = FALSE, color = "coral4") + geom_line() +
+  theme_bw()+theme(plot.title = element_text(hjust = 0.5))
+```
 
 
 ### Linear Regression
