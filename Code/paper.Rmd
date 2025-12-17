@@ -7,7 +7,7 @@ output: pdf_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-packages <- c("lubridate", "tidyverse", "tidymodels", "rpart.plot", "vip", "Metrics", "knitr")
+packages <- c("lubridate", "tidyverse", "tidymodels", "rpart.plot", "vip", "Metrics", "knitr", "randomForest")
 
 for (pkg in packages) {
   if (!require(pkg, character.only = TRUE)) {
@@ -134,13 +134,12 @@ knn_wf <- workflow() |> add_recipe(knn_rec) |> add_model(knn_spec)
 
 ### Random Forest
 
-
-
-We made some decisions for this model, filtering out people with the hair color "Sandy" as there were very few observations (5). We also decided to not predict for people who were sentenced to zero years, as there were too many data entry issues around these rows which just sometimes made no sense. This still left us with a large dataset at 59388 observations, where we decided random foresting would be a good model to run our data through for predicting a prisoners sentencing time in years.The use of random forests allows for several trees to be fit with random subsets of our data and then combines results to better assess predictions.We found random foresting to be a good option because of its' built-in out-of-bag feature which allows for us to run the model on all predictors and not worry about cross-validation. We didn't want the correlated trees you would expect in boosting, random forests don't care for the most important features it learns from tree to tree. It builds is trees on random subsets of predictors each time, while boosting begins to "boost" predictions by further finding optimal splits with the important features it learns as it goes. We went with 500 trees, and 4 predictors for each tree. Since we have 20 predictors and it's common practice to choose the square root of how many predictors you have which is $\sqrt{20} = 4.47$. It's also important we note that we kept a similar training split for this model at 70:30 ( $\sim$ 17 41,200:17,600 ). Once this model was fit, we were eager to look into the feature importance plot to see if it was any different to our previous models.  
+We made some decisions for this model, filtering out people with the hair color "Sandy" as there were very few observations (5). We also decided to not predict for people who were sentenced to zero years, as there were too many data entry issues around these rows which made no sense. This still left us with a large dataset at 59388 observations, where we decided random foresting would be a good model to run our data through for predicting a prisoner's sentencing time in years.The use of random forests allows for several trees to be fit with random subsets of our data and then combines results to better assess predictions. We found random foresting to be a good option because of its built-in out-of-bag feature which allows for us to run the model on all predictors and not worry about cross-validation. We didn't want the correlated trees you would expect in boosting, random forests don't care for the most important features it learns from tree to tree. It builds its trees on random subsets of predictors each time, while boosting begins to "boost" predictions by further finding optimal splits with the important features it learns as it goes. We went with 500 trees, and 4 predictors for each tree because it's common practice to choose the square root of how many predictors you have which is $\sqrt{20} = 4.47$. It's also important we note that we kept a similar training split for this model at 70:30 ( $\sim$ 17 41,200:17,600 ). Once this model was fit, we were eager to look into the feature importance plot to see if it was any different to our previous models.  
 
 ```{r, warning=FALSE, echo=FALSE, cache=TRUE, fig.width=7, fig.height=4, dpi=300, out.width="70%", fig.align='center'}  
 
-df_load <- read.csv("~/Documents/GitHub/project-5/CSV Files/merged_data.csv")
+df_load <- read.csv("../CSV Files/merged_data.csv")
+
 
 df <- df_load %>% select(-id, -last_name, -name, -life_sentence, -death_sentence)%>%
   mutate(time_sentenced_prior = round(time_sentenced_prior,2),
@@ -159,7 +158,8 @@ df_split <- initial_split(df, prop = 0.7)
 df_train <- training(df_split)
 df_test <- testing(df_split)
 
-rf_fit <- readRDS("~/Documents/RFfit_model_juan.rds")
+#rf_fit <- readRDS("~/Documents/RFfit_model_juan.rds")
+rf_fit <- readRDS("RFfit_model_juan.rds")
 
 vi <- vi(rf_fit$fit) %>%
   top_n(5, Importance) %>%
@@ -180,9 +180,9 @@ vip(vi, aesthetics = list(fill = "coral4"))  +
 
 ```
 
-The predictor with the most importance in this case is the year the prisoner was admitted, which instantly tells us based off our model that the time period they were sentenced plays the biggest role in sentence length. It's interesting to think about and hypothesize why this may be; Has the way certain charges have been punished drastically changed throughout the years? Another predictor that stood out from this variable importance plot was total counts, which makes sense looking at it from a judges point of view. It makes sense that a person with more charges historically will often get a longer sentence.
+The predictor with the most importance in this case is the year the prisoner was admitted, which instantly tells us based off our model that the time period they were sentenced plays the biggest role in sentence length. It's interesting to think about and hypothesize why this may be; Has the way certain charges have been punished drastically changed throughout the years? Another predictor that stood out from this variable importance plot was total counts, which makes sense looking at it from a judge's point of view. It makes sense that a person with more charges historically will often get a longer sentence.
 
-We checked model performance first by looking at the out-of-bag rmse which measures prediction error on the training split by evaluating each tree on the subset of data not used during its training. We got a value of 12.11, which up to this point was the best. But it was still not ideal at first glance. We also looked at the test rmse which checks the model performance on the test split and we found a very similar value at 12.18, meaning our model generalized well. We took a further step to look into why our predictions were off that much by grouping by sentencing length predicted and then calculating rmse per sentencing length. The motivation here was that we feared our model was no good if we were off by 12 years for people with sentencing lengths of 1-5 years. As you can see below, we were very happy to find that this was not the case. We dont get into that 12 rmse region until just about 50 predicted sentencing years. With such a broad range from 1-100 on our response variable, I would actually consider our rmse not that bad with all things considered.
+We checked model performance first by looking at the out-of-bag RMSE which measures prediction error on the training split by evaluating each tree on the subset of data not used during its training. We got a value of 12.11, which up to this point was the best, but still not ideal at first glance. We also looked at the test RMSE which checks the model performance on the test split and we found a very similar value at 12.18, meaning our model generalized well. We took a further step to look into why our predictions were off that much by grouping by sentencing length predicted and then calculating RMSE per sentencing length. The motivation here was that we feared our model was no good if we were off by 12 years for people with sentencing lengths of 1-5 years. As you can see below, we were very happy to find that this was not the case. We don't get into that 12 RMSE region until just about 50 predicted sentencing years. With such a broad range from 1-100 on our response variable, I would actually consider our RMSE not that bad with all things considered.
 
 ```{r, warning=FALSE, message=FALSE, echo=FALSE, cache=TRUE, fig.width=7, fig.height=4, dpi=300, out.width="70%", fig.align='center'}
 
