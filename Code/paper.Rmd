@@ -224,27 +224,13 @@ merge_vars$"variable (cont)" <- vars[9:16, "variable"]
 kable(merge_vars)
 ```
 
+Although both forward and backward subset selection indicated that the best model includes the above sixteen categories, an exploration indicates that smaller models can be fit with a minimal increase in RMSE, when the model is fit with a number of categories between five and fifteen. The graph below shows the RMSE for a model fit with the most important variable, followed by a model with the two most important variables, and so on up to sixteen variables, according to the ranking provided by the forward subset shown in the table above. This indicates that if interpretability is a priority, a model can be fit with five or six terms that will have nearly identical prediction results to the model with sixteen, but fewer variables would need to be explained. 
 
-```{r}
+```{r, echo = F}
 rmse <- read.csv("LinearRegressionOutputs/rmse_v_terms.csv")
 
 ggplot(rmse) + geom_point(aes(num_terms, RMSE, color = RMSE == min(RMSE))) + scale_color_discrete(labels = c("larger than optimum", "minimum RMSE")) + labs(x = "Number of Terms", color = "", caption = "dropped terms: num_scars, sex, num_other_marks, height")
 ```
-
-
-if the relationship is approximately linear, least squares will have low bias
-if we have many data points, n >> p, also have low variance -- do have many data points
-limitations to linear model: linearity is an approximation
-
-use LASSO, forward, backward to obtain more interpretable model, drop predictors not associated with the response
-
-not doing best subset because there are over 20 predictors and fitting approximately $2^20$ models would be too computationally expensive; not doing principle component regression because interpretability again; ridge doesn't eliminate does not eliminate predictors and I care about interpretation
-
-Ridge regression: RSS + $\lambda \sum_{j = 1}^{p} \beta_{j}^2$ where $\lambda$ is the tuning parameter
-- variable selection
-- LASSO
-- Ridge
-- results
 
 ### GAM
 We decided to use fit a generalized additive model(GAM) to see how well it can predict sentencing length and what predictors have the strongest effect on sentencing length. GAMs are an extension of linear regression that are used to show relationships between the predictors that can be better explained non-linearly while being easily interpretable.  We then used 10 fold Cross-Validation to evaluate the model 
