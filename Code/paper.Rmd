@@ -311,4 +311,9 @@ In the figure above, we show the estimated nonlinear effect of year admitted on 
 
 
 ## References
-kaggle data set
+
+Illinois Compiled Statutes, Chapter 730, Article 4.5 General Sentencing Provisions. Justia, 2010, law.justia.com/codes/illinois/2010/chapter730/073000050HCh_V_Art_4_5.html.
+
+“Time on Death Row.” Death Penalty Information Center, deathpenaltyinfo.org/death-row/death-row-time-on-death-row.
+
+Fisher, David J. Illinois DOC Labeled Faces Dataset. Kaggle, 2019, www.kaggle.com/datasets/davidjfisher/illinois-doc-labeled-faces-dataset/data.
