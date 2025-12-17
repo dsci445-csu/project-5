@@ -20,7 +20,23 @@ remove(packages, pkg)
 ```
 
 ## Abstract
-have a summary of the paper
+
+Incarceration and criminal justice are two large issues currently affecting
+the United States.  Although there has been work to mend some of the past
+injustices that have occurred on the basis of race, gender, sexual identity,
+and more, bias and discrimination undoubtedly remain apart of our society.
+In particular, one issue that typically exemplifies these unresolved issues
+is the prison system. This report takes the approach of analyzing prison
+specific data, from the Illinois Department of Corrections, using machine
+learning to predict charge category, as well as sentencing length.  Predicting
+offense category was much more successful for offense categories with a large
+sample, potentially indicating more variability in predictors for lower-level
+offenses. For sentence length, random forest modeling performed the best,
+with the relationship between prison sentence and the predictor variables
+likely not being linear.  Demographic data, such as race, sex, and weight
+were less important predictors for sentencing length, indicating an
+encouraging sign that sentence length is based primarily on criminal history
+and the specific crime committed, rather than being biased by physical traits.
 
 ## Background
 here's our data and why we chose it
@@ -32,7 +48,6 @@ Our data comes from kaggle, it contains three csv files; sentencing, person, and
 ### Research Questions
 - What predictors have the strongest effect on sentencing length?
 - How accurately can we predict sentencing length?
-- What predictors have the strongest effect on offence category?
 - How accurately can we predict offence categories?
 
 ## Methods
@@ -46,19 +61,15 @@ criminal justice system (such as offense category hypothetically being
 correlated with number of scars).  With these seemingly conflicting 
 ideas in mind, this section of analysis focuses on using
 K-nearest neighbors (KNN) to attempt to predict offense category within the
-data.  While predictive accuracy is one goal, the expectations raised in this
-section also indicate a desire to examine variable importance within prediction,
-to see if expected or unexpected variables are having large impacts on
-predictive accuracy in the model.
+data.
 
-As such, in order to answer our second two research questions regarding 
-prediction of offense category, as well as determine which predictors have the
-strongest effect on offense category, we decided to fit a KNN model. KNN stands
+As such, in order to answer research question regarding 
+prediction of offense category, we decided to fit a KNN model. KNN stands
 for k-nearest neighbor, which is an algorithm that cycles through each point
 in a dataset, and identifies the k points that are closest to that point.
 This k value is adjustable and helps determine the classifier itself, so tuning
 k is critical for optimizing classification performance.
-I grouped offenses/charges into nineteen categories: controlled subst poss w/out 
+I grouped offenses/charges into seventeen categories: controlled subst poss w/out 
 prescription, burglary, murder, armed robbery, theft (identity or property),
 battery, sexual assault, forgery, kidnapping,
 illegal firearm/weapon/handgun use or possession, harassment, bribery,
@@ -76,8 +87,27 @@ Because this dataset is so large (even with an 80-20 training-test split), ten
 fold cross validation (which is the process of partitioning the entire data
 set in ten different folds, where each fold is the test set one time and the
 other nine folds are used for training) was extremely time-expensive (about
-2 hours and 45 minutes to complete).
-```{r, warning = FALSE}
+2 hours and 45 minutes to complete).  An additional drawback to this approach
+is the inability to perform variable selection ahead of time, as can be done
+using best subset selection in various types of linear regression. Still, the
+use of all variables in the model will make it easier to interpret which
+variables were the most impactful in model performance in the context of all
+possible predictors.
+
+The first step of building the model was to load the data, clean the predictors
+by ensuring all variables were correctly factors or numeric, and omit rows
+with NA values after transforming the necessary columns. Afterwards, the data
+was randomly split into an 80-20 training-test set.  Then, a range of k-values
+to be used in tuning was selected. Because time-cost was so expensive for adding
+additional k-values to be trained, only seven were selected: 10, 50, 100, 200,
+500, 1000, and 5000.  The wide variety of k values was selected due to the
+size of the data, and anticipated complexity.  A larger range allows for
+comparison of model performance with a greater variety of k-values selected
+for KNN.  After this, ten folds for cross validation were fit, and the recipe
+of model fit (`offense_category` explained by all other variables) as well as
+the `tidymodels` spec was set for KNN classification. Finally, cross-validation
+was performed to find the k-value with the highest accuracy in prediction.
+```{r KNN_Prep, echo = FALSE}
 set.seed(445)
 illinois_doc_data <- read.csv("../CSV Files/merged_data.csv")
 cleaned_doc_data <- illinois_doc_data |> select(-c(last_name, name, id)) |>
@@ -96,41 +126,53 @@ head(cleaned_doc_data)
 df_split <- initial_split(cleaned_doc_data, prop = 0.8)
 df_train <- training(df_split)
 df_test <- testing(df_split)
-
-k_vals <- expand.grid(neighbors = c(10, 50, 100, 200, 500, 1000,
-                                     2000, 5000, 10000))
-knn_10foldcv <- vfold_cv(df_train, v = 10)
-knn_spec <- nearest_neighbor(mode = "classification", neighbors = tune()) |>
-  set_engine("kknn")
-knn_rec <- recipe(offense_category ~ ., data = df_train) |>
-  step_dummy(all_nominal_predictors()) |>
-  step_normalize(all_numeric_predictors())
-knn_wf <- workflow() |> add_recipe(knn_rec) |> add_model(knn_spec)
-#tune_results <- tune_grid(knn_wf,
-#                          resamples = knn_10foldcv,
-#                          grid = k_vals)
-#collect_metrics(tune_results)
-#best_knn <- select_best(tune_results, metric = "accuracy")
-#final_knn <- finalize_workflow(knn_wf, best_knn)
-#final_knn_fit <- fit(final_knn, data = df_train)
-#end_time <- Sys.time()
-#elapsed <- end_time - start_time
-#elapsed
-# 2. Create a confusion matrix for the `test` data
-#knn_preds <- predict(knn_fit, new_data = df_test)
-
-#knn_test_res |>
-#  conf_mat(truth = offense_category, estimate = .pred_class)
-
-# test error
-#test_res |>
- # accuracy(truth = offense_category, estimate = .pred_class) |>
-#  mutate(error = 1 - .estimate) |>
-#  pull(error)
-
-
 ```
 
+After reading in the cross-validation results, we can plot the variation in
+accuracy for each $k$ value examined.
+```{r KNN_CV_Results, echo = FALSE}
+knn_tune_results <- readRDS("~/DSCI445/project-5/Code/knn_CV_results.rds")
+autoplot(knn_tune_results)
+```
+Immediately, it is clear that predictive accuracy decreases substantially as
+k increases, with the best accuracy occurring when $k = 50$. Using this best
+model obtained through cross-validation, the next step of the analysis was to
+finalize the best model, and perform predictions on the test set.
+```{r KNN_preds, echo = FALSE}
+final_knn_fit <- readRDS("~/DSCI445/project-5/Code/final_knn_model.rds")
+knn_preds <- predict(final_knn_fit, new_data = df_test) |>
+  bind_cols(df_test)
+knn_conf_mat <- knn_preds |> conf_mat(truth = offense_category,
+                                      estimate = .pred_class)
+knn_conf_mat_df <- data.frame(knn_conf_mat$table)
+knn_table <- knn_conf_mat_df |> group_by(Truth) |>
+  summarize(total = sum(Freq),
+            correct = sum(Freq[Truth == Prediction]),
+            prop_correct = round(correct / total, 3))
+kable(knn_table, caption = "KNN Classification Recall")
+```
+These test set prediction results indicate a clear trend: total proportion
+correctly predicted is significantly higher in categories with more individuals.
+Logically, this makes sense because the model attempts to maximize accuracy by
+predicting the best within categories with more samples. For example, 
+individuals marked as having a "sexual offense" were correctly predicted 72 
+percent of the time,  those categorized for murder were correctly predicted
+91.4 percent of the time, and those charged with illegal possession of a
+controlled substance were correctly classified 76.9 percent of the time.  These
+classification rates are impressive, considering the number of categories that
+each individual could be predicted as, indicating similarlity of predictor 
+values (means) for individuals in these categories. The only categories
+with relatively significant sample sizes and poor predictive accuracy were
+burglary, theft, and drug manufacturing.  A potential explanation for this
+poorer predictive performance would be greater variation in predictor variable
+values for these "lower-level" crimes (which might be classified as lower-level
+felonies or misdemeanors than murder or a sexual crime). Overall, this KNN model
+performed relatively well, achieving an overall accuracy of roughly 62.3 percent.
+Given that randomly classifying each individual into an offense category would
+result in an expected accuracy around six percent (1/17), this is a significant
+improvement, and demonstrates predictor mean similarity between individuals
+charged with the same categories of crimes (particularly for more severe
+charges).
 
 ### Random Forest
 
