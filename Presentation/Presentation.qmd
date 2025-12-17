@@ -152,7 +152,6 @@ kable(knn_table2)
 where $\lambda$ is the tuning parameter, to improve interpretability, use penalty to perform feature selection
 
 -   cross validation selected $\lambda = 0.01$
-
 :::
 
 ::: column
@@ -292,7 +291,7 @@ ggplot() +
 #You must use the download link to download the rds file locally and adjust the pathway then store it in rf_fit.
 #
 #rf_fit <- readRDS("~/Documents/RFfit_model_juan.rds")
-#rf_fit <- readRDS("../Code/RFfit_model_juan.rds")
+rf_fit <- readRDS("../Code/RFfit_model_juan.rds")
 
 
 
