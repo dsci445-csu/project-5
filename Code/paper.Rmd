@@ -23,17 +23,16 @@ remove(packages, pkg)
 have a summary of the paper
 
 ## Background
-here's our data and why we chose it
-here's where the data is from
-here are our research questions
 
-Our data comes from kaggle, it contains three csv files; sentencing, person, and marks. Across these datasets we have a unique id for each prisoner assigned by the Illinois Department of Corrections. (Talk about data cleaning and the work put into making one final dataframe)
+We chose to analyze a dataset recording people incarcerated in Illinois because we were curious to understand the relationships underlying an individual's prison sentence. Our data comes from kaggle, it contains three csv files; sentencing, person, and marks. Across these datasets we have a unique id for each prisoner assigned by the Illinois Department of Corrections. Because this data was scraped from the Illinois Department of Corections' website, this data required a substantial amount of cleaning. The variables in these datasets were initially separated by semicolons and the data failed to parse into designated columns because there were also semicolons used within the information scraped from the website. A parser was used to replace all within-text semicolons with commas to resolve this issue. The sentencing and marks files had different rows for each of an individual's charges and marks respectively. Thus these files were modified to group together all of the individual's rows so that each row had a unique ID and the three datasets could be merged together on ID. Within the sentencing csv, individuals recieved a sentence that was either numerical, indicating the length of time they were sentenced to serve, or one of the following categories: life, death, or sexually dangerous person. The sentence of sexually dangerous person did not lead to time served in prison but did lead to that individual being placed on a registry for sexually dangerous persons, so during data cleaning this category was replaced with the numerical value 0. Individuals who received a death sentence were assigned a prison sentence of 15 years, as our research indicated this was the median amount of time an individual spent in prison while waiting for a death sentence to be enacted. More severe prison sentences were represented in the sentencing csv in a variety of ways. Some individuals received sentences with lengths of time longer than the human lifespan, including some sentences greater than 3,000 years. To standardize these numbers, prison sentences were capped at 100 years in the data cleaning process. Those who received a life sentence were also assigned a numerical sentence of 100 years to match this standardization.
 
 ### Research Questions
 - What predictors have the strongest effect on sentencing length?
 - How accurately can we predict sentencing length?
 - What predictors have the strongest effect on offence category?
 - How accurately can we predict offence categories?
+
+To investigate these research questions, we fit four different categories of models. Linear models, generalized additive models, and tree-based models were used to investigate sentencing length. K nearest neighbors based models were used to investigate offense category. 
 
 ## Methods
 ### KNN
