@@ -1,7 +1,7 @@
 ---
-title: "paper"
-author: "Group 5"
-date: "2025-12-04"
+title: "Illinois DOC Sentencing Machine Learning Analysis"
+author: "Juan Gonzalez, Aaron Graff, Ilijah Pearson, Hope Winsor"
+date: "2025-12-17"
 output: pdf_document
 ---
 
@@ -234,23 +234,81 @@ ggplot(rmse) + geom_point(aes(num_terms, RMSE, color = RMSE == min(RMSE))) + sca
 Unfortunately, the best model fit according to subset selection has a RMSE of just under 14.5. This means that on average the linear model is off in its prediction of prison sentence length by about 14.5 years. Given that this data has a range of sentence lengths between 0 and 100 years, this is not an acceptable amount of error. The length of time an individual spends in prison has a substantial impact on their life, so we do not feel confident in applying the decisions made in this model to predictions made about the real world. Analysis of this model can help reveal the most important factors in understanding prison sentence length, but this model should not be used for prediction. The error from this model indicates that the relationship between prison sentence length and the predictors we investigated is likely not linear, so non-parametric models should be investigated instead.
 
 ### GAM
-We decided to use fit a generalized additive model(GAM) to see how well it can predict sentencing length and what predictors have the strongest effect on sentencing length. GAMs are an extension of linear regression that are used to show relationships between the predictors that can be better explained non-linearly while being easily interpretable.  We then used 10 fold Cross-Validation to evaluate the model 
 
-When fitting a model that includes physical descriptors and a model without any of the physical descriptors. The model that was able to best predict sentencing length was:
+  To see how accurately we can predict sentencing length, we fit a generalized additive model (GAM) with sentence length as the response. A GAM is an extension of linear regression that replaces straight-line effects with smooth functions of each predictor, allowing us to capture nonlinear relationships while retaining an additive and interpretable structure.
+
+  We used the merged Illinois DOC dataset and restricted our analysis to cases with complete information on sentencing length, basic demographics, physical descriptors, and key legal variables. We removed identifiers (ID, names) and the death_sentence indicator, and recoded all categorical variables (race, sex, hair color, eye color, felony class, offense category, parent institution, attempted/aggravated/armed) as factors. Numeric predictors in the GAM included number of scars, tattoos, and other marks, weight, height, year and month admitted, total number of counts, prior sentencing time, and approximate age at admission.
+
+  We randomly split the data into 80% training and 20% test sets. On the training set, we specified a linear regression model with natural spline terms for all numeric predictors and dummy variables for all categorical predictors. Degrees of freedom was treated as a tuning parameter and selected using 10-fold cross-validation to balance flexibility and overfitting. After choosing the optimal degrees of freedom, we refit the final GAM on the full training data and then evaluated performance on the held-out test set.
+
+  On the test set, the GAM achieved an $RMSE$ of approximately 12.2 and an $R^2$ of about 0.71. This means that the average prediction error is around 12 years, and the model explains roughly 71% of the variability in sentencing length on new cases. This indicates that the observed legal and physical variables capture a substantial portion of the structure in sentencing, while still leaving meaningful variation that is likely due to other factors not present in the dataset.
+
+  To understand which predictors had the most nonlinear effects, we generated partial effect plots from the fitted GAM.
+
+```{r, echo=FALSE, fig.width=12, fig.height=8.25}
+gam_fit <- readRDS("../Code/gam_fit.rds")
+sent_train <- readRDS("../Code/GAM_train.rds")
+train_pred <- readRDS("../Code/gam_pred.rds")
 
 
 
 
+pred_dat <- train_pred |>
+  group_by(year_adm) |>
+  summarise(
+    .pred       = mean(.pred,       na.rm = TRUE),
+    .pred_lower = mean(.pred_lower, na.rm = TRUE),
+    .pred_upper = mean(.pred_upper, na.rm = TRUE),
+    .groups     = "drop"
+  )
 
+out_dat <- sent_train |>
+  select(year_adm, current_sentence)
 
+ggplot() +
+  geom_point(
+    data = out_dat,
+    aes(x = year_adm, y = current_sentence),
+    alpha = 0.007
+  ) +
+  geom_line(
+    data = pred_dat,
+    aes(x = year_adm, y = .pred),
+    color = "coral4"
+  ) +
+  geom_line(
+    data = pred_dat,
+    aes(x = year_adm, y = .pred_lower),
+    color = "coral4",
+    linetype = "dashed"
+  ) +
+  geom_line(
+    data = pred_dat,
+    aes(x = year_adm, y = .pred_upper),
+    color = "coral4",
+    linetype = "dashed"
+  ) +
+  coord_cartesian(xlim = c(1980, 2018)) +
+  labs(
+    x = "Year admitted",
+    y = "Sentence length",
+    title = "GAM effect for year admitted 1980–2018"
+  ) +
+  theme_bw(base_size = 18) +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    axis.title = element_text(face = "bold"),
+    axis.text  = element_text(size = 14)
+  )
 
-This model shows that:
+```
 
-
-- results
+In the figure above, we show the estimated nonlinear effect of year admitted on sentencing length, holding all other predictors constant. GAMs are easy to interpret as we can clearly see that as the years went on sentencing length has gone down holding all other predictors constant.
 
 ## Conclusion
-here's why we pick x model over y model
+
+ Looking at our models results compared to each other suggest that the predictors have a non-linear relationship with sentencing length. This is shown by the models respective $RMSE$ values, with the random forest performing the best followed by the GAM and then our linear regression model. When determining the best predictors for sentencing length we found that demographic data like race, sex, and weight are less helpful predictors while the best were year admitted, parent institution, total counts charged, prior sentencing time, and criminal class, and offense category. With our various $R^2$ values suggesting that while most of the sentencing length is explained by the predictors there is still unexplained variability that our data did not capture.
+
 
 ## References
 kaggle data set
