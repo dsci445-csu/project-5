@@ -57,22 +57,22 @@ exist for sentencing type, prior offenses, counts and severity of a charge
 (i.e., was it armed or aggravated), among other variables. However, there
 are some patterns or correlations that would ideally not exist, in a perfect
 criminal justice system (such as offense category hypothetically being 
-correlated with number of scars).  With these seemingly conflicting 
+correlated with number of tattoos).  With these seemingly conflicting 
 ideas in mind, this section of analysis focuses on using
 K-nearest neighbors (KNN) to attempt to predict offense category within the
 data.
 
 As such, in order to answer research question regarding 
-prediction of offense category, we decided to fit a KNN model. KNN stands
+prediction of offense category, a KNN model was chosen. KNN stands
 for k-nearest neighbor, which is an algorithm that cycles through each point
 in a dataset, and identifies the k points that are closest to that point.
 This k value is adjustable and helps determine the classifier itself, so tuning
 k is critical for optimizing classification performance.
-I grouped offenses/charges into seventeen categories: controlled subst poss w/out 
-prescription, burglary, murder, armed robbery, theft (identity or property),
-battery, sexual assault, forgery, kidnapping,
-illegal firearm/weapon/handgun use or possession, harassment, bribery,
-drug/meth manufacturing, vehicular hijacking/theft, DUI, child porn,
+For this analysis, offenses were grouped into seventeen categories:
+controlled substance possession without a prescription, burglary, murder, armed
+robbery, theft (identity or property), battery, sexual assault, forgery,
+kidnapping, illegal firearm/weapon/handgun use or possession, harassment, 
+bribery, drug/meth manufacturing, vehicular hijacking/theft, DUI, child porn,
 obstructing justice, home invasion, and other. It is important to note that
 these categories were created by reading through thousands of different
 individual charges, all unique and specific to each person. As such, these
@@ -88,10 +88,7 @@ set in ten different folds, where each fold is the test set one time and the
 other nine folds are used for training) was extremely time-expensive (about
 2 hours and 45 minutes to complete).  An additional drawback to this approach
 is the inability to perform variable selection ahead of time, as can be done
-using best subset selection in various types of linear regression. Still, the
-use of all variables in the model will make it easier to interpret which
-variables were the most impactful in model performance in the context of all
-possible predictors.
+using best subset selection in various types of logistic regression.
 
 The first step of building the model was to load the data, clean the predictors
 by ensuring all variables were correctly factors or numeric, and omit rows
@@ -104,8 +101,9 @@ size of the data, and anticipated complexity.  A larger range allows for
 comparison of model performance with a greater variety of k-values selected
 for KNN.  After this, ten folds for cross validation were fit, and the recipe
 of model fit (`offense_category` explained by all other variables) as well as
-the `tidymodels` spec was set for KNN classification. Finally, cross-validation
-was performed to find the k-value with the highest accuracy in prediction.
+the `tidymodels` KNN spec was set for KNN classification. Finally,
+cross-validation was performed to find the k-value with the highest accuracy in
+prediction.
 ```{r KNN_Prep, echo = FALSE}
 set.seed(445)
 illinois_doc_data <- read.csv("../CSV Files/merged_data.csv")
@@ -121,7 +119,6 @@ cleaned_doc_data <- illinois_doc_data |> select(-c(last_name, name, id)) |>
          class = as.factor(class),
          parent_institution = as.factor(parent_institution)) |>
   select(-c(eyes, height, weight, appx_age)) |> na.omit()
-head(cleaned_doc_data)
 df_split <- initial_split(cleaned_doc_data, prop = 0.8)
 df_train <- training(df_split)
 df_test <- testing(df_split)
@@ -159,7 +156,7 @@ percent of the time,  those categorized for murder were correctly predicted
 91.4 percent of the time, and those charged with illegal possession of a
 controlled substance were correctly classified 76.9 percent of the time.  These
 classification rates are impressive, considering the number of categories that
-each individual could be predicted as, indicating similarlity of predictor 
+each individual could be predicted as, indicating similarity of predictor 
 values (means) for individuals in these categories. The only categories
 with relatively significant sample sizes and poor predictive accuracy were
 burglary, theft, and drug manufacturing.  A potential explanation for this
@@ -169,7 +166,7 @@ felonies or misdemeanors than murder or a sexual crime). Overall, this KNN model
 performed relatively well, achieving an overall accuracy of roughly 62.3 percent.
 Given that randomly classifying each individual into an offense category would
 result in an expected accuracy around six percent (1/17), this is a significant
-improvement, and demonstrates predictor mean similarity between individuals
+improvement, and likely indicates predictor mean similarity between individuals
 charged with the same categories of crimes (particularly for more severe
 charges).
 
@@ -349,7 +346,7 @@ In the figure above, we show the estimated nonlinear effect of year admitted on 
 
 ## Conclusion
 
- Looking at our models results compared to each other suggest that the predictors have a non-linear relationship with sentencing length. This is shown by the models respective $RMSE$ values, with the random forest performing the best followed by the GAM and then our linear regression model. When determining the best predictors for sentencing length we found that demographic data like race, sex, and weight are less helpful predictors while the best were year admitted, parent institution, total counts charged, prior sentencing time, and criminal class, and offense category. With our various $R^2$ values suggesting that while most of the sentencing length is explained by the predictors there is still unexplained variability that our data did not capture.
+ Looking at our models results compared to each other suggest that the predictors have a non-linear relationship with sentencing length. This is shown by the models respective $RMSE$ values, with the random forest performing the best followed by the GAM and then our linear regression model. When determining the best predictors for sentencing length we found that demographic data like race, sex, and weight are less helpful predictors while the best were year admitted, parent institution, total counts charged, prior sentencing time, and criminal class, and offense category. With our various $R^2$ values suggesting that while most of the sentencing length is explained by the predictors there is still unexplained variability that our data did not capture. In terms of offense category, the high predictive success rate for predicting higher-level charge category indicates increased similarity in the mean of all predictor variables for those individuals. This allowed the model to better generalize, compared to lower-level charges where larger variation in all predictors existed. 
 
 
 ## References
