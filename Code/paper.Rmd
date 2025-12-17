@@ -7,7 +7,7 @@ output: pdf_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-packages <- c("lubridate", "tidyverse", "tidymodels", "rpart.plot", "vip", "Metrics", "knitr", "randomForest")
+packages <- c("lubridate", "tidyverse", "tidymodels", "rpart.plot", "vip", "Metrics", "knitr", "randomForest", "kknn")
 
 for (pkg in packages) {
   if (!require(pkg, character.only = TRUE)) {
@@ -104,7 +104,7 @@ of model fit (`offense_category` explained by all other variables) as well as
 the `tidymodels` KNN spec was set for KNN classification. Finally,
 cross-validation was performed to find the k-value with the highest accuracy in
 prediction.
-```{r KNN_Prep, echo = FALSE}
+```{r KNN_Prep, echo = FALSE, warning= FALSE}
 set.seed(445)
 illinois_doc_data <- read.csv("../CSV Files/merged_data.csv")
 cleaned_doc_data <- illinois_doc_data |> select(-c(last_name, name, id)) |>
@@ -127,7 +127,7 @@ df_test <- testing(df_split)
 After reading in the cross-validation results, we can plot the variation in
 accuracy for each $k$ value examined.
 ```{r KNN_CV_Results, echo = FALSE}
-knn_tune_results <- readRDS("~/DSCI445/project-5/Code/knn_CV_results.rds")
+knn_tune_results <- readRDS("knn_CV_results.rds")
 autoplot(knn_tune_results)
 ```
 Immediately, it is clear that predictive accuracy decreases substantially as
@@ -135,7 +135,7 @@ k increases, with the best accuracy occurring when $k = 50$. Using this best
 model obtained through cross-validation, the next step of the analysis was to
 finalize the best model, and perform predictions on the test set.
 ```{r KNN_preds, echo = FALSE}
-final_knn_fit <- readRDS("~/DSCI445/project-5/Code/final_knn_model.rds")
+final_knn_fit <- readRDS("final_knn_model.rds")
 knn_preds <- predict(final_knn_fit, new_data = df_test) |>
   bind_cols(df_test)
 knn_conf_mat <- knn_preds |> conf_mat(truth = offense_category,
