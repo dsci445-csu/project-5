@@ -1,0 +1,12 @@
+---
+title: "DataAccessFile"
+output: html_document
+---
+
+```{r}
+
+library(readxl)
+veopu_data <- read_excel("veopu.xlsx")
+View(veopu_data)
+
+```
