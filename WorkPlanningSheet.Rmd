@@ -3,3 +3,38 @@ title: "WorkPlanningSheet"
 output: html_document
 ---
 
+Dataset Initial Work:
+
+The complete dataset is now imported into Github in the DataAccessFile.Rmd. In order to have a full understanding of the dataset and ensure it is ready for model fitting we need to complete the following work:
+
+Identify the column to their corresponding characteristic (parameter) and create a description of it.
+Mark whether it is categorical or quantitative. If representing a categorical variable, note all the categories with their associated meanings. 
+Create a description, annotate the constraints and specifications for this characteristic that we are given from the data collection process.
+Find and note the amount of N/A values for this characteristic
+Remove the first three rows from the dataset as they are descriptive and not actual observations.
+First column to be removed. It is not a characteristic.
+Since the earnings and employment columns are separated by years from the service, we will need to consider which to use for each question.
+Mutate and label the dataset into different variables based on the following:
+Combine the data of earnings and get the mean.
+Combine the data of employment status and get the mean.
+Remove observations with missing data when that column is needed as a parameter to answer a particular question.
+Once we have completed the work above we can create scatter-plots and other plot types to get initial ideas of which models we believe are appropriate to start fitting.
+
+What questions would we like to answer from this dataset? Are they feasible to answer? 
+
+We need to look at each separately and determine if the dataset we have access to would allow for us to come to an answer. Once we complete this analysis we can choose which questions we will move forward with for the project.
+
+For each of the questions we need to identify the following:
+
+What would be our response variable for this question?
+Would we need to use regression or classification?
+Are the questions amenable to be answered based on the parameters we have in this dataset?
+What nuances in the way the parameters were gathered are important to consider? 
+Based on how the data was collected, how would we need to adjust the interpretive statements we can make from our models?
+
+Question List:
+What impact does the level of education at the time of enlistment have on post-service employment earnings? 
+Are there certain characteristics that would result in being less likely to be employed? 
+What type of industries hire veterans the most? Has this changed over the years or has it been constant?
+Does the rank achieved during military service impact post-military service earnings?
+Is there a difference in the expected average earnings for veterans of different sex?
