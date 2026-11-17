@@ -3,3 +3,38 @@ title: "Lucas_work"
 output: html_document
 ---
 
+```{r}
+# loading all of the data in
+
+
+
+```
+
+
+```{r}
+# Preliminary work for the data
+
+
+```
+
+
+
+Does the rank achieved during military service impact post military earnings? 
+
+```{r}
+
+```
+
+
+Can we make accurate predictions of whether a veteran will have employment 1,2,5 and 10 years after service based on characteristics in the data?
+
+```{r}
+
+```
+
+
+
+
+
+
+
