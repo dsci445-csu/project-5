@@ -38,3 +38,5 @@ Are there certain characteristics that would result in being less likely to be e
 What type of industries hire veterans the most? Has this changed over the years or has it been constant?
 Does the rank achieved during military service impact post-military service earnings?
 Is there a difference in the expected average earnings for veterans of different sex?
+Can we make accurate predictions of whether a veteran will have employment 1,2,5, and 10 years after service based on characteristics in the data?
+
