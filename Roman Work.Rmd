@@ -9,6 +9,15 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+FNISH BEFORE THE END OF THANKSGIVING BREAK
+
+Due Dates:
+Nov. 19th - Finish preliminary investigations
+Dec. 1st - Present models on data
+Dec. 3rd - Finalize slides/presentation
+
 afqt_scores_data <- read.csv("~/DSCI445/project-5/veo_AFQT_scores.csv")
 DOD_code_paygrade <- read.csv("~/DSCI445/project-5/veo_DOD_code_paygrade.csv")
 
+Can you accurately predict future wages based on someone's AFQT score? (aptitude when they enlist)
+Is there a difference in average earnings for the different branches, controlling for other variables?
