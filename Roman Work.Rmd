@@ -9,3 +9,6 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+afqt_scores_data <- read.csv("~/DSCI445/project-5/veo_AFQT_scores.csv")
+DOD_code_paygrade <- read.csv("~/DSCI445/project-5/veo_DOD_code_paygrade.csv")
+
