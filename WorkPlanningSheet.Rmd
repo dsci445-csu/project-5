@@ -18,6 +18,7 @@ Mutate and label the dataset into different variables based on the following:
 Combine the data of earnings and get the mean.
 Combine the data of employment status and get the mean.
 Remove observations with missing data when that column is needed as a parameter to answer a particular question.
+Split the data into training and testing sets. 70/30 training:test.
 Once we have completed the work above we can create scatter-plots and other plot types to get initial ideas of which models we believe are appropriate to start fitting.
 
 What questions would we like to answer from this dataset? Are they feasible to answer? 
@@ -31,12 +32,47 @@ Would we need to use regression or classification?
 Are the questions amenable to be answered based on the parameters we have in this dataset?
 What nuances in the way the parameters were gathered are important to consider? 
 Based on how the data was collected, how would we need to adjust the interpretive statements we can make from our models?
-
-Question List:
+Designation of Questions To Work On:
+Roman: 
+Can you accurately predict future wages based on someone's AFQT score? (aptitude when they enlist)
+Is there a difference in average earnings for the different branches, controlling for other variables?
+Lucas:
+Does the rank achieved during military service impact post-military service earnings?
+Can we make accurate predictions of whether a veteran will have employment 1,2,5, and 10 years after service based on characteristics in the data?
+Mi:
+What type of industries hire veterans the most? Has this changed over the years or has it been constant?
+Is there a difference in the expected average earnings for veterans of different sex?
+Alejandro:
 What impact does the level of education at the time of enlistment have on post-service employment earnings? 
 Are there certain characteristics that would result in being less likely to be employed? 
-What type of industries hire veterans the most? Has this changed over the years or has it been constant?
+Presentation/paper thoughts: 
+How many presentation slides per question? 
+What will be the process for the deciding on what is the best model?
+For the paper who will each separate part be brought together?
 Does the rank achieved during military service impact post-military service earnings?
-Is there a difference in the expected average earnings for veterans of different sex?
 Can we make accurate predictions of whether a veteran will have employment 1,2,5, and 10 years after service based on characteristics in the data?
+Are there certain characteristics that would result in being less likely to be employed?
+What type of industries hire veterans the most? Has this changed over the years or has it been constant?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
