@@ -3,3 +3,7 @@ title: "MiWork"
 output: html_document
 ---
 
+```{r}
+veteran_sex <- read.csv("veo_sex.csv")
+head(veteran_sex)
+```
