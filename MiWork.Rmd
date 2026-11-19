@@ -7,3 +7,7 @@ output: html_document
 veteran_sex <- read.csv("veo_sex.csv")
 head(veteran_sex)
 ```
+```{r}
+veteran_industry <- read.csv("veo_industry.csv")
+head(veteran_industry)
+```
