@@ -3,21 +3,22 @@ title: "WorkPlanningSheet"
  
 output: html_document
 ---
+
 # 🪖 Veteran Earnings & Employment Project
 
 > Project plan covering the initial dataset work, question assignments, and model-fitting expectations.
 
----
+------------------------------------------------------------------------
 
 ## 📑 Table of Contents
 
-1. [Dataset Initial Work](#-dataset-initial-work)
-2. [Project Questions](#-project-questions)
-3. [Designation of Questions](#-designation-of-questions)
-4. [Presentation & Paper](#-presentation--paper)
-5. [Model Fitting Expectations](#-model-fitting-expectations)
+1.  [Dataset Initial Work](#-dataset-initial-work)
+2.  [Project Questions](#-project-questions)
+3.  [Designation of Questions](#-designation-of-questions)
+4.  [Presentation & Paper](#-presentation--paper)
+5.  [Model Fitting Expectations](#-model-fitting-expectations)
 
----
+------------------------------------------------------------------------
 
 ## 📊 Dataset Initial Work
 
@@ -44,7 +45,7 @@ For every column (characteristic / parameter):
 Earnings and employment columns are split by years since service, so we need to decide which to use for each question.
 
 | Mutation | Description |
-|---|---|
+|----|----|
 | **Earnings** | Combine the earnings columns and take the **mean** |
 | **Employment status** | Combine the employment status columns and take the **mean** |
 
@@ -56,7 +57,7 @@ Earnings and employment columns are split by years since service, so we need to 
 
 Once the above is done, create scatter plots and other plot types to get initial ideas of which models are appropriate to start fitting.
 
----
+------------------------------------------------------------------------
 
 ## ❓ Project Questions
 
@@ -66,26 +67,26 @@ We need to look at each question separately and determine whether our dataset al
 
 ### For each question, identify:
 
-| # | Consideration |
-|---|---|
+| \# | Consideration |
+|----|----|
 | 1 | What is the **response variable**? |
 | 2 | Do we need **regression** or **classification**? |
 | 3 | Is the question **amenable** to the parameters in this dataset? |
 | 4 | What **nuances in how the parameters were gathered** are important to consider? |
 | 5 | Based on how the data was collected, how do we need to **adjust the interpretive statements** we make from our models? |
 
----
+------------------------------------------------------------------------
 
 ## 👥 Designation of Questions
 
 | Team Member | Questions |
-|---|---|
-| **Roman** | 1. Can you accurately predict future wages based on someone's AFQT score (aptitude when they enlist)?<br>2. Is there a difference in average earnings for the different branches, controlling for other variables? |
-| **Lucas** | 1. Does the rank achieved during military service impact post-military service earnings?<br>2. Can we make accurate predictions of whether a veteran will have employment 1, 2, 5, and 10 years after service based on characteristics in the data? |
-| **Mi** | 1. What type of industries hire veterans the most? Has this changed over the years or has it been constant?<br>2. Is there a difference in the expected average earnings for veterans of different sex? |
-| **Alejandro** | 1. What impact does the level of education at the time of enlistment have on post-service employment earnings?<br>2. Are there certain characteristics that would result in being less likely to be employed? |
+|----|----|
+| **Roman** | 1\. Can you accurately predict future wages based on someone's AFQT score (aptitude when they enlist)?<br>2. Is there a difference in average earnings for the different branches, controlling for other variables? |
+| **Lucas** | 1\. Does the rank achieved during military service impact post-military service earnings?<br>2. Can we make accurate predictions of whether a veteran will have employment 1, 2, 5, and 10 years after service based on characteristics in the data? |
+| **Mi** | 1\. What type of industries hire veterans the most? Has this changed over the years or has it been constant?<br>2. Is there a difference in the expected average earnings for veterans of different sex? |
+| **Alejandro** | 1\. What impact does the level of education at the time of enlistment have on post-service employment earnings?<br>2. Are there certain characteristics that would result in being less likely to be employed? |
 
----
+------------------------------------------------------------------------
 
 ## 🎤 Presentation & Paper
 
@@ -95,14 +96,14 @@ Open questions to settle as a team:
 - [ ] What will be the process for deciding on the **best model**?
 - [ ] For the paper, how will each separate part be brought together?
 
----
+------------------------------------------------------------------------
 
 ## 🧪 Model Fitting Expectations
 
 ### General rules
 
 | Setting | Value |
-|---|---|
+|----|----|
 | **Seed** | `445` |
 | **Train / test split** | 70 / 30 for all models, so testing metrics are comparable across models |
 | **Cross-validation** | 10-fold CV on the training data wherever possible |
@@ -112,14 +113,14 @@ For each question, fit the models below and compute **all appropriate testing me
 
 > 📈 **Every model fit must be accompanied by a representative plot.**
 
----
+------------------------------------------------------------------------
 
 ### 📉 Regression
 
 **Metric:** Root Mean Squared Error (RMSE) through 10-fold CV
 
 | Model | Requirements | Metric |
-|---|---|---|
+|----|----|----|
 | **Tree** | One tree fit with a bagging, random forest, or boosting extension | CV RMSE |
 | **KNN** | One KNN model | CV RMSE |
 | **Stepwise selection** | Forward and backward. Test with Cp, AIC, BIC, Adj R², and CV | Cp / AIC / BIC / Adj R² / CV |
@@ -129,19 +130,19 @@ For each question, fit the models below and compute **all appropriate testing me
 
 > Within linear models, we need stepwise selection, at least one shrinkage method, and at least one dimension reduction method.
 
----
+------------------------------------------------------------------------
 
 ### 🏷️ Classification
 
 **Metric:** Testing error rate (10-fold CV), with **confusion matrices attached** and **accuracy percentage**
 
-| Model | Requirements |
-|---|---|
-| **Logistic Regression** | At least 1 |
-| **LDA or QDA** | One of the two |
-| **Support Vector Machine** | One SVM |
+| Model                      | Requirements   |
+|----------------------------|----------------|
+| **Logistic Regression**    | At least 1     |
+| **LDA or QDA**             | One of the two |
+| **Support Vector Machine** | One SVM        |
 
----
+------------------------------------------------------------------------
 
 ### ✅ Quick checklist per model
 
@@ -151,25 +152,3 @@ For each question, fit the models below and compute **all appropriate testing me
 - [ ] 10-fold CV on training data
 - [ ] All appropriate test metrics recorded
 - [ ] Representative plot included
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
