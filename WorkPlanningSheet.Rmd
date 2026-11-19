@@ -3,58 +3,154 @@ title: "WorkPlanningSheet"
  
 output: html_document
 ---
+# 🪖 Veteran Earnings & Employment Project
 
-Dataset Initial Work:
+> Project plan covering the initial dataset work, question assignments, and model-fitting expectations.
 
-The complete dataset is now imported into Github in the DataAccessFile.Rmd. In order to have a full understanding of the dataset and ensure it is ready for model fitting we need to complete the following work:
+---
 
-Identify the column to their corresponding characteristic (parameter) and create a description of it.
-Mark whether it is categorical or quantitative. If representing a categorical variable, note all the categories with their associated meanings. 
-Create a description, annotate the constraints and specifications for this characteristic that we are given from the data collection process.
-Find and note the amount of N/A values for this characteristic
-Remove the first three rows from the dataset as they are descriptive and not actual observations.
-First column to be removed. It is not a characteristic.
-Since the earnings and employment columns are separated by years from the service, we will need to consider which to use for each question.
-Mutate and label the dataset into different variables based on the following:
-Combine the data of earnings and get the mean.
-Combine the data of employment status and get the mean.
-Remove observations with missing data when that column is needed as a parameter to answer a particular question.
-Split the data into training and testing sets. 70/30 training:test.
-Once we have completed the work above we can create scatter-plots and other plot types to get initial ideas of which models we believe are appropriate to start fitting.
+## 📑 Table of Contents
 
-What questions would we like to answer from this dataset? Are they feasible to answer? 
+1. [Dataset Initial Work](#-dataset-initial-work)
+2. [Project Questions](#-project-questions)
+3. [Designation of Questions](#-designation-of-questions)
+4. [Presentation & Paper](#-presentation--paper)
+5. [Model Fitting Expectations](#-model-fitting-expectations)
 
-We need to look at each separately and determine if the dataset we have access to would allow for us to come to an answer. Once we complete this analysis we can choose which questions we will move forward with for the project.
+---
 
-For each of the questions we need to identify the following:
+## 📊 Dataset Initial Work
 
-What would be our response variable for this question?
-Would we need to use regression or classification?
-Are the questions amenable to be answered based on the parameters we have in this dataset?
-What nuances in the way the parameters were gathered are important to consider? 
-Based on how the data was collected, how would we need to adjust the interpretive statements we can make from our models?
-Designation of Questions To Work On:
-Roman: 
-Can you accurately predict future wages based on someone's AFQT score? (aptitude when they enlist)
-Is there a difference in average earnings for the different branches, controlling for other variables?
-Lucas:
-Does the rank achieved during military service impact post-military service earnings?
-Can we make accurate predictions of whether a veteran will have employment 1,2,5, and 10 years after service based on characteristics in the data?
-Mi:
-What type of industries hire veterans the most? Has this changed over the years or has it been constant?
-Is there a difference in the expected average earnings for veterans of different sex?
-Alejandro:
-What impact does the level of education at the time of enlistment have on post-service employment earnings? 
-Are there certain characteristics that would result in being less likely to be employed? 
-Presentation/paper thoughts: 
-How many presentation slides per question? 
-What will be the process for the deciding on what is the best model?
-For the paper who will each separate part be brought together?
-Does the rank achieved during military service impact post-military service earnings?
-Can we make accurate predictions of whether a veteran will have employment 1,2,5, and 10 years after service based on characteristics in the data?
-Are there certain characteristics that would result in being less likely to be employed?
-What type of industries hire veterans the most? Has this changed over the years or has it been constant?
+The complete dataset is now imported into GitHub in `DataAccessFile.Rmd`. To fully understand the dataset and make sure it is ready for model fitting, we need to complete the following work.
 
+### 1. Document each variable
+
+For every column (characteristic / parameter):
+
+- [ ] Identify the column and its corresponding characteristic, and write a **description**
+- [ ] Mark whether it is **categorical** or **quantitative**
+  - If categorical, list all categories with their associated meanings
+- [ ] Annotate the **constraints and specifications** given by the data collection process
+- [ ] Find and note the **number of N/A values**
+
+### 2. Clean the dataset
+
+- [ ] Remove the **first three rows**. They are descriptive, not actual observations.
+- [ ] Remove the **first column**. It is not a characteristic.
+- [ ] Remove observations with missing data **only when that column is needed** as a parameter for a particular question.
+
+### 3. Combine time-separated columns
+
+Earnings and employment columns are split by years since service, so we need to decide which to use for each question.
+
+| Mutation | Description |
+|---|---|
+| **Earnings** | Combine the earnings columns and take the **mean** |
+| **Employment status** | Combine the employment status columns and take the **mean** |
+
+### 4. Split the data
+
+- [ ] Split into **training / testing sets at 70 / 30**
+
+### 5. Explore
+
+Once the above is done, create scatter plots and other plot types to get initial ideas of which models are appropriate to start fitting.
+
+---
+
+## ❓ Project Questions
+
+**What questions would we like to answer from this dataset? Are they feasible to answer?**
+
+We need to look at each question separately and determine whether our dataset allows us to answer it. After this analysis we choose which questions to move forward with.
+
+### For each question, identify:
+
+| # | Consideration |
+|---|---|
+| 1 | What is the **response variable**? |
+| 2 | Do we need **regression** or **classification**? |
+| 3 | Is the question **amenable** to the parameters in this dataset? |
+| 4 | What **nuances in how the parameters were gathered** are important to consider? |
+| 5 | Based on how the data was collected, how do we need to **adjust the interpretive statements** we make from our models? |
+
+---
+
+## 👥 Designation of Questions
+
+| Team Member | Questions |
+|---|---|
+| **Roman** | 1. Can you accurately predict future wages based on someone's AFQT score (aptitude when they enlist)?<br>2. Is there a difference in average earnings for the different branches, controlling for other variables? |
+| **Lucas** | 1. Does the rank achieved during military service impact post-military service earnings?<br>2. Can we make accurate predictions of whether a veteran will have employment 1, 2, 5, and 10 years after service based on characteristics in the data? |
+| **Mi** | 1. What type of industries hire veterans the most? Has this changed over the years or has it been constant?<br>2. Is there a difference in the expected average earnings for veterans of different sex? |
+| **Alejandro** | 1. What impact does the level of education at the time of enlistment have on post-service employment earnings?<br>2. Are there certain characteristics that would result in being less likely to be employed? |
+
+---
+
+## 🎤 Presentation & Paper
+
+Open questions to settle as a team:
+
+- [ ] How many presentation slides per question?
+- [ ] What will be the process for deciding on the **best model**?
+- [ ] For the paper, how will each separate part be brought together?
+
+---
+
+## 🧪 Model Fitting Expectations
+
+### General rules
+
+| Setting | Value |
+|---|---|
+| **Seed** | `445` |
+| **Train / test split** | 70 / 30 for all models, so testing metrics are comparable across models |
+| **Cross-validation** | 10-fold CV on the training data wherever possible |
+| **Model type** | Use only models appropriate for the response variable (regression vs. classification) |
+
+For each question, fit the models below and compute **all appropriate testing metrics** for each, so we can compare which fits best.
+
+> 📈 **Every model fit must be accompanied by a representative plot.**
+
+---
+
+### 📉 Regression
+
+**Metric:** Root Mean Squared Error (RMSE) through 10-fold CV
+
+| Model | Requirements | Metric |
+|---|---|---|
+| **Tree** | One tree fit with a bagging, random forest, or boosting extension | CV RMSE |
+| **KNN** | One KNN model | CV RMSE |
+| **Stepwise selection** | Forward and backward. Test with Cp, AIC, BIC, Adj R², and CV | Cp / AIC / BIC / Adj R² / CV |
+| **Shrinkage** (at least one) | Ridge **or** Lasso | CV RMSE, λ selected with `lambda.min` |
+| **Dimension reduction** (at least one) | PCA **or** PLS | CV RMSE, with the optimal number of components *K* chosen |
+| **Linear / quasi-linear** (at least one, if appropriate) | e.g. 3rd-degree polynomial splines, **GAM** | CV RMSE |
+
+> Within linear models, we need stepwise selection, at least one shrinkage method, and at least one dimension reduction method.
+
+---
+
+### 🏷️ Classification
+
+**Metric:** Testing error rate (10-fold CV), with **confusion matrices attached** and **accuracy percentage**
+
+| Model | Requirements |
+|---|---|
+| **Logistic Regression** | At least 1 |
+| **LDA or QDA** | One of the two |
+| **Support Vector Machine** | One SVM |
+
+---
+
+### ✅ Quick checklist per model
+
+- [ ] Correct model type for the response (regression or classification)
+- [ ] Seed `445` set
+- [ ] 70/30 split used
+- [ ] 10-fold CV on training data
+- [ ] All appropriate test metrics recorded
+- [ ] Representative plot included
 
 
 
